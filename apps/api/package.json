@@ -1,0 +1,20 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node src/index.js",
+    "build": "echo \"js-only\"",
+    "lint": "node -e \"process.exit(0)\"",
+    "test": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "fastify": "^4.27.2",
+    "@fastify/cors": "^10.0.1",
+    "dotenv": "^16.4.5",
+    "knex": "^3.1.0",
+    "pg": "^8.12.0",
+    "bcryptjs": "^2.4.3",
+    "pino": "^9.5.0"
+  }
+}

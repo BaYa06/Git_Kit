@@ -1,0 +1,5 @@
+/apps/api/ @owner
+/apps/web/ @owner
+/packages/ @owner
+/database/ @owner
+/infra/ @owner

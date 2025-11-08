@@ -1,6 +1,0 @@
-{
-  "devCommand": "npm --prefix apps/web run dev -- --port $PORT",
-  "buildCommand": "npm --prefix apps/web run build",
-  "installCommand": "npm install",
-  "framework": "nextjs"
-}

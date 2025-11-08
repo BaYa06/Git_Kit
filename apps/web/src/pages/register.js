@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { apiPost } from '@/lib/api'
+import { useRouter } from 'next/router'
 
 export default function Register() {
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '' })
   const [msg, setMsg] = useState(null)
+  const router = useRouter()
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -13,9 +15,11 @@ export default function Register() {
     setMsg(null)
     try {
       const data = await apiPost('/v1/auth/register', form)
-      setMsg({ type: 'ok', text: data.message || 'Успешная регистрация' })
+      // можно оставить сообщение, но мы сразу уходим на /login
+      // setMsg({ type: 'ok', text: data.message || 'Успешная регистрация' })
+      window.location.href = '/login';
     } catch (err) {
-      setMsg({ type: 'err', text: err.message })
+      setMsg({ type: 'err', text: err.message || 'Ошибка регистрации' })
     }
   }
 

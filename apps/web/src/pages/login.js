@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { apiPost } from '@/lib/api'
+import { useRouter } from 'next/router'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [msg, setMsg] = useState(null)
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  const router = useRouter()
 
   const onSubmit = async (e) => {
     e.preventDefault()
     setMsg(null)
     try {
       const data = await apiPost('/v1/auth/login', form)
-      setMsg({ type: 'ok', text: data.message || 'Успешный вход' })
+      // setMsg({ type: 'ok', text: data.message || 'Успешный вход' })
+      window.location.href = '/cabinet';
     } catch (err) {
-      setMsg({ type: 'err', text: err.message })
+      setMsg({ type: 'err', text: err.message || 'Ошибка входа' })
     }
   }
 

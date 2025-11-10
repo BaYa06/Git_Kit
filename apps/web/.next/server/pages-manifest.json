@@ -1,8 +1,7 @@
 {
-  "/_error": "pages/_error.js",
   "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/login": "pages/login.js",
-  "/profile/edit": "pages/profile/edit.js",
   "/cabinet": "pages/cabinet.js"
 }

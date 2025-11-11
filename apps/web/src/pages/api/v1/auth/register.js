@@ -27,8 +27,8 @@ export default async function handler(req, res) {
     const hash = await bcrypt.hash(password, 10);
     const id = crypto.randomUUID();
     await client.query(
-      `INSERT INTO users (id,email,first_name,last_name,phone,password_hash,created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,now())`,
+      `INSERT INTO users (id,email,first_name,last_name,phone,password_hash,must_change_password,created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,FALSE,now())`,
       [id, email, first_name, last_name, phone, hash]
     );
 

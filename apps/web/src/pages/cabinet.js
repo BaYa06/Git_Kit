@@ -21,14 +21,20 @@ export async function getServerSideProps({ req }) {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL })
     // Пользователь
     const { rows } = await pool.query(
-      'SELECT id, first_name, last_name, email FROM users WHERE id=$1 LIMIT 1',
+      'SELECT id, first_name, last_name, email, must_change_password FROM users WHERE id=$1 LIMIT 1',
       [payload.sub]
     )
+    
     if (!rows[0]) {
       await pool.end()
       return { redirect: { destination: '/login', permanent: false } }
     }
     const u = rows[0]
+
+    // если нужно обязательно сменить пароль — отправляем на страницу смены
+    if (u.must_change_password === true) {
+      return { redirect: { destination: '/profile/password?force=1', permanent: false } }
+    }
     const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || 'Пользователь'
 
     // Компании пользователя
@@ -121,7 +127,8 @@ export default function Cabinet({ user, companies = [] }) {
               {/* СПИСОК КОМПАНИЙ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {list.map((c) => (
-                  <div key={c.id} className="companie_name flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <Link href={`/company/${c.id}`} key={c.id}
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
                       {c.logo_url ? (
                         <img src={c.logo_url} alt={c.name} className="w-10 h-10 object-cover" />
@@ -130,7 +137,7 @@ export default function Cabinet({ user, companies = [] }) {
                       )}
                     </div>
                     <div className="truncate font-medium text-slate-900">{c.name}</div>
-                  </div>
+                  </Link>
                 ))}
                 {list.length === 0 && (
                   <div className="text-center text-sm text-slate-500">Пока нет компаний</div>

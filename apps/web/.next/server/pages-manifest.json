@@ -2,6 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/register": "pages/register.js",
   "/login": "pages/login.js",
-  "/cabinet": "pages/cabinet.js"
+  "/cabinet": "pages/cabinet.js",
+  "/api/v1/company/users/list": "pages/api/v1/company/users/list.js",
+  "/company/[id]": "pages/company/[id].js"
 }

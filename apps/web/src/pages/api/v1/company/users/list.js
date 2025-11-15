@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     const group = { admins: [], managers: [], guides: [] };
     for (const r of rows) {
       const item = { id: r.id, name: [r.first_name, r.last_name].filter(Boolean).join(' ') || r.username || r.email, email: r.email, phone: r.phone, username: r.username };
-      if (r.role === 'owner' || r.role === 'admin') group.admins.push(item);
+      if (r.role === 'admin') group.admins.push(item);
       else if (r.role === 'manager' || r.role === 'org_department') group.managers.push(item);
       else if (r.role === 'guide') group.guides.push(item);
     }

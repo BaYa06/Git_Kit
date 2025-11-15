@@ -69,14 +69,17 @@ export default function Cabinet({ user, companies = [] }) {
   const [name, setName] = useState('')
   const [file, setFile] = useState(null)
   const [list, setList] = useState(companies)
+  const [mode, setMode] = useState('create') // 'create' | 'find'
+  const [inviteLogin, setInviteLogin] = useState('')
+  const [invitePassword, setInvitePassword] = useState('')
+
 
   async function handleLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST' })
     window.location.href = '/login'
   }
 
-  async function createCompany(e) {
-    e.preventDefault()
+    async function createCompany() {
     if (!name.trim()) return
     const fd = new FormData()
     fd.append('name', name.trim())
@@ -89,7 +92,7 @@ export default function Cabinet({ user, companies = [] }) {
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Ошибка')
       // добавляем новую компанию в начало списка
-      setList([data.company, ...list])
+      setList((prev) => [data.company, ...(prev || [])])
       // сбрасываем форму/закрываем
       setOpen(false)
       setName('')
@@ -100,6 +103,55 @@ export default function Cabinet({ user, companies = [] }) {
       setSaving(false)
     }
   }
+
+  async function joinCompany() {
+    if (!inviteLogin.trim() || !invitePassword.trim()) return
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/v1/companies/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          login: inviteLogin.trim(),
+          password: invitePassword,
+        }),
+      })
+      let data = {}
+      try {
+        data = await res.json()
+      } catch {
+        data = {}
+      }
+      if (!res.ok) {
+        throw new Error(data.message || 'Такой пользователь не найден')
+      }
+      if (Array.isArray(data.companies)) {
+        // API вернул полный список компаний пользователя
+        setList(data.companies)
+      } else if (data.company) {
+        // запасной вариант — если вернётся одна компания
+        setList((prev) => [data.company, ...(prev || [])])
+      }
+      setOpen(false)
+      setInviteLogin('')
+      setInvitePassword('')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleModalSubmit(e) {
+    e.preventDefault()
+    if (mode === 'create') {
+      await createCompany()
+    } else {
+      await joinCompany()
+    }
+  }
+
 
   return (
     <div className={`min-h-screen flex flex-col ${s.container}`}>
@@ -147,7 +199,14 @@ export default function Cabinet({ user, companies = [] }) {
               {/* КНОПКА ДОБАВИТЬ КОМПАНИЮ — НИЖЕ СПИСКА */}
               <button
                 type="button"
-                onClick={() => setOpen(true)}
+                onClick={() => {
+                  setMode('create')
+                  setName('')
+                  setFile(null)
+                  setInviteLogin('')
+                  setInvitePassword('')
+                  setOpen(true)
+                }}
                 className="w-full group active:scale-[.99] transition-transform"
               >
                 <div className={`rounded-2xl border-2 border-slate-300 p-6 bg-white shadow-sm duration-200 ${s.addCard} ${s.fadeInUp}`}>
@@ -176,6 +235,10 @@ export default function Cabinet({ user, companies = [] }) {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500">Имя</span>
+                    <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">{user?.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Фамилия</span>
                     <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">{user?.name}</span>
                   </div>
                   {user?.email ? (
@@ -213,30 +276,91 @@ export default function Cabinet({ user, companies = [] }) {
       {open && (
         <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center px-4">
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-5">
-            <div className="text-lg font-semibold text-slate-900 text-center">Новая компания</div>
-            <form onSubmit={createCompany} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Логотип (опционально)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1">Название компании</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
-                  placeholder="Avangard Travel"
-                  required
-                />
-              </div>
+            <div className="text-lg font-semibold text-slate-900 text-center">Добавить компанию</div>
+
+            {/* Табы: Создать / Найти */}
+            <div className="mt-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setMode('create')}
+                className={`py-1.5 rounded-lg transition ${mode === 'create' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600'}`}
+              >
+                Создать
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('find')}
+                className={`py-1.5 rounded-lg transition ${mode === 'find' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600'}`}
+              >
+                Найти
+              </button>
+            </div>
+
+            <form onSubmit={handleModalSubmit} className="mt-4 space-y-4">
+              {mode === 'create' ? (
+                <>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">Логотип (опционально)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">Название компании</label>
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
+                      placeholder="Avangard Travel"
+                      required
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">Логин</label>
+                    <input
+                      value={inviteLogin}
+                      onChange={(e) => setInviteLogin(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                      placeholder="Логин из доступа"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-slate-600 mb-1">Пароль</label>
+                    <input
+                      type="password"
+                      value={invitePassword}
+                      onChange={(e) => setInvitePassword(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                      placeholder="Пароль из доступа"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Введите логин и пароль, которые вам выдал владелец компании. Если данные верны, компания добавится в список.
+                  </p>
+                </>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-1">
-                <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 rounded-xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    setMode('create')
+                    setName('')
+                    setFile(null)
+                    setInviteLogin('')
+                    setInvitePassword('')
+                  }}
+                  className="px-4 py-2 rounded-xl border border-slate-200"
+                >
                   Отмена
                 </button>
                 <button
@@ -244,7 +368,13 @@ export default function Cabinet({ user, companies = [] }) {
                   disabled={saving}
                   className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:opacity-95 active:scale-[.99]"
                 >
-                  {saving ? 'Сохраняем…' : 'Сохранить'}
+                  {saving
+                    ? mode === 'create'
+                      ? 'Сохраняем…'
+                      : 'Подключаем…'
+                    : mode === 'create'
+                    ? 'Сохранить'
+                    : 'Подключить'}
                 </button>
               </div>
             </form>

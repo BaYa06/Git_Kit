@@ -21,10 +21,10 @@ export async function getServerSideProps({ req }) {
     const pool = new Pool({ connectionString: process.env.DATABASE_URL })
     // Пользователь
     const { rows } = await pool.query(
-      'SELECT id, first_name, last_name, email, must_change_password FROM users WHERE id=$1 LIMIT 1',
+      'SELECT id, first_name, last_name, email, phone, must_change_password FROM users WHERE id=$1 LIMIT 1',
       [payload.sub]
     )
-    
+
     if (!rows[0]) {
       await pool.end()
       return { redirect: { destination: '/login', permanent: false } }
@@ -35,11 +35,18 @@ export async function getServerSideProps({ req }) {
     if (u.must_change_password === true) {
       return { redirect: { destination: '/profile/password?force=1', permanent: false } }
     }
-    const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || 'Пользователь'
 
-    // Компании пользователя
+    const name =
+      [u.first_name, u.last_name].filter(Boolean).join(' ') ||
+      u.email ||
+      'Пользователь'
+
+    // Компании пользователя + роль в компании
     const cres = await pool.query(
-      `SELECT c.id, c.name, c.logo_url
+      `SELECT c.id,
+              c.name,
+              c.logo_url,
+              ucr.role
          FROM companies c
          JOIN user_company_roles ucr ON ucr.company_id = c.id
         WHERE ucr.user_id = $1
@@ -51,7 +58,14 @@ export async function getServerSideProps({ req }) {
 
     return {
       props: {
-        user: { name, email: u.email || '' },
+        user: {
+          id: u.id,
+          name,
+          first_name: u.first_name || '',
+          last_name: u.last_name || '',
+          email: u.email || '',
+          phone: u.phone || ''
+        },
         companies: cres.rows || []
       }
     }
@@ -72,6 +86,24 @@ export default function Cabinet({ user, companies = [] }) {
   const [mode, setMode] = useState('create') // 'create' | 'find'
   const [inviteLogin, setInviteLogin] = useState('')
   const [invitePassword, setInvitePassword] = useState('')
+
+  function renderRole(role) {
+    switch (role) {
+      case 'owner':
+        return 'Владелец'
+      case 'admin':
+        return 'Админ'
+      case 'coordinator':
+        return 'Координатор'
+      case 'guide':
+        return 'Гид'
+      case 'readonly':
+        return 'Только просмотр'
+      default:
+        return role
+    }
+  }
+
 
 
   async function handleLogout() {
@@ -179,16 +211,28 @@ export default function Cabinet({ user, companies = [] }) {
               {/* СПИСОК КОМПАНИЙ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {list.map((c) => (
-                  <Link href={`/company/${c.id}`} key={c.id}
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <Link
+                    href={`/company/${c.id}`}
+                    key={c.id}
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white shadow-sm"
+                  >
                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
                       {c.logo_url ? (
                         <img src={c.logo_url} alt={c.name} className="w-10 h-10 object-cover" />
                       ) : (
-                        <div className="w-10 h-10 grid place-items-center text-slate-400 text-[10px]">LOGO</div>
+                        <div className="w-10 h-10 grid place-items-center text-slate-400 text-[10px]">
+                          LOGO
+                        </div>
                       )}
                     </div>
-                    <div className="truncate font-medium text-slate-900">{c.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium text-slate-900">{c.name}</div>
+                      {c.role && (
+                        <div className="mt-0.5 text-xs text-slate-500">
+                          {renderRole(c.role)}
+                        </div>
+                      )}
+                    </div>
                   </Link>
                 ))}
                 {list.length === 0 && (
@@ -233,33 +277,56 @@ export default function Cabinet({ user, companies = [] }) {
                   <div className="font-medium text-slate-900">Профиль</div>
                 </div>
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Имя</span>
-                    <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">{user?.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Фамилия</span>
-                    <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">{user?.name}</span>
-                  </div>
-                  {user?.email ? (
+                  {user?.first_name && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Имя</span>
+                      <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">
+                        {user.first_name}
+                      </span>
+                    </div>
+                  )}
+                  {user?.last_name && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Фамилия</span>
+                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                        {user.last_name}
+                      </span>
+                    </div>
+                  )}
+                  {user?.email && (
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500">Email</span>
-                      <span className="text-slate-900 truncate max-w-[60%] text-right">{user.email}</span>
+                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                        {user.email}
+                      </span>
                     </div>
-                  ) : null}
+                  )}
+                  {user?.phone && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Телефон</span>
+                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                        {user.phone}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 justify-end">
                   <Link href="/profile/edit" className={s.btnGhost}>
                     <Pencil className="w-4 h-4" />
-                    <span className="text-sm font-medium text-slate-800">Изменить данные</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      Изменить данные
+                    </span>
                   </Link>
                   <Link href="/profile/password" className={s.btnGhost}>
                     <KeyRound className="w-4 h-4" />
-                    <span className="text-sm font-medium text-slate-800">Изменить пароль</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      Изменить пароль
+                    </span>
                   </Link>
                 </div>
               </div>
+
 
               {/* (Опционально) */}
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

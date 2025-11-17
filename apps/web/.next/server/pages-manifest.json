@@ -2,10 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/cabinet": "pages/cabinet.js",
-  "/api/v1/auth/login": "pages/api/v1/auth/login.js",
-  "/api/v1/auth/logout": "pages/api/v1/auth/logout.js",
   "/login": "pages/login.js",
-  "/api/v1/company/users/list": "pages/api/v1/company/users/list.js",
-  "/company/[id]": "pages/company/[id].js"
+  "/api/v1/auth/login": "pages/api/v1/auth/login.js",
+  "/cabinet": "pages/cabinet.js"
 }

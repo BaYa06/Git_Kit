@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import s from '../../styles/company.module.css'
 import o from '../../styles/owner.module.css'
-import { Info, Users2 } from 'lucide-react';
+import { Info, Users2, MoreHorizontal } from 'lucide-react';
 
 export async function getServerSideProps({ req, params }) {
   const jwt = require('jsonwebtoken')
@@ -65,6 +65,22 @@ export default function CompanyPage({ company }) {
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [issued, setIssued] = useState(null) // { username, tempPassword } | null
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState(null)
+
+  const splitName = (name) => {
+    if (!name) return { firstName: '', lastName: '' }
+    const parts = String(name).trim().split(/\s+/)
+    if (parts.length === 1) {
+      return { firstName: parts[0], lastName: '' }
+    }
+    return { firstName: parts[0], lastName: parts.slice(1).join(' ') }
+  }
+
+  const selectedNameParts = selectedEmployee
+    ? splitName(selectedEmployee.name)
+    : { firstName: '', lastName: '' }
+
 
   const roleLabel = (r) => {
     if (!r) return null;
@@ -170,12 +186,29 @@ export default function CompanyPage({ company }) {
                 <div className="font-medium text-slate-900 mb-3">Админы</div>
                 <ul className="space-y-2">
                   {lists.admins.map(p => (
-                    <li key={p.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-slate-500 truncate max-w-[50%] text-right">{p.email || p.username}</span>
+                    <li key={p.id} className={`flex items-center justify-between gap-3 text-sm ${o.cardStuff}`}>
+                      <div className="min-w-0">
+                        <div className="truncate">{p.name}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[50%]">
+                          {p.email || p.username}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmployee(p)
+                          setDetailsOpen(true)
+                        }}
+                        className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+                        aria-label="Информация о сотруднике"
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
                     </li>
                   ))}
-                  {lists.admins.length === 0 && <li className="text-sm text-slate-500">Пока нет</li>}
+                  {lists.admins.length === 0 && (
+                    <li className="text-sm text-slate-500">Пока нет</li>
+                  )}
                 </ul>
               </div>
 
@@ -184,12 +217,29 @@ export default function CompanyPage({ company }) {
                 <div className="font-medium text-slate-900 mb-3">Менеджеры</div>
                 <ul className="space-y-2">
                   {lists.managers.map(p => (
-                    <li key={p.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-slate-500 truncate max-w-[50%] text-right">{p.email || p.username}</span>
+                    <li key={p.id} className={`flex items-center justify-between gap-3 text-sm ${o.cardStuff}`}>
+                      <div className="min-w-0">
+                        <div className="truncate">{p.name}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[50%]">
+                          {p.email || p.username}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmployee(p)
+                          setDetailsOpen(true)
+                        }}
+                        className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+                        aria-label="Информация о сотруднике"
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
                     </li>
                   ))}
-                  {lists.managers.length === 0 && <li className="text-sm text-slate-500">Пока нет</li>}
+                  {lists.managers.length === 0 && (
+                    <li className="text-sm text-slate-500">Пока нет</li>
+                  )}
                 </ul>
               </div>
 
@@ -198,12 +248,29 @@ export default function CompanyPage({ company }) {
                 <div className="font-medium text-slate-900 mb-3">Гиды</div>
                 <ul className="space-y-2">
                   {lists.guides.map(p => (
-                    <li key={p.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{p.name}</span>
-                      <span className="text-slate-500 truncate max-w-[50%] text-right">{p.email || p.username}</span>
+                    <li key={p.id} className={`flex items-center justify-between gap-3 text-sm ${o.cardStuff}`}>
+                      <div className="min-w-0">
+                        <div className="truncate">{p.name}</div>
+                        <div className="text-xs text-slate-500 truncate max-w-[50%]">
+                          {p.email || p.username}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmployee(p)
+                          setDetailsOpen(true)
+                        }}
+                        className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+                        aria-label="Информация о сотруднике"
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
                     </li>
                   ))}
-                  {lists.guides.length === 0 && <li className="text-sm text-slate-500">Пока нет</li>}
+                  {lists.guides.length === 0 && (
+                    <li className="text-sm text-slate-500">Пока нет</li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -224,7 +291,7 @@ export default function CompanyPage({ company }) {
                     <select
                       value={role}
                       onChange={e => setRole(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                      className={`w-full rounded-xl border border-slate-300 px-3 py-2 ${o.colorWhite}`}
                     >
                       <option value="admin">Админ</option>
                       <option value="manager">Менеджер</option>
@@ -285,6 +352,56 @@ export default function CompanyPage({ company }) {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* МОДАЛКА: Информация о сотруднике */}
+      {detailsOpen && selectedEmployee && (
+        <div className="fixed inset-0 z-40 bg-black/40 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-5 relative">
+            <button
+              type="button"
+              onClick={() => {
+                setDetailsOpen(false)
+                setSelectedEmployee(null)
+              }}
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              aria-label="Закрыть"
+            >
+              <span className="text-lg leading-none">&times;</span>
+            </button>
+
+            <div className="text-lg font-semibold text-slate-900 mb-4 pr-8">
+              Информация о сотруднике
+            </div>
+
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500">Имя</span>
+                <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">
+                  {selectedNameParts.firstName || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500">Фамилия</span>
+                <span className="text-slate-900 truncate max-w-[60%] text-right">
+                  {selectedNameParts.lastName || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500">Email</span>
+                <span className="text-slate-900 truncate max-w-[60%] text-right">
+                  {selectedEmployee.email || selectedEmployee.username || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-slate-500">Телефон</span>
+                <span className="text-slate-900 truncate max-w-[60%] text-right">
+                  {selectedEmployee.phone || '—'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       )}

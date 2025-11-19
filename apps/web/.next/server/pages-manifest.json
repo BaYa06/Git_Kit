@@ -3,6 +3,6 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/login": "pages/login.js",
-  "/api/v1/auth/login": "pages/api/v1/auth/login.js",
-  "/cabinet": "pages/cabinet.js"
+  "/cabinet": "pages/cabinet.js",
+  "/company/[id]/admin": "pages/company/[id]/admin.js"
 }

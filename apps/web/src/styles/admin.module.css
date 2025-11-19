@@ -1,0 +1,354 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1));
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+}
+
+.shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* HEADER */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(20px);
+  background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  /* background: radial-gradient(circle at 30% 20%, #0f172a, #020617); */
+  border-color: rgb(255 255 255 / 0.1);
+  border-width: 1px;
+  color: #e5e7eb;
+  text-decoration: none;
+  /* box-shadow: 0 10px 25px rgba(15, 23, 42, 0.85); */
+}
+
+.backButton:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.backIcon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.headerTitleWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.companyName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sectionTitle {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.roleBadge {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 9999px;
+  border-color: rgb(255 255 255 / 0.1);
+  border-width: 1px;
+  background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1));
+  color: #e5e7eb;
+  text-transform: lowercase;
+}
+
+/* MAIN */
+
+.main {
+  flex: 1;
+}
+
+.mainInner {
+  padding: 18px 16px 88px;
+}
+
+/* CARDS */
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.card {
+  border-radius: 18px;
+  padding: 12px 12px 10px;
+  background-color: rgb(31 41 55 / 0.5);
+  border-color: rgb(255 255 255 / 0.1);
+  border-width: 1px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #adadad;
+}
+
+.cardIcon {
+  font-size: 18px;
+}
+
+.cardValue {
+  margin-top: 2px;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #f9fafb;
+}
+
+.cardSub {
+  font-size: 12px;
+  color: #888c95;
+}
+
+/* TOURS LIST */
+
+.sectionHeading {
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.toursList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tourItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgb(31 41 55 / 0.5);
+  border-color: rgb(255 255 255 / 0.1);
+  border-width: 1px;
+  /* box-shadow: 0 22px 55px rgba(0, 0, 0, 0.9); */
+}
+
+.tourDate {
+  width: 52px;
+  height: 64px;
+  border-radius: 14px;
+  background: rgb(45 101 230 / 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.tourMonth {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgb(45 101 230 / var(--tw-text-opacity, 1));
+}
+
+.tourDay {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.tourBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.tourTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tourMeta {
+  margin-top: 2px;
+  font-size: 14px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tourChevron {
+  font-size: 20px;
+  color: #6b7280;
+}
+
+/* EMPTY STATE */
+
+.emptyState {
+  min-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.emptyText {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* BOTTOM NAV */
+
+.bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.4);
+  /* background: radial-gradient(circle at top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96)); */
+  backdrop-filter: blur(18px);
+}
+
+.bottomNavInner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.navItem {
+  padding: 8px 4px 10px;
+  margin: 5px 0 5px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  /* background: transparent; */
+  border: none;
+  outline: none;
+  color: #adadad;
+  font-size: 11px;
+}
+
+.navItemActive {
+  color: #2D65E6;
+}
+
+.navItemActive .navDot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.navDot {
+  width: 16px;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #4f46e5, #06b6d4);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: all 0.18s ease-out;
+}
+
+.navLabel {
+  font-size: 12px;
+}
+
+.icons_color {
+    color: rgb(45 101 230 / var(--tw-text-opacity, 1));
+}
+
+.count_people {
+    display: flex;
+	text-align: center;
+	align-items: center;
+}
+
+.people_count_right{
+    align-items: center;
+	text-align: right;		    
+    font-size: 20px;
+}
+
+.people_count_number {
+    font-size: 0.875rem;
+	margin-left: 5px;
+    color: #acacac;
+}
+
+.round {
+    background-color: green;
+    border-radius: 50%;
+}
+
+.tour_ready {
+    margin-left: 5px;
+}
+
+.tour_position_confirmed {
+    display: flex;
+	text-align: center;
+	align-items: center;
+    font-size: 12px;
+    margin-top: 3px;
+    color: rgb(34 197 94 / var(--tw-bg-opacity, 1));
+}
+
+.tour_position_waiting {
+    display: flex;
+	text-align: center;
+	align-items: center;
+    font-size: 12px;
+    margin-top: 3px;
+    color: rgb(250 204 21 / var(--tw-text-opacity, 1));
+}

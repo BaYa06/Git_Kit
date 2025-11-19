@@ -43,7 +43,6 @@
   border-width: 1px;
   color: #e5e7eb;
   text-decoration: none;
-  /* box-shadow: 0 10px 25px rgba(15, 23, 42, 0.85); */
 }
 
 .backButton:active {
@@ -98,6 +97,7 @@
 
 .mainInner {
   padding: 18px 16px 88px;
+  margin-bottom: 80px;
 }
 
 /* CARDS */
@@ -352,3 +352,320 @@
     margin-top: 3px;
     color: rgb(250 204 21 / var(--tw-text-opacity, 1));
 }
+
+.add_button {
+    background-color: #2D65E6;
+}
+
+.add_button_icon {
+    font-size: 30px;
+}
+
+
+.add_button {
+    background-color: #2D65E6;
+}
+
+.add_button_icon {
+    font-size: 30px;
+}
+
+/* BASE TAB (База) */
+
+.baseTabs {
+  margin-bottom: 16px;
+}
+
+.baseTabsInner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 9999px;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+}
+
+.baseTab {
+  border: none;
+  outline: none;
+  border-radius: 9999px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.baseTabActive {
+  background: linear-gradient(135deg, #2d65e6, #4f46e5);
+  color: #f9fafb;
+}
+
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  margin-bottom: 14px;
+}
+
+.searchIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 14px;
+}
+
+.searchInput::placeholder {
+  color: #6b7280;
+}
+
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 4px 8px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+}
+
+.guideList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guideCard {
+  position: relative;
+  border-radius: 18px;
+  padding: 12px 14px 10px;
+  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
+  border: 1px solid rgba(31, 41, 55, 1);
+}
+
+.guideCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.guideName {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f9fafb;
+}
+
+.guideMenuBtn {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 2px;
+  color: #9ca3af;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guideRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.guideLabel {
+  color: #9ca3af;
+}
+
+.guideValue {
+  color: #e5e7eb;
+  text-align: right;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ====== HOTELS (вкладка "Отели" в Базе) ====== */
+
+.hotelsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hotelCard {
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
+  border: 1px solid rgba(31, 41, 55, 1);
+}
+
+.hotelCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.hotelTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.hotelStarsRow {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #eab308; /* жёлтые звёзды */
+}
+
+.hotelCardAction {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 4px;
+  margin-right: -4px;
+  margin-top: -4px;
+  color: #9ca3af;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotelCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hotelRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hotelRowIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: #252f46; /* как dark:bg-[#252f46] */
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.hotelRowText {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: #e5e7eb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hotelRowLink {
+  text-decoration: none;
+}
+
+.hotelRowLink:hover .hotelRowText {
+  color: #2d65e6; /* primary */
+}
+
+/* ====== TRANSPORT (вкладка "Транспорт" в Базе) ====== */
+
+.transportList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 4px;
+}
+
+.transportItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 18px;
+  min-height: 72px;
+  cursor: pointer;
+  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
+}
+
+.transportItem:hover {
+  background-color: rgba(31, 41, 55, 0.9); /* hover как в code.html */
+}
+
+.transportIconWrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #374151; /* bg-gray-700 */
+  color: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.transportBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.transportTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transportMeta {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transportRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f9fafb;
+  flex-shrink: 0;
+}
+
+.transportSeats {
+  font-size: 14px;
+}
+

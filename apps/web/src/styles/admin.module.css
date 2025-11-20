@@ -669,3 +669,232 @@
   font-size: 14px;
 }
 
+/* === Фильтры во "Все туры" === */
+
+.toursFilter {
+  margin-bottom: 16px;
+}
+
+.toursFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+
+.toursFilterField {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1 1 0;
+}
+
+.toursFilterLabel {
+  padding-bottom: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.toursFilterInputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toursFilterInput {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background-color: #020617;
+  padding: 0 0 0 12px;
+  font-size: 14px;
+  color: #e5e7eb;
+  outline: none;
+  width: 100%;
+}
+
+.toursFilterInput::placeholder {
+  color: #6b7280;
+}
+
+.toursFilterIcon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #6b7280;
+}
+
+/* chips-строка */
+
+.toursChipsRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.toursChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1));
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.toursChipPrimary {
+  background-color: rgba(45, 101, 230, 0.18);
+  color: #2d65e6;
+}
+
+.toursChipText {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.toursChipIcon {
+  font-size: 18px;
+}
+
+/* ====== Templates (вкладка "Шаблоны") ====== */
+
+.templatesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.templateCard {
+  overflow: hidden;
+  border-radius: 18px;
+  background-color: rgb(26 34 50 / var(--tw-bg-opacity, 1));
+  border: 1px solid rgba(31, 41, 55, 0.9);
+}
+
+.templateCardBody {
+  padding: 16px;
+}
+
+.templateHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.templateTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.templateStatus {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.templateStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+}
+
+.templateStatusActive {
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.templateStatusDraft {
+  background-color: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+}
+
+.templateMetaRow {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  color: #94a3c7;
+}
+
+.templateMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.templateMetaIcon {
+  font-size: 18px;
+}
+
+/* низ карточки */
+
+.templateActionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(55, 65, 81, 1);
+  background-color: rgb(30 41 59 / 0.5);
+}
+
+.templateSecondaryButton,
+.templatePrimaryButton {
+  border: none;
+  outline: none;
+  height: 36px;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.templateSecondaryButton {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.templateSecondaryButton:hover {
+  background-color: #4b5563;
+}
+
+.templatePrimaryButton {
+  min-width: 84px;
+  background-color: #2d65e6;
+  color: #ffffff;
+}
+
+.templatePrimaryButton:hover {
+  opacity: 0.9;
+}
+
+.templateButtonIcon {
+  font-size: 16px;
+}
+
+
+

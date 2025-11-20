@@ -27,6 +27,11 @@
       "static/chunks/main.js",
       "static/chunks/pages/cabinet.js"
     ],
+    "/company/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/company/[id].js"
+    ],
     "/company/[id]/admin": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",

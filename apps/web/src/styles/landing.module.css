@@ -1,0 +1,574 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 16px;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #7aa2ff33, transparent 60%),
+    radial-gradient(1200px 600px at 110% 110%, #22d3ee33, transparent 60%),
+    linear-gradient(180deg, #0b0f1a, #0b0f1a);
+}
+
+.phone {
+  width: 100%;
+  max-width: 390px;              /* 👉 твой лимит для ПК */
+  min-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background-color: #111621;     /* background-dark */
+  color: #f9f9f9;
+  border-radius: 24px;
+  overflow: hidden;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* На телефоне — на весь экран, без рамок */
+@media (max-width: 480px) {
+  .root {
+    padding: 0;
+  }
+
+  .phone {
+    max-width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+.header {
+  padding: 24px 16px 0;
+}
+
+.logoBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background-color: #008080; /* primary */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.heroImageWrapper {
+  width: 100%;
+  padding: 16px 0 0;
+}
+
+.heroImage {
+  width: 100%;
+  min-height: 210px;
+  border-radius: 20px;
+  background-color: #050814;
+  background-image:
+    radial-gradient(circle at 0% 0%, #22d3ee55 0, transparent 55%),
+    radial-gradient(circle at 100% 100%, #00808066 0, transparent 55%);
+  background-size: cover;
+  background-position: center;
+}
+
+.title {
+  margin-top: 24px;
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 700;
+  text-align: center;
+}
+
+.subtitle {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.actions {
+  padding: 0 16px 16px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  width: 100%;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 12px;
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.button span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buttonPrimary {
+  background-color: #008080;
+  border-color: #008080;
+  color: #ffffff;
+}
+
+.buttonSecondary {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+
+.footer {
+  padding: 0 16px 24px;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.footerLink {
+  color: #c4ddff;
+  text-decoration: underline;
+}
+
+
+
+
+
+
+/* ===== LOGIN PAGE ===== */
+
+.loginRoot {
+  min-height: 100vh;
+  background-color: #111621; /* background-dark */
+  display: flex;
+  justify-content: center;
+  color: #f9fafb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+}
+
+.loginWrapper {
+  flex: 1;
+  width: 100%;
+  max-width: 390px; /* как просил для ПК-экрана */
+  padding: 24px 24px 32px;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* HEADER */
+
+.loginHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+  padding-bottom: 32px;
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.loginIcon {
+  width: 96px;
+  height: 96px;
+  border-radius: 9999px;
+  border: 4px solid #2d65e6; /* primary */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.loginIcon svg {
+  width: 48px;
+  height: 48px;
+  stroke: #2d65e6;
+}
+
+.loginTitle {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #f9fafb;
+  margin-bottom: 0;
+}
+
+.loginSubtitle {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #9ca3af; /* slate-400 */
+}
+
+/* FORM */
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loginLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.loginFieldWrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.loginFieldIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 14px;
+  background-color: #111827; /* близко к bg-slate-900 */
+  border: 1px solid #9ca3af; /* border-slate-800 */
+  color: #9ca3af;
+  border-radius: 12px;
+}
+
+.loginInput {
+  flex: 1;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  background-color: #020617; /* очень тёмный фон как в макете */
+  color: 1px solid #9ca3af;
+  padding: 14px 16px;
+  font-size: 16px;
+  outline: none;
+  margin-left: 5px;
+}
+
+.loginInput::placeholder {
+  color: #6b7280; /* slate-500 */
+}
+
+.loginInput:focus {
+  border-color: #2d65e6;
+  box-shadow: 0 0 0 1px rgba(45, 101, 230, 0.6);
+}
+
+/* глазик у пароля */
+
+.loginPasswordToggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* ССЫЛКА "Забыли пароль" */
+
+.loginForgot {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.loginForgot a {
+  color: #2d65e6;
+  text-decoration: underline;
+}
+
+.loginForgot a:hover {
+  opacity: 0.8;
+}
+
+/* КНОПКА "Войти" */
+
+.loginButton {
+  margin-top: 8px;
+  height: 56px;
+  border-radius: 12px;
+  background-color: #2d65e6;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.loginButton:hover {
+  background-color: #2552ba;
+}
+
+.loginButton:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* ФУТЕР */
+
+.loginFooter {
+  margin-top: 32px;
+  padding-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.loginFooter a {
+  color: #2d65e6;
+  text-decoration: underline;
+}
+
+.loginFooter a:hover {
+  opacity: 0.85;
+}
+
+/* На маленькой высоте чуть компактнее */
+
+@media (max-height: 700px) {
+  .loginWrapper {
+    justify-content: flex-start;
+  }
+
+  .loginHeader {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
+
+
+
+
+
+/* ===== REGISTER PAGE ===== */
+
+.registerRoot {
+  min-height: 100vh;
+  background-color: #111621; /* тот же тёмный фон, что и на логине */
+  display: flex;
+  justify-content: center;
+  color: #f9fafb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+}
+
+.registerWrapper {
+  flex: 1;
+  width: 100%;
+  max-width: 390px; /* как и на логине */
+  padding: 24px 24px 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+
+.registerHeader {
+  margin-bottom: 24px;
+}
+
+.registerHeaderTop {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.registerClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: 1px solid #1f2937;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.registerHeaderTitle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* прогресс (2 точки) */
+
+.registerSteps {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.registerStepDot {
+  width: 40px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #1f2937; /* тёмно-серый */
+}
+
+.registerStepDotActive {
+  background-color: #2d65e6; /* синий primary */
+}
+
+.registerMainTitle {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 0;
+  margin-bottom: 24px;
+}
+
+/* ФОРМА */
+
+.registerForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.registerField {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.registerLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e5e7eb;
+}
+
+.registerInput {
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background-color: #020617;
+  color: #f9fafb;
+  padding: 14px 16px;
+  font-size: 16px;
+  outline: none;
+  width: 100%;
+}
+
+.registerInput::placeholder {
+  color: #6b7280;
+}
+
+.registerInput:focus {
+  border-color: #2d65e6;
+  box-shadow: 0 0 0 1px rgba(45, 101, 230, 0.6);
+}
+
+/* пароль + иконка */
+
+.registerPasswordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.registerPasswordWrapper > .registerInput {
+  padding-right: 44px;
+}
+
+.registerHint {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* КНОПКА */
+
+.registerButton {
+  margin-top: 8px;
+  height: 56px;
+  border-radius: 12px;
+  background-color: #2d65e6;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.registerButton:hover {
+  background-color: #2552ba;
+}
+
+.registerButton:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* НИЖНИЙ ТЕКСТ */
+
+.registerFooterText {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.registerFooterText a {
+  color: #2d65e6;
+  text-decoration: underline;
+}
+
+.registerFooterText a:hover {
+  opacity: 0.85;
+}
+
+@media (max-height: 700px) {
+  .registerWrapper {
+    padding-top: 16px;
+  }
+}
+
+

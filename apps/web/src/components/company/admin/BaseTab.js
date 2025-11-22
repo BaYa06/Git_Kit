@@ -3,7 +3,7 @@ import { Search, MoreVertical } from "lucide-react";
 import s from "../../../styles/admin.module.css";
 import {Phone, Utensils, MapPin, Star, StarHalf, EllipsisVertical, Bus, BusFront, CarFront, Users} from "lucide-react";
 
-export default function BaseTab() {
+export default function BaseTab({ guides = [] }) {
   // внутренняя вкладка: Гиды / Транспорт / Отели / Инфо
   const [subTab, setSubTab] = useState("guides"); // 'guides' | 'transport' | 'hotels' | 'info'
 
@@ -70,80 +70,60 @@ export default function BaseTab() {
 
       {/* === ГИДЫ === */}
       {subTab === "guides" && (
-        <>
-          {/* Заголовок списка */}
-          <div className={s.listHeader}>
-            <span className={s.listHeaderLabel}>ФИО</span>
-            <span className={s.listHeaderLabel}>Действия</span>
-          </div>
-
-          {/* Список гидов */}
-          <div className={s.guideList}>
-            <div className={s.guideCard}>
-              <div className={s.guideCardHeader}>
-                <p className={s.guideName}>Иванов Иван Иванович</p>
-                <button type="button" className={s.guideMenuBtn}>
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Телефон</span>
-                <span className={s.guideValue}>+7 (999) 123-45-67</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Email</span>
-                <span className={s.guideValue}>ivanov.ivan@example.com</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Языки</span>
-                <span className={s.guideValue}>Русский, Английский</span>
-              </div>
+        guides.length > 0 ? (
+            <>
+            <div className={s.listHeader}>
+                <span className={s.listHeaderLabel}>ФИО</span>
+                <span className={s.listHeaderLabel}>Контакты</span>
             </div>
 
-            <div className={s.guideCard}>
-              <div className={s.guideCardHeader}>
-                <p className={s.guideName}>Петрова Анна Сергеевна</p>
-                <button type="button" className={s.guideMenuBtn}>
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Телефон</span>
-                <span className={s.guideValue}>+7 (999) 987-65-43</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Email</span>
-                <span className={s.guideValue}>petrova.anna@example.com</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Языки</span>
-                <span className={s.guideValue}>Русский, Французский</span>
-              </div>
-            </div>
+            <div className={s.guideList}>
+                {guides.map((g) => (
+                    <div key={g.id} className={s.guideCard}>
+                        <div className={s.guideCardHeader}>
+                        <p className={s.guideName}>{g.full_name}</p>
+                        <button type="button" className={s.guideMenuBtn}>
+                            <MoreVertical className="w-4 h-4" />
+                        </button>
+                        </div>
 
-            <div className={s.guideCard}>
-              <div className={s.guideCardHeader}>
-                <p className={s.guideName}>Сидоров Пётр Олегович</p>
-                <button type="button" className={s.guideMenuBtn}>
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Телефон</span>
-                <span className={s.guideValue}>+7 (911) 555-88-99</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Email</span>
-                <span className={s.guideValue}>sidorov.petr@example.com</span>
-              </div>
-              <div className={s.guideRow}>
-                <span className={s.guideLabel}>Языки</span>
-                <span className={s.guideValue}>Русский, Немецкий</span>
-              </div>
+                        {g.phone && (
+                        <div className={s.guideRow}>
+                            <span className={s.guideLabel}>Телефон</span>
+                            <span className={s.guideValue}>{g.phone}</span>
+                        </div>
+                        )}
+
+                        {g.email && (
+                        <div className={s.guideRow}>
+                            <span className={s.guideLabel}>Email</span>
+                            <span className={s.guideValue}>{g.email}</span>
+                        </div>
+                        )}
+
+                        <div className={s.guideRow}>
+                        <span className={s.guideLabel}>Языки</span>
+                        <span className={s.guideValue}>
+                            {Array.isArray(g.languages) && g.languages.length > 0
+                            ? g.languages.join(', ')
+                            : '-'}
+                        </span>
+                        </div>
+                    </div>
+                    ))}
+
             </div>
-          </div>
-        </>
-      )}
+            </>
+        ) : (
+            <div className={s.emptyState}>
+            <p className={s.emptyTitle}>Гиды не найдены</p>
+            <p className={s.emptyText}>
+                Добавьте первого гида в базе, чтобы он появился в этом списке.
+            </p>
+            </div>
+        )
+        )}
+
 
       {/* === ТРАНСПОРТ (как в code.html) === */}
       {subTab === "transport" && (

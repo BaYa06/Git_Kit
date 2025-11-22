@@ -896,5 +896,14 @@
   font-size: 16px;
 }
 
+.add_card {
+    background-color: rgb(26 34 50 / var(--tw-bg-opacity, 1));
+    border: 0;
+}
+
+.add_card_color {
+    color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+
 
 

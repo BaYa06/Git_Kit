@@ -186,26 +186,29 @@ export default function Cabinet({ user, companies = [] }) {
 
 
   return (
-    <div className={`min-h-screen flex flex-col ${s.container}`}>
-      {/* HEADER */}
-      <header className={`sticky top-0 z-10 bg-white/80 border-b border-slate-200 ${s.header}`}>
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="text-sm text-slate-500">Кабинет</div>
-          <div className={`text-lg font-semibold text-slate-900 truncate ${s.headerTitle}`}>{user?.name || 'Пользователь'}</div>
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
-            type="button"
-            title="Выйти">
-            <LogOut className="w-4 h-4" />
-            Выйти
-          </button>
-        </div>
-      </header>
+        <div className={s.container}>
+          {/* HEADER */}
+          <header className={s.header}>
+            <div className={s.headerInner}>
+              <div className={s.headerCaption}>Кабинет</div>
+              <div className={s.headerTitle}>
+                {user?.name || 'Пользователь'}
+              </div>
+              <button
+                onClick={handleLogout}
+                className={s.logoutBtn}
+                type="button"
+                title="Выйти"
+              >
+                <LogOut className="w-4 h-4" />
+                Выйти
+              </button>
+            </div>
+          </header>
 
-      {/* MAIN */}
-      <main className="flex-1">
-        <div className="max-w-md mx-auto px-4 py-8">
+          {/* MAIN */}
+          <main className={s.main}>
+            <div className={s.mainInner}>
           {tab === 'companies' ? (
             <>
               {/* СПИСОК КОМПАНИЙ */}
@@ -214,9 +217,9 @@ export default function Cabinet({ user, companies = [] }) {
                   <Link
                     href={`/company/${c.id}`}
                     key={c.id}
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 bg-white shadow-sm"
+                    className={`flex items-center gap-3 ${s.companyCard}`}
                   >
-                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-700 bg-slate-800/80 shrink-0">
                       {c.logo_url ? (
                         <img src={c.logo_url} alt={c.name} className="w-10 h-10 object-cover" />
                       ) : (
@@ -225,10 +228,10 @@ export default function Cabinet({ user, companies = [] }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate font-medium text-slate-900">{c.name}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium text-slate-50">{c.name}</div>
                       {c.role && (
-                        <div className="mt-0.5 text-xs text-slate-500">
+                        <div className="mt-0.5 text-xs text-slate-400">
                           {renderRole(c.role)}
                         </div>
                       )}
@@ -253,14 +256,14 @@ export default function Cabinet({ user, companies = [] }) {
                 }}
                 className="w-full group active:scale-[.99] transition-transform"
               >
-                <div className={`rounded-2xl border-2 border-slate-300 p-6 bg-white shadow-sm duration-200 ${s.addCard} ${s.fadeInUp}`}>
+                <div className={`${s.addCard} ${s.fadeInUp}`}>
                   <div className="flex items-center justify-center gap-3">
                     <div className={s.addCardIcon}>
                       <Plus className="w-6 h-6" />
                     </div>
-                    <span className={`text-lg text-slate-900 ${s.addCardTitle}`}>Добавить компанию</span>
+                    <span className={s.addCardTitle}>Добавить компанию</span>
                   </div>
-                  <p className="text-center text-sm text-slate-500 mt-3">
+                  <p className="text-center text-sm text-slate-400 mt-3">
                     Загрузите логотип (по желанию) и введите название
                   </p>
                 </div>
@@ -271,40 +274,40 @@ export default function Cabinet({ user, companies = [] }) {
               {/* Карточка: профиль */}
               <div className={`p-5 rounded-2xl ${s.card}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="user-icon p-2 rounded-xl border border-slate-200 bg-slate-50">
+                  <div className={`user-icon p-2 rounded-xl border border-slate-200 ${s.background_icon}`}>
                     <UserIcon className="user-icon w-5 h-5" />
                   </div>
-                  <div className="font-medium text-slate-900">Профиль</div>
+                  <div className="font-medium text-slate-50">Профиль</div>
                 </div>
                 <div className="space-y-2 text-sm">
                   {user?.first_name && (
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Имя</span>
-                      <span className="text-slate-900 font-medium truncate max-w-[60%] text-right">
+                      <span className="text-slate-300">Имя</span>
+                      <span className="text-slate-400 font-medium truncate max-w-[60%] text-right">
                         {user.first_name}
                       </span>
                     </div>
                   )}
                   {user?.last_name && (
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Фамилия</span>
-                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                      <span className="text-slate-300">Фамилия</span>
+                      <span className="text-slate-400 truncate max-w-[60%] text-right">
                         {user.last_name}
                       </span>
                     </div>
                   )}
                   {user?.email && (
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Email</span>
-                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                      <span className="text-slate-300">Email</span>
+                      <span className="text-slate-400 truncate max-w-[60%] text-right">
                         {user.email}
                       </span>
                     </div>
                   )}
                   {user?.phone && (
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Телефон</span>
-                      <span className="text-slate-900 truncate max-w-[60%] text-right">
+                      <span className="text-slate-300">Телефон</span>
+                      <span className="text-slate-400 truncate max-w-[60%] text-right">
                         {user.phone}
                       </span>
                     </div>
@@ -314,13 +317,13 @@ export default function Cabinet({ user, companies = [] }) {
                 <div className="mt-4 flex flex-wrap gap-2 justify-end">
                   <Link href="/profile/edit" className={s.btnGhost}>
                     <Pencil className="w-4 h-4" />
-                    <span className="text-sm font-medium text-slate-800">
+                    <span className="text-sm font-medium text-slate-300">
                       Изменить данные
                     </span>
                   </Link>
                   <Link href="/profile/password" className={s.btnGhost}>
                     <KeyRound className="w-4 h-4" />
-                    <span className="text-sm font-medium text-slate-800">
+                    <span className="text-sm font-medium text-slate-300">
                       Изменить пароль
                     </span>
                   </Link>
@@ -329,8 +332,8 @@ export default function Cabinet({ user, companies = [] }) {
 
 
               {/* (Опционально) */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="text-sm text-slate-600">
+              <div className={s.card}>
+                <div className="text-sm text-slate-300">
                   Здесь позже появятся настройки уведомлений, смена пароля и т.д.
                 </div>
               </div>
@@ -341,23 +344,22 @@ export default function Cabinet({ user, companies = [] }) {
 
       {/* МОДАЛЬНОЕ ОКНО — Добавить компанию */}
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-5">
-            <div className="text-lg font-semibold text-slate-900 text-center">Добавить компанию</div>
-
+        <div className={s.modalOverlay}>
+          <div className={s.modal}>
+            <div className={s.modalTitle}>Добавить компанию</div>
             {/* Табы: Создать / Найти */}
-            <div className="mt-4 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm">
+              <div className={s.modalTabs}>
               <button
                 type="button"
                 onClick={() => setMode('create')}
-                className={`py-1.5 rounded-lg transition ${mode === 'create' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600'}`}
+                className={`${s.modalTab} ${mode === 'create' ? s.modalTabActive : ''}`}
               >
                 Создать
               </button>
               <button
                 type="button"
                 onClick={() => setMode('find')}
-                className={`py-1.5 rounded-lg transition ${mode === 'find' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600'}`}
+                className={`${s.modalTab} ${mode === 'find' ? s.modalTabActive : ''}`}
               >
                 Найти
               </button>
@@ -367,7 +369,7 @@ export default function Cabinet({ user, companies = [] }) {
               {mode === 'create' ? (
                 <>
                   <div>
-                    <label className="block text-sm text-slate-600 mb-1">Логотип (опционально)</label>
+                    <label className="block text-sm text-slate-300 mb-1">Логотип (опционально)</label>
                     <input
                       type="file"
                       accept="image/*"
@@ -415,25 +417,18 @@ export default function Cabinet({ user, companies = [] }) {
                 </>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div className={s.modalActions}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setOpen(false)
-                    setMode('create')
-                    setName('')
-                    setFile(null)
-                    setInviteLogin('')
-                    setInvitePassword('')
-                  }}
-                  className="px-4 py-2 rounded-xl border border-slate-200"
+                  onClick={() => setOpen(false)}
+                  className={s.btnSecondary}
                 >
                   Отмена
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:opacity-95 active:scale-[.99]"
+                  className={s.btnPrimary}
                 >
                   {saving
                     ? mode === 'create'
@@ -450,8 +445,8 @@ export default function Cabinet({ user, companies = [] }) {
       )}
 
       {/* BOTTOM NAV */}
-      <nav className="sticky bottom-0 bg-white border-t border-slate-200">
-        <div className="max-w-md mx-auto grid grid-cols-2">
+      <nav className={s.bottomNav}>
+        <div className={s.bottomNavInner}>
           <button
             type="button"
             onClick={() => setTab('companies')}

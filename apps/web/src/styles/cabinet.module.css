@@ -1,124 +1,313 @@
-/* Контейнер всей страницы */
+/* ===== КАБИНЕТ: общая тёмная тема как login / register ===== */
+
 .container {
-  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1)); /* общий фон */
+  color: #e5e7eb;
 }
 
-/* Шапка */
+/* ШАПКА */
+
 .header {
-  backdrop-filter: saturate(180%) blur(10px);
-  box-shadow: 0 1px 0 0 rgba(15, 23, 42, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #111621;
+  border-bottom: 1px solid #1f2937;
+}
+
+.headerInner {
+  max-width: 390px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerCaption {
+  font-size: 13px;
+  color: #9ca3af;
 }
 
 .headerTitle {
-  letter-spacing: 0.2px;
+  flex: 1;
+  margin: 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
-/* Карточка добавления компании */
+.logoutBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+  border-radius: 9999px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.logoutBtn:hover {
+  color: #e5e7eb;
+  border-color: #1f2937;
+}
+
+/* ОСНОВНОЙ КОНТЕНТ */
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.mainInner {
+  width: 100%;
+  max-width: 390px;
+  padding: 24px 16px 80px; /* снизу запас под нижнее меню */
+}
+
+/* КАРТОЧКИ (общий стиль) */
+
+.card {
+  border-radius: 18px;
+  border: 1px solid #1f2937;
+  background-color: rgb(26 34 50 / var(--tw-bg-opacity, 1));
+  padding: 20px;
+  color: #e5e7eb;
+}
+
+/* Карточка компании в списке */
+
+.companyCard {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid #1f2937;
+  background-color: rgb(26 34 50 / var(--tw-bg-opacity, 1));
+}
+
+/* Кнопка "Добавить компанию" */
+
 .addCard {
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  border-style: dashed;
+  border-radius: 18px;
+  border: 1px dashed #2d65e6;
+  background-color: rgb(26 34 50 / var(--tw-bg-opacity, 1));
+  padding: 16px;
+  color: #e5e7eb;
+  transition:
+    background-color 0.15s ease-out,
+    transform 0.15s ease-out,
+    border-color 0.15s ease-out;
 }
+
 .addCard:hover {
+  background-color: #0b1120;
+  border-color: #3b82f6;
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  border-color: rgba(15, 23, 42, 0.4);
 }
+
 .addCardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  width: 40px;
-  height: 40px;
-}
-
-.addCardIcon svg {
-    color: black;
+  background-color: #1f2937;
+  color: #60a5fa;
 }
 
 .addCardTitle {
+  font-size: 16px;
   font-weight: 600;
 }
 
-/* Профиль/карточки */
-.card {
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+/* небольшая анимация появления */
+
+.fadeInUp {
+  animation: fadeInUp 0.25s ease-out;
 }
 
-.card svg {
-    color: black;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Кнопки в профиле */
+/* МОДАЛКА */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  padding: 0 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 390px;
+  border-radius: 18px;
+  background-color: #020617;
+  border: 1px solid #1f2937;
+  padding: 20px;
+  color: #e5e7eb;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modalTabs {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px;
+  border-radius: 9999px;
+  background-color: #020617;
+  border: 1px solid #1f2937;
+  font-size: 14px;
+}
+
+.modalTab {
+  padding: 6px 10px;
+  border-radius: 9999px;
+  text-align: center;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.modalTabActive {
+  background-color: #2d65e6;
+  color: #f9fafb;
+}
+
+/* КНОПКИ В МОДАЛКЕ */
+
+.modalActions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btnPrimary {
+  height: 48px;
+  border-radius: 12px;
+  background-color: #2d65e6;
+  border: none;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out;
+}
+
+.btnPrimary:hover {
+  background-color: #2552ba;
+}
+
+.btnSecondary {
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background-color: transparent;
+  color: #e5e7eb;
+  font-size: 15px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.btnSecondary:hover {
+  background-color: #020617;
+}
+
+/* КНОПКИ-ПИЛЮЛИ В ПРОФИЛЕ */
+
 .btnGhost {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  justify-content: center;
+  gap: 6px;
   padding: 8px 14px;
-  transition: background .15s ease, box-shadow .15s ease, transform .05s ease;
+  border-radius: 9999px;
+  border: 1px solid #1f2937;
+  background-color: #020617;
+  color: #e5e7eb;
+  font-size: 13px;
+  text-decoration: none;
 }
+
 .btnGhost:hover {
-  background: #ffffff;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-}
-.btnGhost:active {
-  transform: scale(.98);
+  background-color: #0b1120;
 }
 
-/* Нижняя навигация */
-.navItem {
-  padding: 10px 0;
-  color: #a2a6ac;
-  position: relative;
-  transition: color .15s ease;
-}
-.navItemActive {
-  color: #0f172a;
-}
-.navItemActive::after {
-  content: "";
-  position: absolute;
+/* НИЖНЕЕ МЕНЮ */
+
+.bottomNav {
+  position: sticky;
   bottom: 0;
-  height: 2px;
-  width: 28px;
-  border-radius: 2px;
-  background: #0f172a;
+  background-color: #111621;
+  border-top: 1px solid #1f2937;
 }
 
-.companie_name {
-    width: 100%;
+.bottomNavInner {
+  max-width: 390px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* Незаметная анимация появления */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0);  }
-}
-.fadeInUp {
-  animation: fadeInUp .25s ease both;
-}
-
-.container {
-  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
-}
-.header {
-  backdrop-filter: saturate(180%) blur(10px);
-  box-shadow: 0 1px 0 0 rgba(15, 23, 42, 0.05);
+.navItem {
+  padding: 8px 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: #9ca3af;
 }
 
-@media screen and (max-width: 480px) {
-    .btnGhost {
-        width: 140px;
-    }        
+.navItemActive {
+  color: #f9fafb;
+}
+
+.navItemActive svg {
+  color: #2d65e6;
+}
+
+.background_icon {
+  background-color: (156 163 175 / var(--tw-text-opacity, 1));
+}
+
+/* адаптив */
+
+@media (max-width: 480px) {
+  .headerInner,
+  .mainInner,
+  .bottomNavInner {
+    max-width: 100%;
+  }
 }

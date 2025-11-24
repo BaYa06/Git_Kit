@@ -46,7 +46,7 @@ export async function getServerSideProps({ req, params }) {
       connectionString: process.env.DATABASE_URL,
     });
 
-    const [companyRes, roleRes, guidesRes] = await Promise.all([
+    const [companyRes, roleRes, guidesRes, hotelsRes] = await Promise.all([
       // сама компания
       pool.query("SELECT id, name FROM companies WHERE id = $1", [params.id]),
 
@@ -75,6 +75,25 @@ export async function getServerSideProps({ req, params }) {
         `,
         [params.id]
       ),
+
+      // все отели компании
+      pool.query(
+        `
+        SELECT
+          id,
+          name,
+          stars,
+          phone,
+          meal_plan,
+          address,
+          checkin_from,
+          checkout_until
+        FROM hotels
+        WHERE company_id = $1
+        ORDER BY name
+        `,
+        [params.id]
+      ),
     ]);
 
     await pool.end();
@@ -98,6 +117,17 @@ export async function getServerSideProps({ req, params }) {
       languages: null, // нет отдельного поля — пусть BaseTab покажет "-"
     }));
 
+    const hotels = (hotelsRes.rows || []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      stars: row.stars || 0,
+      phone: row.phone || "",
+      meal_plan: row.meal_plan || "",
+      address: row.address || "",
+      checkin_from: row.checkin_from || null,
+      checkout_until: row.checkout_until || null,
+    }));
+
     // доступ к этой странице только owner/admin
     if (!(role === "owner" || role === "admin")) {
       return {
@@ -113,6 +143,7 @@ export async function getServerSideProps({ req, params }) {
         company,
         role,
         guides,
+        hotels,
       },
     };
   } catch (e) {
@@ -128,8 +159,212 @@ const roleLabel = (r) => {
   return r; // owner, admin, guide
 };
 
-export default function CompanyAdminPage({ company, role, guides }) {
-  const [tab, setTab] = useState('dashboard')
+export default function CompanyAdminPage({ company, role, guides, hotels }) {
+  const [tab, setTab] = useState("dashboard");
+  const [baseSubTab, setBaseSubTab] = useState("guides"); // guides | transport | hotels | info
+  const [hotelList, setHotelList] = useState(hotels || []);
+
+  const [guideList, setGuideList] = useState(guides || []);  // 🔹 локальный список гидов
+
+  const [guideMenuGuide, setGuideMenuGuide] = useState(null);      // меню по трём точкам
+  const [guideDeleteGuide, setGuideDeleteGuide] = useState(null); 
+
+  const [hotelMenuHotel, setHotelMenuHotel] = useState(null);      // для меню «ред/удалить»
+  const [hotelDeleteHotel, setHotelDeleteHotel] = useState(null);  // для подтверждения удаления
+
+
+  const [hotelModalOpen, setHotelModalOpen] = useState(false);
+  const [hotelSaving, setHotelSaving] = useState(false);
+  const [hotelForm, setHotelForm] = useState({
+    name: "",
+    stars: "3",
+    phone: "",
+    meal_plan: "BB",
+    address: "",
+    checkin_from: "14:00",
+    checkout_until: "12:00",
+  });
+
+  const [editingHotelId, setEditingHotelId] = useState(null);
+
+  const normalizeTime = (value, fallback) => {
+    if (!value) return fallback;
+    const s = String(value);
+    if (/^\d{2}:\d{2}$/.test(s)) return s;
+    if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s.slice(0, 5);
+    return fallback;
+  };
+
+
+  function openHotelModal() {
+    setHotelForm({
+      name: "",
+      stars: "3",
+      phone: "",
+      meal_plan: "BB",
+      address: "",
+      checkin_from: "14:00",
+      checkout_until: "12:00",
+    });
+    setHotelModalOpen(true);
+  }
+
+    function openHotelModalForCreate() {
+      setEditingHotelId(null);
+      setHotelForm({
+        name: "",
+        stars: "3",
+        phone: "",
+        meal_plan: "BB",
+        address: "",
+        checkin_from: "14:00",
+        checkout_until: "12:00",
+      });
+      setHotelModalOpen(true);
+    }
+
+  function handleHotelEdit(hotel) {
+    setEditingHotelId(hotel.id);
+    setHotelForm({
+      name: hotel.name || "",
+      stars: String(hotel.stars || "3"),
+      phone: hotel.phone || "",
+      meal_plan: hotel.meal_plan || "BB",
+      address: hotel.address || "",
+      checkin_from: normalizeTime(hotel.checkin_from, "14:00"),
+      checkout_until: normalizeTime(hotel.checkout_until, "12:00"),
+    });
+    setHotelModalOpen(true);
+  }
+
+  function handleHotelMenu(hotel) {
+    setHotelMenuHotel(hotel);
+  }
+
+  async function handleHotelDeleteConfirm() {
+    if (!hotelDeleteHotel) return;
+    const id = hotelDeleteHotel.id;
+
+    try {
+      const res = await fetch("/api/v1/company/hotels/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          company_id: company.id,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && data.message) || "Не удалось удалить отель"
+        );
+      }
+
+      // убираем из списка на фронте
+      setHotelList((prev) => prev.filter((h) => h.id !== id));
+      setHotelDeleteHotel(null);
+    } catch (err) {
+      alert(err.message || "Ошибка удаления отеля");
+    }
+  }
+
+    function handleGuideMenu(guide) {
+    setGuideMenuGuide(guide);
+  }
+
+  async function handleGuideDeleteConfirm() {
+    if (!guideDeleteGuide) return;
+    const userId = guideDeleteGuide.id;
+
+    try {
+      const res = await fetch("/api/v1/company/guides/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: company.id,
+          user_id: userId,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && data.message) || "Не удалось удалить гида"
+        );
+      }
+
+      // убираем гида из списка на фронте
+      setGuideList((prev) => prev.filter((g) => g.id !== userId));
+      setGuideDeleteGuide(null);
+    } catch (err) {
+      alert(err.message || "Ошибка удаления гида");
+    }
+  }
+
+
+  function handleHotelFormChange(e) {
+    const { name, value } = e.target;
+    setHotelForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleHotelSubmit(e) {
+    e.preventDefault();
+    setHotelSaving(true);
+
+    try {
+      const payload = {
+        company_id: company.id,
+        name: hotelForm.name,
+        stars: hotelForm.stars,
+        phone: hotelForm.phone,
+        meal_plan: hotelForm.meal_plan,
+        address: hotelForm.address,
+        checkin_from: hotelForm.checkin_from,
+        checkout_until: hotelForm.checkout_until,
+      };
+
+      let url = "/api/v1/company/hotels/create";
+      if (editingHotelId) {
+        url = "/api/v1/company/hotels/update";
+        payload.id = editingHotelId;
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && data.message) || "Не удалось сохранить отель"
+        );
+      }
+
+      if (data && data.hotel) {
+        setHotelList((prev) => {
+          if (!editingHotelId) {
+            // создание
+            return [...prev, data.hotel];
+          }
+          // редактирование
+          return prev.map((h) =>
+            h.id === data.hotel.id ? data.hotel : h
+          );
+        });
+      }
+
+      setHotelModalOpen(false);
+      setEditingHotelId(null);
+    } catch (err) {
+      alert(err.message || "Ошибка сохранения отеля");
+    } finally {
+      setHotelSaving(false);
+    }
+  }
 
     // модалка приглашения гида (как у owner, но роль фиксирована)
   const [guideInviteOpen, setGuideInviteOpen] = useState(false)
@@ -200,22 +435,37 @@ export default function CompanyAdminPage({ company, role, guides }) {
         <div className={`${s.shell} ${s.mainInner}`}>
           {tab === "dashboard" && <DashboardTab />}
           {tab === "tours" && <ToursTab />}
-          {tab === "base" && <BaseTab guides={guides} />}  {/* ВАЖНО */}
+          {tab === "base" && (
+            <BaseTab
+              guides={guideList}          // 🔹 вместо guides
+              hotels={hotelList}
+              activeSubTab={baseSubTab}
+              onSubTabChange={setBaseSubTab}
+              onHotelMenu={handleHotelMenu}
+              onHotelEdit={handleHotelEdit}   // если есть
+              onGuideMenu={handleGuideMenu}   // 🔹 добавили
+            />
+          )}
           {tab === "templates" && <TemplatesTab />}
         </div>
 
-        {tab === "base" && (
-          <button
-            type="button"
-            onClick={() => {
-              setGuideInviteOpen(true)
-              setGuideInviteIssued(null)
-            }}
-            className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
-          >
-            <Plus className={s.add_button_icon} />
-          </button>
-        )}
+        {tab === "base" &&
+          (baseSubTab === "guides" || baseSubTab === "hotels") && (
+            <button
+              type="button"
+              onClick={() => {
+                if (baseSubTab === "guides") {
+                  setGuideInviteOpen(true);
+                  setGuideInviteIssued(null);
+                } else if (baseSubTab === "hotels") {
+                  openHotelModalForCreate();
+                }
+              }}
+              className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
+            >
+              <Plus className={s.add_button_icon} />
+            </button>
+          )}
       </main>
 
       {/* Модалка приглашения гида */}
@@ -294,6 +544,276 @@ export default function CompanyAdminPage({ company, role, guides }) {
           </div>
         </div>
       )}
+
+      {hotelModalOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-slate-950 border border-slate-800 p-5">
+            <div className="text-lg font-semibold text-slate-50 text-center">
+              {editingHotelId ? "Редактировать отель" : "Новый отель"}
+            </div>
+
+            <form onSubmit={handleHotelSubmit} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">Название</label>
+                <input
+                  name="name"
+                  value={hotelForm.name}
+                  onChange={handleHotelFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="Например, Sunrise Hotel"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Звёзды
+                  </label>
+                  <select
+                    name="stars"
+                    value={hotelForm.stars}
+                    onChange={handleHotelFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  >
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Вид питания
+                  </label>
+                  <select
+                    name="meal_plan"
+                    value={hotelForm.meal_plan}
+                    onChange={handleHotelFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  >
+                    <option value="RO">RO — без питания</option>
+                    <option value="BB">BB — завтрак</option>
+                    <option value="HB">HB — завтрак + ужин</option>
+                    <option value="FB">FB — завтрак, обед, ужин</option>
+                    <option value="AI">AI — всё включено</option>
+                    <option value="UAI">UAI — ультра всё включено</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">
+                  Телефон
+                </label>
+                <input
+                  name="phone"
+                  value={hotelForm.phone}
+                  onChange={handleHotelFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="+996 ..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">Адрес</label>
+                <input
+                  name="address"
+                  value={hotelForm.address}
+                  onChange={handleHotelFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="Город, район, улица"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Check-in с
+                  </label>
+                  <input
+                    type="time"
+                    name="checkin_from"
+                    value={hotelForm.checkin_from}
+                    onChange={handleHotelFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Check-out до
+                  </label>
+                  <input
+                    type="time"
+                    name="checkout_until"
+                    value={hotelForm.checkout_until}
+                    onChange={handleHotelFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHotelModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-100"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={hotelSaving}
+                  className="px-4 py-2 rounded-xl bg-primary text-sm text-white disabled:opacity-70"
+                >
+                  {hotelSaving ? "Сохраняем..." : "Сохранить"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
+      {/* Меню для отеля (Редактировать / Удалить) */}
+      {hotelMenuHotel && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center px-4">
+          <div className="w-full max-w-md rounded-t-2xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+            <div className="text-sm text-slate-400 text-center mb-2">
+              {hotelMenuHotel.name}
+            </div>
+
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 rounded-xl bg-slate-900 text-slate-50 text-sm"
+              onClick={() => {
+                setHotelMenuHotel(null);
+                // открываем уже существующий модал редактирования
+                handleHotelEdit(hotelMenuHotel);
+              }}
+            >
+              Редактировать
+            </button>
+
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 rounded-xl bg-red-600/10 text-red-400 text-sm"
+              onClick={() => {
+                setHotelMenuHotel(null);
+                setHotelDeleteHotel(hotelMenuHotel);
+              }}
+            >
+              Удалить
+            </button>
+
+            <button
+              type="button"
+              className="w-full text-center px-3 py-2 rounded-xl text-sm text-slate-400"
+              onClick={() => setHotelMenuHotel(null)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Подтверждение удаления отеля */}
+      {hotelDeleteHotel && (
+        <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-slate-950 border border-slate-800 p-5 space-y-3">
+            <div className="text-lg font-semibold text-slate-50 text-center">
+              Удалить отель?
+            </div>
+            <p className="text-sm text-slate-300 text-center">
+              Вы действительно хотите удалить отель «{hotelDeleteHotel.name}»?
+              Это действие нельзя будет отменить.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-100"
+                onClick={() => setHotelDeleteHotel(null)}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-red-600 text-sm text-white"
+                onClick={handleHotelDeleteConfirm}
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Меню для гида (только Удалить) */}
+      {guideMenuGuide && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center px-4">
+          <div className="w-full max-w-md rounded-t-2xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+            <div className="text-sm text-slate-400 text-center mb-2">
+              {guideMenuGuide.first_name} {guideMenuGuide.last_name}
+            </div>
+
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 rounded-xl bg-red-600/10 text-red-400 text-sm"
+              onClick={() => {
+                setGuideMenuGuide(null);
+                setGuideDeleteGuide(guideMenuGuide);
+              }}
+            >
+              Удалить
+            </button>
+
+            <button
+              type="button"
+              className="w-full text-center px-3 py-2 rounded-xl text-sm text-slate-400"
+              onClick={() => setGuideMenuGuide(null)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Подтверждение удаления гида */}
+      {guideDeleteGuide && (
+        <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-slate-950 border border-slate-800 p-5 space-y-3">
+            <div className="text-lg font-semibold text-slate-50 text-center">
+              Удалить гида?
+            </div>
+            <p className="text-sm text-slate-300 text-center">
+              Вы действительно хотите удалить гида «
+              {guideDeleteGuide.first_name} {guideDeleteGuide.last_name}
+              » из этой компании?
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-100"
+                onClick={() => setGuideDeleteGuide(null)}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-red-600 text-sm text-white"
+                onClick={handleGuideDeleteConfirm}
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
 
       {/* Нижнее меню */}
       <nav className={s.bottomNav}>

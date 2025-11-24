@@ -4,6 +4,5 @@
   "/_document": "pages/_document.js",
   "/login": "pages/login.js",
   "/cabinet": "pages/cabinet.js",
-  "/api/v1/company/users/create": "pages/api/v1/company/users/create.js",
   "/company/[id]/admin": "pages/company/[id]/admin.js"
 }

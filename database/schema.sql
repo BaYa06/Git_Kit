@@ -214,71 +214,13 @@ CREATE TABLE IF NOT EXISTS drivers (
   company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   full_name text NOT NULL,
   phone text NOT NULL,
-  whatsapp text,
-  telegram text,
-  email text,
-  birth_date date,
-  citizenship text,
-  languages text[],
-  license_number text,
-  license_classes text[],
-  license_issued_at date,
-  license_expires_at date,
-  national_id_or_passport text,
-  passport_issued_at date,
-  passport_expires_at date,
-  rating numeric(2,1) DEFAULT 5.0,
+  car_name text NOT NULL,
+  plate_number text NOT NULL,
+  seats int NOT NULL,
   is_active boolean DEFAULT true,
   notes text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS vehicles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  plate_number text NOT NULL,
-  brand text,
-  model text,
-  prod_year int,
-  color text,
-  seats int,
-  class text CHECK (class IN ('bus','minibus','van','sedan','suv','other')),
-  ownership text CHECK (ownership IN ('company','contractor','driver')),
-  vin text,
-  insurance_number text,
-  insurance_expires_at date,
-  inspection_expires_at date,
-  notes text
-);
-
-CREATE TABLE IF NOT EXISTS driver_vehicle (
-  driver_id uuid NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
-  vehicle_id uuid NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-  is_primary boolean DEFAULT false,
-  since date,
-  until date,
-  PRIMARY KEY (driver_id, vehicle_id)
-);
-
-CREATE TABLE IF NOT EXISTS driver_documents (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id uuid NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
-  doc_type text CHECK (doc_type IN ('license','passport','med_cert','insurance','other')),
-  number text,
-  issue_date date,
-  expiry_date date,
-  file_id uuid,
-  notes text
-);
-
-CREATE TABLE IF NOT EXISTS driver_availability (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id uuid NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
-  date_from date,
-  date_to date,
-  status text CHECK (status IN ('available','booked','vacation','sick')),
-  note text
 );
 
 -- Tour segments

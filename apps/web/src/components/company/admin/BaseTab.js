@@ -1,16 +1,69 @@
 import { useState } from "react";
 import { Search, MoreVertical } from "lucide-react";
 import s from "../../../styles/admin.module.css";
-import {Phone, Utensils, MapPin, Star, StarHalf, EllipsisVertical, Bus, BusFront, CarFront, Users} from "lucide-react";
+import {
+  Phone,
+  Utensils,
+  MapPin,
+  Star,
+  StarHalf,
+  EllipsisVertical,
+  Bus,
+  BusFront,
+  CarFront,
+  Users,
+  Clock,
+} from "lucide-react";
 
-export default function BaseTab({ guides = [] }) {
-  // внутренняя вкладка: Гиды / Транспорт / Отели / Инфо
-  const [subTab, setSubTab] = useState("guides"); // 'guides' | 'transport' | 'hotels' | 'info'
+export default function BaseTab({
+  guides = [],
+  hotels = [],
+  activeSubTab,
+  onSubTabChange,
+  onHotelEdit,
+  onHotelMenu,
+  onGuideMenu,  
+}) {
+  // локальный стейт на случай, если сверху ничего не передали
+  const [innerSubTab, setInnerSubTab] = useState("guides");
+  const subTab = activeSubTab || innerSubTab;
+  const setSubTab = onSubTabChange || setInnerSubTab;
 
   const placeholder =
     subTab === "hotels"
       ? "Поиск по названию или локации..."
       : "Поиск";
+
+  const renderStars = (stars) => {
+    const n = parseInt(stars || 0, 10);
+    if (!n || n <= 0) return null;
+    const count = Math.min(Math.max(n, 1), 5);
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      items.push(<Star key={i} className="w-4 h-4" />);
+    }
+    return items;
+  };
+
+  const formatTime = (t) => {
+    if (!t) return null;
+    const s = String(t);
+    return s.slice(0, 5); // HH:MM
+  };
+
+  const getAddressHref = (addr) => {
+    if (!addr) return null;
+    const trimmed = String(addr).trim();
+
+    // если уже https-ссылка — открываем как есть
+    if (/^https?:\/\//i.test(trimmed)) {
+        return trimmed;
+    }
+
+    // иначе — поиск в Google Maps
+    const encoded = encodeURIComponent(trimmed);
+    return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+  };
 
   return (
     <>
@@ -82,8 +135,12 @@ export default function BaseTab({ guides = [] }) {
                     <div key={g.id} className={s.guideCard}>
                         <div className={s.guideCardHeader}>
                         <p className={s.guideName}>{g.full_name}</p>
-                        <button type="button" className={s.guideMenuBtn}>
-                            <MoreVertical className="w-4 h-4" />
+                        <button
+                            type="button"
+                            className={s.guideCardAction}
+                            onClick={() => onGuideMenu && onGuideMenu(g)}
+                        >
+                            <EllipsisVertical />
                         </button>
                         </div>
 
@@ -190,56 +247,94 @@ export default function BaseTab({ guides = [] }) {
         </div>
       )}
 
-      {/* === ОТЕЛИ (как в code.html) === */}
-      {subTab === "hotels" && (
+      {/* === ОТЕЛИ (из базы) === */}
+    {subTab === "hotels" &&
+    (hotels && hotels.length > 0 ? (
         <div className={s.hotelsList}>
-          {/* Grand Hyatt */}
-          <div className={s.hotelCard}>
+        {hotels.map((h) => (
+            <div key={h.id} className={s.hotelCard}>
             <div className={s.hotelCardHeader}>
-              <div>
-                <h2 className={s.hotelTitle}>Grand Hyatt</h2>
-                <div className={s.hotelStarsRow}>
-                  <Star className={`w-4 h-4 ${s.icons_color_yellow}`} />
-                  <Star className={`w-4 h-4 ${s.icons_color_yellow}`} />
-                  <Star className={`w-4 h-4 ${s.icons_color_yellow}`} />
-                  <Star className={`w-4 h-4 ${s.icons_color_yellow}`} />
-                  <StarHalf className={`w-4 h-4 ${s.icons_color_yellow}`} />
+                <div>
+                <h2 className={s.hotelTitle}>{h.name}</h2>
+                {h.stars ? (
+                    <div className={s.hotelStarsRow}>{renderStars(h.stars)}</div>
+                ) : null}
                 </div>
-              </div>
-              <button type="button" className={s.hotelCardAction}>
-                <EllipsisVertical className={`${s.icons_color_grey}`} />
-              </button>
+                <button
+                    type="button"
+                    className={s.hotelCardAction}
+                    onClick={() => {
+                        if (onHotelMenu) {
+                        onHotelMenu(h);
+                        } else if (onHotelEdit) {
+                        onHotelEdit(h);
+                        }
+                    }}
+                    >
+                    <EllipsisVertical />
+                </button>
             </div>
 
             <div className={s.hotelCardBody}>
-              <a
-                href="tel:+12345678900"
-                className={`${s.hotelRow} ${s.hotelRowLink}`}
-              >
-                <div className={s.hotelRowIcon}>
-                  <Phone className={`w-4 h-4 ${s.icons_color_grey}`} />
-                </div>
-                <p className={s.hotelRowText}>+1 234 567 8900</p>
-              </a>
+                {h.phone && (
+                <a
+                    href={`tel:${h.phone}`}
+                    className={`${s.hotelRow} ${s.hotelRowLink}`}
+                >
+                    <div className={s.hotelRowIcon}>
+                    <Phone className="w-4 h-4" />
+                    </div>
+                    <p className={s.hotelRowText}>{h.phone}</p>
+                </a>
+                )}
 
-              <div className={s.hotelRow}>
-                <div className={s.hotelRowIcon}>
-                  <Utensils className={`w-4 h-4 ${s.icons_color_grey}`} />
+                {h.meal_plan && (
+                <div className={s.hotelRow}>
+                    <div className={s.hotelRowIcon}>
+                    <Utensils className="w-4 h-4" />
+                    </div>
+                    <p className={s.hotelRowText}>{h.meal_plan}</p>
                 </div>
-                <p className={s.hotelRowText}>BB, HB, FB, AI</p>
-              </div>
+                )}
 
-              <a href="#" className={`${s.hotelRow} ${s.hotelRowLink}`}>
-                <div className={s.hotelRowIcon}>
-                  <MapPin className={`w-4 h-4 ${s.icons_color_grey}`} />
+                {h.address && (
+                <a
+                    href={getAddressHref(h.address)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`${s.hotelRow} ${s.hotelRowLink}`}
+                >
+                    <div className={s.hotelRowIcon}>
+                    <MapPin className="w-4 h-4" />
+                    </div>
+                    <p className={s.hotelRowText}>{h.address}</p>
+                </a>
+                )}
+
+                {(h.checkin_from || h.checkout_until) && (
+                <div className={s.hotelRow}>
+                    <div className={s.hotelRowIcon}>
+                    <Clock className="w-4 h-4" />
+                    </div>
+                    <p className={s.hotelRowText}>
+                    Заезд с {formatTime(h.checkin_from) || "14:00"} · Выезд до{" "}
+                    {formatTime(h.checkout_until) || "12:00"}
+                    </p>
                 </div>
-                <p className={s.hotelRowText}>Dubai, UAE</p>
-              </a>
+                )}
             </div>
-          </div>
-
+            </div>
+        ))}
         </div>
-      )}
+    ) : (
+        <div className={s.emptyState}>
+        <p className={s.emptyTitle}>Отели не найдены</p>
+        <p className={s.emptyText}>
+            Добавьте первый отель, чтобы он появился в этом списке.
+        </p>
+        </div>
+    ))}
+
 
       {/* === ТРАНСПОРТ / ИНФО — пока заглушки === */}
       {(subTab === "info") && (

@@ -603,40 +603,32 @@
 .transportList {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   margin: 0 4px;
 }
 
-.transportItem {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 12px 8px 8px;
+/* Карточка транспорта */
+.transportCard {
   border-radius: 18px;
-  min-height: 72px;
-  cursor: pointer;
-  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
-}
-
-.transportItem:hover {
-  background-color: rgba(31, 41, 55, 0.9); /* hover как в code.html */
-}
-
-.transportIconWrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  padding: 10px 12px;
+  background-color: #1a2232;       /* как общий тёмный фон карточек */
+  border: 1px solid #1f2937;         /* тонкая рамка */
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #374151; /* bg-gray-700 */
-  color: #e5e7eb;
-  flex-shrink: 0;
+  flex-direction: column;
 }
 
-.transportBody {
-  flex: 1;
-  min-width: 0;
+/* hover без тени */
+.transportCard:hover {
+  background-color: #1f2937;         /* чуть светлее при наведении */
+}
+
+/* Верхняя часть: название авто + номер + три точки */
+.transportHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .transportTitle {
@@ -648,7 +640,7 @@
   text-overflow: ellipsis;
 }
 
-.transportMeta {
+.transportPlate {
   margin-top: 2px;
   font-size: 13px;
   color: #9ca3af;
@@ -657,16 +649,62 @@
   text-overflow: ellipsis;
 }
 
-.transportRight {
-  display: flex;
+/* Кнопка с тремя точками */
+.transportAction {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #9ca3af;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: #f9fafb;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 999px;
   flex-shrink: 0;
 }
 
-.transportSeats {
-  font-size: 14px;
+.transportAction:hover {
+  background-color: rgba(55, 65, 81, 0.6); /* bg-gray-700/60 */
+  color: #e5e7eb;
+}
+
+/* Тело карточки: строки с данными */
+.transportBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Одна строка: "метка — значение" */
+.transportRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* "Водитель:", "Телефон:", "Мест:" и т.п. */
+.transportLabel {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* Значение справа */
+.transportValue {
+  color: #e5e7eb;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Кликабельные строки (телефон) */
+.transportRowLink {
+  text-decoration: none;
+}
+
+.transportRowLink:hover .transportValue {
+  text-decoration: underline;
 }
 
 /* === Фильтры во "Все туры" === */

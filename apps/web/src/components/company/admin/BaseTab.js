@@ -18,21 +18,77 @@ import {
 export default function BaseTab({
   guides = [],
   hotels = [],
+  drivers = [],
   activeSubTab,
   onSubTabChange,
   onHotelEdit,
   onHotelMenu,
-  onGuideMenu,  
+  onGuideMenu,
+  onDriverMenu,
 }) {
+
   // локальный стейт на случай, если сверху ничего не передали
+  const [search, setSearch] = useState("");
+
+  const query = search.trim().toLowerCase();
+
+
   const [innerSubTab, setInnerSubTab] = useState("guides");
   const subTab = activeSubTab || innerSubTab;
   const setSubTab = onSubTabChange || setInnerSubTab;
 
   const placeholder =
-    subTab === "hotels"
-      ? "Поиск по названию или локации..."
-      : "Поиск";
+    subTab === "guides"
+        ? "Поиск гида по имени или телефону"
+        : subTab === "hotels"
+        ? "Поиск отеля по названию или адресу"
+        : subTab === "transport"
+        ? "Поиск транспорта по авто или номеру"
+        : "Поиск";
+
+  const filteredGuides = (guides || []).filter((g) => {
+    if (!query) return true;
+    const text = [
+        g.first_name,
+        g.last_name,
+        g.phone,
+        g.email,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+    return text.includes(query);
+    });
+
+    const filteredHotels = (hotels || []).filter((h) => {
+    if (!query) return true;
+    const text = [
+        h.name,
+        h.phone,
+        h.meal_plan,
+        h.address,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+    return text.includes(query);
+    });
+
+    const filteredDrivers = (drivers || []).filter((d) => {
+    if (!query) return true;
+    const text = [
+        d.car_name,
+        d.plate_number,
+        d.full_name,
+        d.phone,
+        String(d.seats),
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+    return text.includes(query);
+    });
+
 
   const renderStars = (stars) => {
     const n = parseInt(stars || 0, 10);
@@ -118,12 +174,14 @@ export default function BaseTab({
           type="text"
           placeholder={placeholder}
           className={s.searchInput}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       {/* === ГИДЫ === */}
-      {subTab === "guides" && (
-        guides.length > 0 ? (
+      {subTab === "guides" && 
+      (filteredGuides && filteredGuides.length > 0 ? (
             <>
             <div className={s.listHeader}>
                 <span className={s.listHeaderLabel}>ФИО</span>
@@ -131,7 +189,7 @@ export default function BaseTab({
             </div>
 
             <div className={s.guideList}>
-                {guides.map((g) => (
+                {filteredGuides.map((g) => (
                     <div key={g.id} className={s.guideCard}>
                         <div className={s.guideCardHeader}>
                         <p className={s.guideName}>{g.full_name}</p>
@@ -183,75 +241,68 @@ export default function BaseTab({
 
 
       {/* === ТРАНСПОРТ (как в code.html) === */}
-      {subTab === "transport" && (
-        <div className={s.transportList}>
-          {/* Item 1 */}
-          <div className={s.transportItem}>
-            <div className={s.transportIconWrap}>
-              <CarFront className={`${s.icons_color_grey}`} />
-            </div>
-            <div className={s.transportBody}>
-              <p className={s.transportTitle}>Микроавтобус Mercedes Sprinter</p>
-              <p className={s.transportMeta}>А 123 БВ 777</p>
-            </div>
-            <div className={s.transportRight}>
-              <Users className={`w-4 h-4 ${s.icons_color_grey}`} />
-              <p className={s.transportSeats}>20</p>
-            </div>
-          </div>
+      {subTab === "transport" &&
+        (filteredDrivers && filteredDrivers.length > 0 ? (
+            <div className={s.transportList}>
+            {filteredDrivers.map((d) => (
+                <div key={d.id} className={s.transportCard}>
+                <div className={s.transportHeader}>
+                    <div>
+                    <p className={s.transportTitle}>{d.car_name}</p>
+                    <p className={s.transportPlate}>{d.plate_number}</p>
+                    </div>
+                    <button
+                    type="button"
+                    className={s.transportAction}
+                    onClick={() => onDriverMenu && onDriverMenu(d)}
+                    >
+                    <EllipsisVertical />
+                    </button>
+                </div>
 
-          {/* Item 2 */}
-          <div className={s.transportItem}>
-            <div className={s.transportIconWrap}>
-              <CarFront className={`${s.icons_color_grey}`} />
+                <div className={s.transportBody}>
+                    <div className={s.transportRow}>
+                    <span className={s.transportLabel}>Водитель:</span>
+                    <span className={s.transportValue}>{d.full_name}</span>
+                    </div>
+                    {d.phone && (
+                    <a
+                        href={`tel:${d.phone}`}
+                        className={`${s.transportRow} ${s.transportRowLink}`}
+                    >
+                        <span className={s.transportLabel}>Телефон:</span>
+                        <span className={s.transportValue}>{d.phone}</span>
+                    </a>
+                    )}
+                    <div className={s.transportRow}>
+                    <span className={s.transportLabel}>Мест:</span>
+                    <span className={s.transportValue}>{d.seats}</span>
+                    </div>
+                    {d.notes && (
+                    <div className={s.transportRow}>
+                        <span className={s.transportLabel}>Заметки:</span>
+                        <span className={s.transportValue}>{d.notes}</span>
+                    </div>
+                    )}
+                </div>
+                </div>
+            ))}
             </div>
-            <div className={s.transportBody}>
-              <p className={s.transportTitle}>Седан Toyota Camry</p>
-              <p className={s.transportMeta}>К 456 МН 799</p>
+        ) : (
+            <div className={s.emptyState}>
+            <p className={s.emptyTitle}>Транспорт не добавлен</p>
+            <p className={s.emptyText}>
+                Нажмите на кнопку «+», чтобы добавить автобус или машину.
+            </p>
             </div>
-            <div className={s.transportRight}>
-              <Users className={`w-4 h-4 ${s.icons_color_grey}`} />
-              <p className={s.transportSeats}>4</p>
-            </div>
-          </div>
+        ))}
 
-          {/* Item 3 */}
-          <div className={s.transportItem}>
-            <div className={s.transportIconWrap}>
-              <BusFront className={`${s.icons_color_grey}`} />
-            </div>
-            <div className={s.transportBody}>
-              <p className={s.transportTitle}>Автобус Yutong ZK6122H9</p>
-              <p className={s.transportMeta}>О 789 РС 750</p>
-            </div>
-            <div className={s.transportRight}>
-              <Users className={`w-4 h-4 ${s.icons_color_grey}`} />
-              <p className={s.transportSeats}>50</p>
-            </div>
-          </div>
-
-          {/* Item 4 */}
-          <div className={s.transportItem}>
-            <div className={s.transportIconWrap}>
-              <Bus className={`${s.icons_color_grey}`} />
-            </div>
-            <div className={s.transportBody}>
-              <p className={s.transportTitle}>Минивэн Hyundai Staria</p>
-              <p className={s.transportMeta}>Т 101 УХ 199</p>
-            </div>
-            <div className={s.transportRight}>
-              <Users className={`w-4 h-4 ${s.icons_color_grey}`} />
-              <p className={s.transportSeats}>8</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* === ОТЕЛИ (из базы) === */}
     {subTab === "hotels" &&
-    (hotels && hotels.length > 0 ? (
+    (filteredHotels && filteredHotels.length > 0 ? (
         <div className={s.hotelsList}>
-        {hotels.map((h) => (
+        {filteredHotels.map((h) => (
             <div key={h.id} className={s.hotelCard}>
             <div className={s.hotelCardHeader}>
                 <div>

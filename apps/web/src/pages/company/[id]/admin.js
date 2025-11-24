@@ -46,17 +46,17 @@ export async function getServerSideProps({ req, params }) {
       connectionString: process.env.DATABASE_URL,
     });
 
-    const [companyRes, roleRes, guidesRes, hotelsRes] = await Promise.all([
-      // сама компания
+    const [companyRes, roleRes, guidesRes, hotelsRes, driversRes] = await Promise.all([
+      // компания
       pool.query("SELECT id, name FROM companies WHERE id = $1", [params.id]),
 
-      // твоя роль в этой компании
+      // твоя роль
       pool.query(
         "SELECT role FROM user_company_roles WHERE user_id = $1 AND company_id = $2 LIMIT 1",
         [payload.sub, params.id]
       ),
 
-      // все пользователи с ролью guide для этой компании
+      // гиды
       pool.query(
         `
         SELECT
@@ -76,7 +76,7 @@ export async function getServerSideProps({ req, params }) {
         [params.id]
       ),
 
-      // все отели компании
+      // отели
       pool.query(
         `
         SELECT
@@ -91,6 +91,28 @@ export async function getServerSideProps({ req, params }) {
         FROM hotels
         WHERE company_id = $1
         ORDER BY name
+        `,
+        [params.id]
+      ),
+
+      // транспорт (drivers)
+      pool.query(
+        `
+        SELECT
+          id,
+          company_id,
+          full_name,
+          phone,
+          car_name,
+          plate_number,
+          seats,
+          is_active,
+          notes,
+          created_at,
+          updated_at
+        FROM drivers
+        WHERE company_id = $1
+        ORDER BY full_name
         `,
         [params.id]
       ),
@@ -128,6 +150,16 @@ export async function getServerSideProps({ req, params }) {
       checkout_until: row.checkout_until || null,
     }));
 
+    const drivers = (driversRes.rows || []).map((row) => ({
+      id: row.id,
+      full_name: row.full_name,
+      phone: row.phone,
+      car_name: row.car_name,
+      plate_number: row.plate_number,
+      seats: row.seats,
+      notes: row.notes || "",
+    }));
+
     // доступ к этой странице только owner/admin
     if (!(role === "owner" || role === "admin")) {
       return {
@@ -144,6 +176,7 @@ export async function getServerSideProps({ req, params }) {
         role,
         guides,
         hotels,
+        drivers,
       },
     };
   } catch (e) {
@@ -159,7 +192,7 @@ const roleLabel = (r) => {
   return r; // owner, admin, guide
 };
 
-export default function CompanyAdminPage({ company, role, guides, hotels }) {
+export default function CompanyAdminPage({ company, role, guides, hotels, drivers }) {
   const [tab, setTab] = useState("dashboard");
   const [baseSubTab, setBaseSubTab] = useState("guides"); // guides | transport | hotels | info
   const [hotelList, setHotelList] = useState(hotels || []);
@@ -171,6 +204,25 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
 
   const [hotelMenuHotel, setHotelMenuHotel] = useState(null);      // для меню «ред/удалить»
   const [hotelDeleteHotel, setHotelDeleteHotel] = useState(null);  // для подтверждения удаления
+
+  // 🔹 транспорт
+  const [driverList, setDriverList] = useState(drivers || []);
+
+  // 🔹 модалка транспорта
+  const [driverModalOpen, setDriverModalOpen] = useState(false);
+  const [driverSaving, setDriverSaving] = useState(false);
+  const [editingDriverId, setEditingDriverId] = useState(null);
+  const [driverForm, setDriverForm] = useState({
+    full_name: "",
+    phone: "",
+    car_name: "",
+    plate_number: "",
+    seats: "1",
+    notes: "",
+  });
+
+  const [driverMenuDriver, setDriverMenuDriver] = useState(null);      // меню (ред/удалить)
+  const [driverDeleteDriver, setDriverDeleteDriver] = useState(null);  // подтверждение удаления
 
 
   const [hotelModalOpen, setHotelModalOpen] = useState(false);
@@ -194,6 +246,122 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
     if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s.slice(0, 5);
     return fallback;
   };
+
+    function openDriverModalForCreate() {
+    setEditingDriverId(null);
+    setDriverForm({
+      full_name: "",
+      phone: "",
+      car_name: "",
+      plate_number: "",
+      seats: "1",
+      notes: "",
+    });
+    setDriverModalOpen(true);
+  }
+
+  function handleDriverFormChange(e) {
+    const { name, value } = e.target;
+    setDriverForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function handleDriverEdit(driver) {
+    setEditingDriverId(driver.id);
+    setDriverForm({
+      full_name: driver.full_name || "",
+      phone: driver.phone || "",
+      car_name: driver.car_name || "",
+      plate_number: driver.plate_number || "",
+      seats: String(driver.seats || "1"),
+      notes: driver.notes || "",
+    });
+    setDriverModalOpen(true);
+  }
+
+  async function handleDriverSubmit(e) {
+    e.preventDefault();
+    setDriverSaving(true);
+    try {
+      const payload = {
+        company_id: company.id,
+        full_name: driverForm.full_name,
+        phone: driverForm.phone,
+        car_name: driverForm.car_name,
+        plate_number: driverForm.plate_number,
+        seats: driverForm.seats,
+        notes: driverForm.notes,
+      };
+
+      let url = "/api/v1/company/drivers/create";
+      if (editingDriverId) {
+        url = "/api/v1/company/drivers/update";
+        payload.id = editingDriverId;
+      }
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && data.message) || "Не удалось сохранить транспорт"
+        );
+      }
+
+      if (data && data.driver) {
+        setDriverList((prev) => {
+          if (!editingDriverId) {
+            // новый
+            return [...prev, data.driver];
+          }
+          // обновление
+          return prev.map((d) => (d.id === data.driver.id ? data.driver : d));
+        });
+      }
+
+      setDriverModalOpen(false);
+      setEditingDriverId(null);
+    } catch (err) {
+      alert(err.message || "Ошибка сохранения транспорта");
+    } finally {
+      setDriverSaving(false);
+    }
+  }
+
+  function handleDriverMenu(driver) {
+    setDriverMenuDriver(driver);
+  }
+
+  async function handleDriverDeleteConfirm() {
+    if (!driverDeleteDriver) return;
+    const id = driverDeleteDriver.id;
+
+    try {
+      const res = await fetch("/api/v1/company/drivers/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          company_id: company.id,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && data.message) || "Не удалось удалить транспорт"
+        );
+      }
+
+      setDriverList((prev) => prev.filter((d) => d.id !== id));
+      setDriverDeleteDriver(null);
+    } catch (err) {
+      alert(err.message || "Ошибка удаления транспорта");
+    }
+  }
 
 
   function openHotelModal() {
@@ -366,6 +534,8 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
     }
   }
 
+
+
     // модалка приглашения гида (как у owner, но роль фиксирована)
   const [guideInviteOpen, setGuideInviteOpen] = useState(false)
   const [guideInviteSaving, setGuideInviteSaving] = useState(false)
@@ -437,20 +607,22 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
           {tab === "tours" && <ToursTab />}
           {tab === "base" && (
             <BaseTab
-              guides={guideList}          // 🔹 вместо guides
+              guides={guideList}
               hotels={hotelList}
+              drivers={driverList}                
               activeSubTab={baseSubTab}
               onSubTabChange={setBaseSubTab}
               onHotelMenu={handleHotelMenu}
-              onHotelEdit={handleHotelEdit}   // если есть
-              onGuideMenu={handleGuideMenu}   // 🔹 добавили
+              onHotelEdit={handleHotelEdit}
+              onGuideMenu={handleGuideMenu}
+              onDriverMenu={handleDriverMenu}     
             />
           )}
           {tab === "templates" && <TemplatesTab />}
         </div>
 
         {tab === "base" &&
-          (baseSubTab === "guides" || baseSubTab === "hotels") && (
+          (baseSubTab === "guides" || baseSubTab === "hotels" || baseSubTab === "transport") && (
             <button
               type="button"
               onClick={() => {
@@ -459,6 +631,8 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
                   setGuideInviteIssued(null);
                 } else if (baseSubTab === "hotels") {
                   openHotelModalForCreate();
+                } else if (baseSubTab === "transport") {
+                  openDriverModalForCreate();
                 }
               }}
               className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
@@ -812,8 +986,192 @@ export default function CompanyAdminPage({ company, role, guides, hotels }) {
         </div>
       )}
 
+      {/* Модалка транспорта: добавить / редактировать */}
+      {driverModalOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-slate-950 border border-slate-800 p-5">
+            <div className="text-lg font-semibold text-slate-50 text-center">
+              {editingDriverId ? "Редактировать транспорт" : "Новый транспорт"}
+            </div>
 
+            <form onSubmit={handleDriverSubmit} className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">
+                  ФИО водителя
+                </label>
+                <input
+                  name="full_name"
+                  value={driverForm.full_name}
+                  onChange={handleDriverFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="Например, Иванов Иван"
+                  required
+                />
+              </div>
 
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">
+                  Телефон
+                </label>
+                <input
+                  name="phone"
+                  value={driverForm.phone}
+                  onChange={handleDriverFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="+996 ..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">
+                  Название автомобиля
+                </label>
+                <input
+                  name="car_name"
+                  value={driverForm.car_name}
+                  onChange={handleDriverFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                  placeholder="Например, Hyundai County"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Гос номер
+                  </label>
+                  <input
+                    name="plate_number"
+                    value={driverForm.plate_number}
+                    onChange={handleDriverFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                    placeholder="KG 123 ABC"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-200 mb-1">
+                    Мест
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    name="seats"
+                    value={driverForm.seats}
+                    onChange={handleDriverFormChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-200 mb-1">
+                  Заметки (опционально)
+                </label>
+                <textarea
+                  name="notes"
+                  value={driverForm.notes}
+                  onChange={handleDriverFormChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 min-h-[60px]"
+                  placeholder="Например, говорит по-английски, просить ранний выезд и т.п."
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDriverModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-100"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  disabled={driverSaving}
+                  className="px-4 py-2 rounded-xl bg-primary text-sm text-white disabled:opacity-70"
+                >
+                  {driverSaving ? "Сохраняем..." : "Сохранить"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Меню транспорта (Редактировать / Удалить) */}
+      {driverMenuDriver && (
+        <div className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center px-4">
+          <div className="w-full max-w-md rounded-t-2xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+            <div className="text-sm text-slate-400 text-center mb-2">
+              {driverMenuDriver.car_name} — {driverMenuDriver.plate_number}
+            </div>
+
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 rounded-xl bg-slate-900 text-slate-50 text-sm"
+              onClick={() => {
+                setDriverMenuDriver(null);
+                handleDriverEdit(driverMenuDriver);
+              }}
+            >
+              Редактировать
+            </button>
+
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 rounded-xl bg-red-600/10 text-red-400 text-sm"
+              onClick={() => {
+                setDriverMenuDriver(null);
+                setDriverDeleteDriver(driverMenuDriver);
+              }}
+            >
+              Удалить
+            </button>
+
+            <button
+              type="button"
+              className="w-full text-center px-3 py-2 rounded-xl text-sm text-slate-400"
+              onClick={() => setDriverMenuDriver(null)}
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Подтверждение удаления транспорта */}
+      {driverDeleteDriver && (
+        <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center px-4">
+          <div className="w-full max-w-md rounded-2xl bg-slate-950 border border-slate-800 p-5 space-y-3">
+            <div className="text-lg font-semibold text-slate-50 text-center">
+              Удалить транспорт?
+            </div>
+            <p className="text-sm text-slate-300 text-center">
+              Вы действительно хотите удалить «{driverDeleteDriver.car_name} (
+              {driverDeleteDriver.plate_number})»?
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl border border-slate-600 text-sm text-slate-100"
+                onClick={() => setDriverDeleteDriver(null)}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-red-600 text-sm text-white"
+                onClick={handleDriverDeleteConfirm}
+              >
+                Удалить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Нижнее меню */}
       <nav className={s.bottomNav}>

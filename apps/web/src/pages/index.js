@@ -7,9 +7,20 @@ export default function Home() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
   const [installing, setInstalling] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    const ua = window.navigator.userAgent || '';
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    setIsIosDevice(ios);
+
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    setIsStandalone(standalone);
 
     // Браузер говорит: "приложение можно установить"
     const handleBeforeInstallPrompt = (e) => {
@@ -21,6 +32,7 @@ export default function Home() {
     const handleAppInstalled = () => {
       setCanInstall(false);
       setDeferredPrompt(null);
+      setIsStandalone(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -33,13 +45,29 @@ export default function Home() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    // iOS: нет системного диалога установки, показываем подсказку пользователю
+    if (isIosDevice && !isStandalone) {
+      if (typeof window !== 'undefined') {
+        window.alert(
+          'Чтобы установить приложение на iPhone, нажмите кнопку «Поделиться» в Safari и выберите «На экран "Домой"».'
+        );
+      }
+      return;
+    }
+
+    // Android / десктоп: стандартный PWA prompt, если доступен
+    if (!deferredPrompt) {
+      return;
+    }
+
     try {
       setInstalling(true);
       deferredPrompt.prompt();
-      await deferredPrompt.userChoice; // accepted / dismissed
-      setDeferredPrompt(null);
-      setCanInstall(false);
+      const choice = await deferredPrompt.userChoice; // accepted / dismissed
+      if (choice && choice.outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setCanInstall(false);
+      }
     } finally {
       setInstalling(false);
     }
@@ -94,10 +122,10 @@ export default function Home() {
               <div className={styles.heroImage} />
             </div>
 
-            <h1 className={styles.title}>Your guide to seamless tours.</h1>
+            <h1 className={styles.title}>Ваш проводник к безупречным турам.</h1>
             <p className={styles.subtitle}>
-              The ultimate tool for tour guides and tour companies to
-              organize, manage, and grow their business.
+              Идеальный инструмент для гидов и туркомпаний, который помогает
+              организовывать, управлять и масштабировать туристический бизнес.
             </p>
           </section>
 
@@ -119,17 +147,19 @@ export default function Home() {
               <span>Войти</span>
             </Link>
 
-            {/* 👉 Кнопка установки PWA (показывается только когда браузер готов) */}
-            {canInstall && (
-              <button
-                type="button"
-                className={`${styles.button} ${styles.pwaInstallButton}`}
-                onClick={handleInstallClick}
-                disabled={installing}
-              >
-                {installing ? 'Ожидание…' : 'Скачать приложение'}
-              </button>
-            )}
+            {/* 👉 Кнопка установки PWA (теперь всегда видна: Android + iOS) */}
+            <button
+              type="button"
+              className={`${styles.button} ${styles.pwaInstallButton}`}
+              onClick={handleInstallClick}
+              disabled={installing || (!canInstall && !isIosDevice)}
+            >
+              {installing
+                ? 'Ожидание…'
+                : isIosDevice
+                ? 'Установить на iPhone'
+                : 'Скачать приложение'}
+            </button>
           </section>
 
           {/* Футер с условиями */}

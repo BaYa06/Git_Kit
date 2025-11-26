@@ -1,8 +1,50 @@
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import styles from '@/styles/landing.module.css';
 
 export default function Home() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [installing, setInstalling] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Браузер говорит: "приложение можно установить"
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    const handleAppInstalled = () => {
+      setCanInstall(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    try {
+      setInstalling(true);
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice; // accepted / dismissed
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    } finally {
+      setInstalling(false);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -52,9 +94,7 @@ export default function Home() {
               <div className={styles.heroImage} />
             </div>
 
-            <h1 className={styles.title}>
-              Your guide to seamless tours.
-            </h1>
+            <h1 className={styles.title}>Your guide to seamless tours.</h1>
             <p className={styles.subtitle}>
               The ultimate tool for tour guides and tour companies to
               organize, manage, and grow their business.
@@ -78,6 +118,18 @@ export default function Home() {
             >
               <span>Войти</span>
             </Link>
+
+            {/* 👉 Кнопка установки PWA (показывается только когда браузер готов) */}
+            {canInstall && (
+              <button
+                type="button"
+                className={`${styles.button} ${styles.pwaInstallButton}`}
+                onClick={handleInstallClick}
+                disabled={installing}
+              >
+                {installing ? 'Ожидание…' : 'Скачать приложение'}
+              </button>
+            )}
           </section>
 
           {/* Футер с условиями */}

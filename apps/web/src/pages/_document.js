@@ -12,8 +12,8 @@ export default function Document() {
         <meta name="theme-color" content="#0f172a" />
 
         {/* Иконки */}
-        <link rel="icon" href="/icons/192_maskable_icon.png" />
-        <link rel="apple-touch-icon" href="/icons/192_maskable_icon.png" />
+        <link rel="icon" href="/icons/maskable_icon_x192.png" />
+        <link rel="apple-touch-icon" href="/icons/maskable_icon_x192.png" />
       </Head>
       <body>
         <Main />

@@ -1,6 +1,5 @@
 // pages/company/[id]/admin.js
-
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import s from "../../../styles/admin.module.css";
 import {
@@ -22,6 +21,7 @@ import DashboardTab from "../../../components/company/admin/DashboardTab";
 import ToursTab from "../../../components/company/admin/ToursTab";
 import BaseTab from "../../../components/company/admin/BaseTab";
 import TemplatesTab from "../../../components/company/admin/TemplatesTab";
+import TemplateEditor from "../../../components/company/admin/TemplateEditor";
 
 
 
@@ -195,7 +195,14 @@ const roleLabel = (r) => {
 export default function CompanyAdminPage({ company, role, guides, hotels, drivers }) {
   const [tab, setTab] = useState("dashboard");
   const [baseSubTab, setBaseSubTab] = useState("guides"); // guides | transport | hotels | info
+  const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
   const [hotelList, setHotelList] = useState(hotels || []);
+
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templatesError, setTemplatesError] = useState(null);
+
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
 
   const [guideList, setGuideList] = useState(guides || []);  // 🔹 локальный список гидов
 
@@ -238,6 +245,37 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
   });
 
   const [editingHotelId, setEditingHotelId] = useState(null);
+
+  const handleDeleteTemplate = async (templateId) => {
+    const ok = window.confirm("Удалить этот шаблон?");
+    if (!ok) return;
+
+    try {
+      const res = await fetch("/api/v1/company/templates/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template_id: templateId,
+          company_id: company.id,
+        }),
+      });
+
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось удалить шаблон");
+      }
+
+      // локально убираем из списка
+      setTemplates((prev) => prev.filter((t) => t.id !== templateId));
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
+
 
   const normalizeTime = (value, fallback) => {
     if (!value) return fallback;
@@ -580,6 +618,93 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     }
   }
 
+  const reloadTemplates = async () => {
+    if (!company?.id) return;
+    try {
+      const res = await fetch(
+        `/api/v1/company/templates/list?company_id=${company.id}`
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setTemplates(data.templates || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (!company?.id) return;
+
+    const loadTemplates = async () => {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+      try {
+        const res = await fetch(
+          `/api/v1/company/templates/list?company_id=${company.id}`
+        );
+        if (!res.ok) {
+          let data = {};
+          try {
+            data = await res.json();
+          } catch (_) {}
+          throw new Error(data.message || "Не удалось загрузить шаблоны");
+        }
+        const data = await res.json();
+        setTemplates(data.templates || []);
+      } catch (e) {
+        console.error(e);
+        setTemplatesError(e.message);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
+    loadTemplates();
+  }, [company?.id]);
+
+  const handleOpenTemplate = (templateId) => {
+    setEditingTemplateId(templateId);
+    setTemplateEditorOpen(true);
+  };
+
+  const handleCreateTemplate = () => {
+    setEditingTemplateId(null); // новый
+    setTemplateEditorOpen(true);
+  };
+
+  const handleCopyTemplate = async (templateId) => {
+    try {
+      const res = await fetch("/api/v1/company/templates/copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template_id: templateId,
+          company_id: company.id,
+        }),
+      });
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось скопировать шаблон");
+      }
+      const data = await res.json();
+      const newTemplate = data.template;
+      setTemplates((prev) => [newTemplate, ...prev]);
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
+
+  const handleTemplateSaved = () => {
+    reloadTemplates();
+    setTemplateEditorOpen(false);
+    setEditingTemplateId(null);
+  };
+
+
   return (
     <div className={s.page}>
       {/* Хедер с названием компании */}
@@ -609,16 +734,38 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
             <BaseTab
               guides={guideList}
               hotels={hotelList}
-              drivers={driverList}                
+              drivers={driverList}
               activeSubTab={baseSubTab}
               onSubTabChange={setBaseSubTab}
               onHotelMenu={handleHotelMenu}
               onHotelEdit={handleHotelEdit}
               onGuideMenu={handleGuideMenu}
-              onDriverMenu={handleDriverMenu}     
+              onDriverMenu={handleDriverMenu}
             />
           )}
-          {tab === "templates" && <TemplatesTab />}
+
+          {tab === "templates" && !templateEditorOpen && (
+            <TemplatesTab
+              templates={templates}
+              loading={templatesLoading}
+              error={templatesError}
+              onOpenTemplate={handleOpenTemplate}
+              onCopyTemplate={handleCopyTemplate}
+              onDeleteTemplate={handleDeleteTemplate}
+            />
+          )}
+
+          {tab === "templates" && templateEditorOpen && (
+            <TemplateEditor
+              companyId={company.id}
+              templateId={editingTemplateId}   // null = новый, id = редактирование
+              onClose={() => {
+                setTemplateEditorOpen(false);
+                setEditingTemplateId(null);
+              }}
+              onSaved={handleTemplateSaved}
+            />
+          )}
         </div>
 
         {tab === "base" &&
@@ -635,6 +782,16 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
                   openDriverModalForCreate();
                 }
               }}
+              className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
+            >
+              <Plus className={s.add_button_icon} />
+            </button>
+          )}
+
+          {tab === "templates" && !templateEditorOpen && (
+            <button
+              type="button"
+              onClick={() => setTemplateEditorOpen(true)}
               className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
             >
               <Plus className={s.add_button_icon} />
@@ -1174,57 +1331,75 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
       )}
 
       {/* Нижнее меню */}
-      <nav className={s.bottomNav}>
-        <div className={`${s.shell} ${s.bottomNavInner}`}>
-          <button
-            type="button"
-            onClick={() => setTab("dashboard")}
-            className={
-              tab === "dashboard"
-                ? `${s.navItem} ${s.navItemActive}`
-                : s.navItem
-            }
-          >
-            <LayoutDashboard className={``} />
-            <span className={s.navLabel}>Дашборд</span>
-          </button>
+      {!(tab === "templates" && templateEditorOpen) && (
+        <nav className={s.bottomNav}>
+          <div className={`${s.shell} ${s.bottomNavInner}`}>
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateEditorOpen(false);
+                setTab("dashboard");
+              }}
+              className={
+                tab === "dashboard"
+                  ? `${s.navItem} ${s.navItemActive}`
+                  : s.navItem
+              }
+            >
+              <LayoutDashboard />
+              <span className={s.navLabel}>Дашборд</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setTab("tours")}
-            className={
-              tab === "tours" ? `${s.navItem} ${s.navItemActive}` : s.navItem
-            }
-          >
-            <Map className={``} />
-            <span className={s.navLabel}>Все туры</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateEditorOpen(false);
+                setTab("tours");
+              }}
+              className={
+                tab === "tours"
+                  ? `${s.navItem} ${s.navItemActive}`
+                  : s.navItem
+              }
+            >
+              <Map />
+              <span className={s.navLabel}>Все туры</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setTab("base")}
-            className={
-              tab === "base" ? `${s.navItem} ${s.navItemActive}` : s.navItem
-            }
-          >
-            <Database className={``} />
-            <span className={s.navLabel}>База</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateEditorOpen(false);
+                setTab("base");
+              }}
+              className={
+                tab === "base"
+                  ? `${s.navItem} ${s.navItemActive}`
+                  : s.navItem
+              }
+            >
+              <Database />
+              <span className={s.navLabel}>База</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setTab("templates")}
-            className={
-              tab === "templates"
-                ? `${s.navItem} ${s.navItemActive}`
-                : s.navItem
-            }
-          >
-            <Files className={``} />
-            <span className={s.navLabel}>Шаблоны</span>
-          </button>
-        </div>
-      </nav>
+            <button
+              type="button"
+              onClick={() => {
+                setTemplateEditorOpen(false);
+                setTab("templates");
+              }}
+              className={
+                tab === "templates"
+                  ? `${s.navItem} ${s.navItemActive}`
+                  : s.navItem
+              }
+            >
+              <Files />
+              <span className={s.navLabel}>Шаблоны</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

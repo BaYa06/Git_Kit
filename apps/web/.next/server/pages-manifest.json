@@ -2,5 +2,10 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/company/[id]/admin": "pages/company/[id]/admin.js"
+  "/company/[id]/admin": "pages/company/[id]/admin.js",
+  "/api/v1/company/templates/[id]": "pages/api/v1/company/templates/[id].js",
+  "/cabinet": "pages/cabinet.js",
+  "/api/v1/company/templates/list": "pages/api/v1/company/templates/list.js",
+  "/api/v1/company/templates/update": "pages/api/v1/company/templates/update.js",
+  "/api/v1/company/templates/create": "pages/api/v1/company/templates/create.js"
 }

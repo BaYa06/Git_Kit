@@ -944,4 +944,393 @@
 }
 
 
+/* ====== Template Editor (страница редактирования шаблона) ====== */
+
+.templateEditor {
+  display: flex;
+  flex-direction: column;
+  background-color: #111621;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  overflow: hidden;
+}
+
+/* Верхняя панель */
+
+.templateEditorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #354364;
+  background-color: #111621;
+}
+
+.templateEditorBack {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 199, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.templateEditorTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.templateEditorSave {
+  border: none;
+  background: transparent;
+  color: #2d65e6;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Основной блок с полями */
+
+.templateEditorBody {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.templateEditorField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.templateEditorLabel {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.templateEditorInput {
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  padding: 0 14px;
+  background-color: #252f46;
+  color: #f9fafb;
+  font-size: 14px;
+  outline: none;
+}
+
+.templateEditorInput::placeholder {
+  color: #94a3c7;
+}
+
+/* Ряд с двумя датами */
+
+.templateEditorDatesRow {
+  display: flex;
+  gap: 12px;
+}
+
+.templateEditorDatesRow .templateEditorField {
+  flex: 1;
+}
+
+/* Теги (Active / Europe / 10 Days) */
+
+.templateEditorTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.templateEditorTagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.templateTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background-color: #252f46;
+  color: #94a3c7;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease-out, border-color 0.15s ease-out,
+    color 0.15s ease-out;
+}
+
+.templateTagActive {
+  background-color: rgba(34, 197, 94, 0.18); /* зелёный фон */
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.7);
+}
+
+/* Активный "Черновик" — жёлтый */
+.templateTagDraftActive {
+  background-color: rgba(250, 204, 21, 0.18);
+  color: rgb(250 204 21 / 1); /* можно заменить на твой вариант с var(--tw-text-opacity) */
+  border-color: rgba(250, 204, 21, 0.8);
+}
+
+
+/* Табы редактора */
+
+.templateEditorTabs {
+  display: flex;
+  border-top: 1px solid #111827;
+  border-bottom: 1px solid #354364;
+  padding: 0 16px;
+}
+
+.templateEditorTab {
+  flex: 1;
+  padding: 12px 0 13px;
+  border: none;
+  background: transparent;
+  color: #94a3c7;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.templateEditorTabActive {
+  color: #f9fafb;
+  border-bottom: 3px solid #2d65e6;
+}
+
+/* Контент вкладок */
+
+.templateEditorContent {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Аккордеоны (как itinerary в code.html) */
+
+.templateAccordion {
+  border-radius: 14px;
+  border: 1px solid #354364;
+  background-color: #1a2133;
+  padding: 4px 14px 8px;
+}
+
+.templateAccordionSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.templateAccordionTitle {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.templateAccordionIcon {
+  font-size: 18px;
+  transform-origin: center;
+  transition: transform 0.15s ease-out;
+}
+
+.templateAccordionControls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 2px 10px;
+}
+
+.templateAccordionFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 2px 8px;
+}
+
+.templateAccordionDelete {
+  border: none;
+  background: transparent;
+  color: #f97373; /* мягкий красный */
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 9999px;
+}
+
+.templateAccordionDelete:hover {
+  background-color: rgba(248, 113, 113, 0.12);
+}
+
+
+.templateAccordionInput {
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  padding: 0 12px;
+  background-color: #252f46;
+  color: #f9fafb;
+  font-size: 13px;
+  outline: none;
+}
+
+.templateAccordionInput::placeholder {
+  color: #94a3c7;
+}
+
+.templateAccordionSelect {
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  padding: 0 12px;
+  background-color: #252f46;
+  color: #f9fafb;
+  font-size: 13px;
+  outline: none;
+  appearance: none;
+  /* маленькая стрелка "select" останется системная, но в тёмном стиле выглядит нормально */
+}
+
+
+/* поворот стрелки при открытии details */
+.templateAccordion[open] .templateAccordionIcon {
+  transform: rotate(180deg);
+}
+
+
+/* Плашка "добавьте первый день" */
+
+.templateEditorEmptyBlock {
+  margin-top: 4px;
+  width: 100%;
+  border-radius: 14px;
+  border: 2px dashed #354364;
+  padding: 20px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.templateEditorEmptyBlock:hover {
+  background-color: rgba(37, 47, 70, 0.6);
+}
+
+.templateEditorEmptyTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3c7;
+}
+
+.templateEditorEmptyText {
+  font-size: 13px;
+  color: #5a688b;
+}
+
+/* Пустой стейт для вкладки "Туристы" */
+
+.templateEditorEmpty {
+  border-radius: 14px;
+  border: 1px dashed #374151;
+  padding: 20px 16px;
+  text-align: center;
+}
+
+
+.templateModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.templateModal {
+  width: min(420px, 90vw);
+  border-radius: 18px;
+  background-color: #111621;
+  border: 1px solid #374151;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.templateModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.templateModalTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.templateModalClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  border: none;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.templateModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.templateModalOption {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #374151;
+  background-color: #1a2133;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.templateModalOption:hover {
+  background-color: #252f46;
+  border-color: #4b5563;
+}
+
+.templateEditorSave[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.templateEditorError {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #f97373;
+}
 

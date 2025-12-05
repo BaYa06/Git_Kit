@@ -12,7 +12,9 @@ export default function TemplateEditor({
   templateId,
   onClose,
   onSaved,
+  mode = "template", // 'template' | 'tour'
 }) {
+  const isTourMode = mode === "tour";
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -23,7 +25,6 @@ export default function TemplateEditor({
   const [isLoading, setIsLoading] = useState(!!templateId);
   const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
 
 
   const handleAddComponent = (type) => {
@@ -143,32 +144,33 @@ export default function TemplateEditor({
   return (
     <div className={s.templateEditor}>
       {/* Верхняя панель */}
-      <div className={s.templateEditorHeader}>
-        <button
-          type="button"
-          className={s.templateEditorBack}
-          onClick={onClose}
-        >
-          ←
-        </button>
-        <h1 className={s.templateEditorTitle}>Редактор шаблона</h1>
+      <header className={s.templateEditorHeader}>
         <button
             type="button"
-            className={s.templateEditorSave}
-            onClick={handleSave}
-            disabled={isSaving}
-            >
-            {isSaving ? "Сохранение..." : "Сохранить"}
+            onClick={onClose}
+            className={s.templateEditorBackButton}
+        >
+            <span className="text-lg leading-none">←</span>
         </button>
 
-        {error && <p className={s.templateEditorError}>{error}</p>}
+        <h1 className={s.templateEditorTitle}>
+            {isTourMode ? "Новый тур" : "Шаблон тура"}
+        </h1>
 
-      </div>
+        <button
+            type="button"
+            onClick={handleSave}
+            className={s.templateEditorSaveButton}
+        >
+            Сохранить
+        </button>
+      </header>
+
 
       {/* Основные поля */}
       <div className={s.templateEditorBody}>
         <label className={s.templateEditorField}>
-          <span className={s.templateEditorLabel}>Название шаблона</span>
+          <span className={s.templateFieldLabel}>{isTourMode ? "Название тура" : "Название шаблона"}</span>
           <input
             type="text"
             className={s.templateEditorInput}
@@ -185,6 +187,7 @@ export default function TemplateEditor({
                 type="date"
                 className={s.templateEditorInput}
                 value={startDate}
+                placeholder="дд.мм.гггг"
                 onChange={(e) => setStartDate(e.target.value)}
                 />
           </label>
@@ -194,32 +197,35 @@ export default function TemplateEditor({
                 type="date"
                 className={s.templateEditorInput}
                 value={endDate}
+                placeholder="дд.мм.гггг"
                 onChange={(e) => setEndDate(e.target.value)}
                 />
           </label>
         </div>
 
-        <div className={s.templateEditorTagsRow}>
-        <button
-            type="button"
-            className={`${s.templateTag} ${
-            status === "active" ? s.templateTagActive : ""
-            }`}
-            onClick={() => setStatus("active")}
-        >
-            Активный
-        </button>
+        {!isTourMode && (
+            <div className={s.templateEditorTagsRow}>
+                <button
+                    type="button"
+                    className={`${s.templateTag} ${
+                    status === "active" ? s.templateTagActive : ""
+                    }`}
+                    onClick={() => setStatus("active")}
+                >
+                    Активный
+                </button>
 
-        <button
-            type="button"
-            className={`${s.templateTag} ${
-            status === "draft" ? s.templateTagDraftActive : ""
-            }`}
-            onClick={() => setStatus("draft")}
-        >
-            Черновик
-        </button>
-        </div>
+                <button
+                    type="button"
+                    className={`${s.templateTag} ${
+                    status === "draft" ? s.templateTagDraftActive : ""
+                    }`}
+                    onClick={() => setStatus("draft")}
+                >
+                    Черновик
+                </button>
+            </div>
+        )}
       </div>
 
       {/* Табы */}
@@ -384,3 +390,4 @@ export default function TemplateEditor({
     </div>
   );
 }
+

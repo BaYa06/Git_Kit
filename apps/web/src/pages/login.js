@@ -35,8 +35,12 @@ export default function LoginPage() {
         );
       }
 
-      // успешный логин — кидаем в кабинет
-      window.location.href = '/cabinet';
+      // успешный логин — кидаем в кабинет (используем location.assign, чтобы не ловить invariant на /login)
+      if (window.location.pathname === '/cabinet') {
+        window.location.reload();
+      } else {
+        window.location.assign('/cabinet');
+      }
     } catch (err) {
       setError(err.message || 'Не удалось войти');
     } finally {

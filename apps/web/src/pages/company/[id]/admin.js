@@ -18,7 +18,10 @@ import {
   MoreVertical,
 } from "lucide-react";
 import DashboardTab from "../../../components/company/admin/DashboardTab";
-import ToursTab from "../../../components/company/admin/ToursTab";
+import ToursTab, {
+  TemplatePickerModal,
+  NewTourFromTemplateScreen,
+} from "../../../components/company/admin/ToursTab";
 import BaseTab from "../../../components/company/admin/BaseTab";
 import TemplatesTab from "../../../components/company/admin/TemplatesTab";
 import TemplateEditor from "../../../components/company/admin/TemplateEditor";
@@ -46,7 +49,7 @@ export async function getServerSideProps({ req, params }) {
       connectionString: process.env.DATABASE_URL,
     });
 
-    const [companyRes, roleRes, guidesRes, hotelsRes, driversRes] = await Promise.all([
+    const [companyRes, roleRes, guidesRes, hotelsRes, driversRes, toursRes] = await Promise.all([
       // компания
       pool.query("SELECT id, name FROM companies WHERE id = $1", [params.id]),
 
@@ -56,22 +59,20 @@ export async function getServerSideProps({ req, params }) {
         [payload.sub, params.id]
       ),
 
-      // гиды
+      // гиды (нормализовано из таблицы guides)
       pool.query(
         `
         SELECT
-          u.id,
-          u.first_name,
-          u.last_name,
-          u.phone,
-          u.email
-        FROM user_company_roles ucr
-        JOIN users u ON u.id = ucr.user_id
-        WHERE ucr.company_id = $1
-          AND ucr.role = 'guide'
-        ORDER BY
-          u.first_name NULLS LAST,
-          u.last_name NULLS LAST
+          id,
+          full_name,
+          phone,
+          email,
+          languages,
+          is_active,
+          notes
+        FROM guides
+        WHERE company_id = $1
+        ORDER BY full_name NULLS LAST
         `,
         [params.id]
       ),
@@ -116,6 +117,35 @@ export async function getServerSideProps({ req, params }) {
         `,
         [params.id]
       ),
+
+      // туры компании
+      pool.query(
+        `
+        SELECT
+          t.id,
+          t.name,
+          t.status,
+          t.start_date,
+          t.end_date,
+          t.tourists_count,
+          t.created_at,
+          g.full_name AS main_guide_name,
+          gc.guide_names
+        FROM tours t
+        LEFT JOIN guides g ON g.id = t.main_guide_id
+        LEFT JOIN LATERAL (
+          SELECT array_agg(g2.full_name ORDER BY g2.full_name) AS guide_names
+          FROM tour_components tc
+          JOIN guides g2 ON g2.id = tc.guide_id
+          WHERE tc.tour_id = t.id
+            AND tc.type = 'guide'
+            AND tc.guide_id IS NOT NULL
+        ) gc ON TRUE
+        WHERE t.company_id = $1
+        ORDER BY t.start_date DESC NULLS LAST, t.created_at DESC
+        `,
+        [params.id]
+      ),
     ]);
 
     await pool.end();
@@ -127,16 +157,14 @@ export async function getServerSideProps({ req, params }) {
     const company = companyRes.rows[0];
     const role = roleRes.rows[0]?.role || null;
 
-    // мапим строки из БД в формат для BaseTab (guides)
+    // мапим строки из guides
     const guides = (guidesRes.rows || []).map((row) => ({
       id: row.id,
-      full_name:
-        [row.first_name, row.last_name].filter(Boolean).join(" ") ||
-        row.email ||
-        "Без имени",
+      full_name: row.full_name || "Без имени",
       phone: row.phone || "",
       email: row.email || "",
-      languages: null, // нет отдельного поля — пусть BaseTab покажет "-"
+      languages: Array.isArray(row.languages) ? row.languages : null,
+      notes: row.notes || "",
     }));
 
     const hotels = (hotelsRes.rows || []).map((row) => ({
@@ -160,6 +188,26 @@ export async function getServerSideProps({ req, params }) {
       notes: row.notes || "",
     }));
 
+    const formatDate = (value) => {
+      if (!value) return null;
+      const d = value instanceof Date ? value : new Date(value);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    const tours = (toursRes.rows || []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      start_date: formatDate(row.start_date),
+      end_date: formatDate(row.end_date),
+      tourists_count: row.tourists_count,
+      guide_names: Array.isArray(row.guide_names) ? row.guide_names : [],
+      main_guide_name: row.main_guide_name || "",
+    }));
+
     // доступ к этой странице только owner/admin
     if (!(role === "owner" || role === "admin")) {
       return {
@@ -177,6 +225,7 @@ export async function getServerSideProps({ req, params }) {
         guides,
         hotels,
         drivers,
+        tours,
       },
     };
   } catch (e) {
@@ -192,10 +241,14 @@ const roleLabel = (r) => {
   return r; // owner, admin, guide
 };
 
-export default function CompanyAdminPage({ company, role, guides, hotels, drivers }) {
+
+export default function CompanyAdminPage({ company, role, guides, hotels, drivers, tours }) {
   const [tab, setTab] = useState("dashboard");
   const [baseSubTab, setBaseSubTab] = useState("guides"); // guides | transport | hotels | info
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [newTourOpen, setNewTourOpen] = useState(false);
+  const [newTourTemplateId, setNewTourTemplateId] = useState(null);
   const [hotelList, setHotelList] = useState(hotels || []);
 
   const [templates, setTemplates] = useState([]);
@@ -214,6 +267,9 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
 
   // 🔹 транспорт
   const [driverList, setDriverList] = useState(drivers || []);
+
+  const [tourList, setTourList] = useState(tours || []);
+  const [editingTourId, setEditingTourId] = useState(null);
 
   // 🔹 модалка транспорта
   const [driverModalOpen, setDriverModalOpen] = useState(false);
@@ -574,6 +630,7 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
 
 
 
+
     // модалка приглашения гида (как у owner, но роль фиксирована)
   const [guideInviteOpen, setGuideInviteOpen] = useState(false)
   const [guideInviteSaving, setGuideInviteSaving] = useState(false)
@@ -704,6 +761,33 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     setEditingTemplateId(null);
   };
 
+  const handleTemplatePicked = (tpl) => {
+    if (!tpl) return;
+
+    setNewTourTemplateId(tpl.id);
+    setEditingTourId(null);
+    setTemplatePickerOpen(false);
+    setNewTourOpen(true);
+  };
+
+    // ВРЕМЕННО: заглушка для создания тура
+  const handleCreateTourClick = () => {
+    alert("Создание тура пока в разработке. Здесь будет форма создания тура 🙂");
+  };
+
+  const reloadTours = async () => {
+    try {
+      const res = await fetch(`/api/v1/tours/list?company_id=${company.id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.tours)) {
+        setTourList(data.tours);
+      }
+    } catch (e) {
+      console.error("reload tours error", e);
+    }
+  };
+
 
   return (
     <div className={s.page}>
@@ -728,8 +812,27 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
       {/* Основной контент */}
       <main className={s.main}>
         <div className={`${s.shell} ${s.mainInner}`}>
-          {tab === "dashboard" && <DashboardTab />}
-          {tab === "tours" && <ToursTab />}
+          {tab === "dashboard" && (
+            <DashboardTab
+              tours={tourList}
+              guides={guideList}
+              hotels={hotelList}
+            />
+          )}
+          {tab === "tours" && (
+            <ToursTab
+              guides={guideList}
+              hotels={hotelList}
+              drivers={driverList}
+              tours={tourList}
+              onTourClick={(tour) => {
+                setEditingTourId(tour?.id || null);
+                setNewTourTemplateId(null);
+                setTemplatePickerOpen(false);
+                setNewTourOpen(true);
+              }}
+            />
+          )}
           {tab === "base" && (
             <BaseTab
               guides={guideList}
@@ -756,15 +859,17 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
           )}
 
           {tab === "templates" && templateEditorOpen && (
-            <TemplateEditor
-              companyId={company.id}
-              templateId={editingTemplateId}   // null = новый, id = редактирование
-              onClose={() => {
-                setTemplateEditorOpen(false);
-                setEditingTemplateId(null);
-              }}
-              onSaved={handleTemplateSaved}
-            />
+            <div className="fixed inset-0 z-50 bg-slate-950 text-slate-100 overflow-y-auto">
+              <TemplateEditor
+                companyId={company.id}
+                templateId={editingTemplateId}   // null = новый, id = редактирование
+                onClose={() => {
+                  setTemplateEditorOpen(false);
+                  setEditingTemplateId(null);
+                }}
+                onSaved={handleTemplateSaved}
+              />
+            </div>
           )}
         </div>
 
@@ -788,6 +893,28 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
             </button>
           )}
 
+          {/* + на вкладке ДАШБОРД — быстрый старт создания тура */}
+          {tab === "dashboard" && (
+            <button
+              type="button"
+              onClick={() => setTemplatePickerOpen(true)}
+              className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
+            >
+              <Plus className={s.add_button_icon} />
+            </button>
+          )}
+
+          {/* + на вкладке ВСЕ ТУРЫ — создание нового тура */}
+          {tab === "tours" && (
+            <button
+              type="button"
+              onClick={() => setTemplatePickerOpen(true)}
+              className={`fixed bottom-24 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white ${s.add_button}`}
+            >
+              <Plus className={s.add_button_icon} />
+            </button>
+          )}
+
           {tab === "templates" && !templateEditorOpen && (
             <button
               type="button"
@@ -798,6 +925,33 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
             </button>
           )}
       </main>
+
+      <TemplatePickerModal
+        open={templatePickerOpen}
+        templates={templates}
+        loading={templatesLoading}
+        error={templatesError}
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelectTemplate={handleTemplatePicked}
+      />
+
+      <NewTourFromTemplateScreen
+        open={newTourOpen}
+        templateId={newTourTemplateId}
+        companyId={company.id}
+        guides={guideList}
+        hotels={hotelList}
+        drivers={driverList}
+        mode={editingTourId ? "edit" : "create"}
+        tourId={editingTourId}
+        onCreated={reloadTours}
+        onClose={() => {
+          setNewTourOpen(false);
+          setNewTourTemplateId(null);
+          setEditingTourId(null);
+        }}
+      />
+
 
       {/* Модалка приглашения гида */}
       {guideInviteOpen && (

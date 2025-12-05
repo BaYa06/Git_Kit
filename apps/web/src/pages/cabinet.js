@@ -380,7 +380,7 @@ export default function Cabinet({ user, companies = [] }) {
                   <div>
                     <label className="block text-sm text-slate-600 mb-1">Название компании</label>
                     <input
-                      value={name}
+                      value={name || ""}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
                       placeholder="Avangard Travel"
@@ -393,7 +393,7 @@ export default function Cabinet({ user, companies = [] }) {
                   <div>
                     <label className="block text-sm text-slate-600 mb-1">Логин</label>
                     <input
-                      value={inviteLogin}
+                      value={inviteLogin || ""}
                       onChange={(e) => setInviteLogin(e.target.value)}
                       className="w-full rounded-xl border border-slate-300 px-3 py-2"
                       placeholder="Логин из доступа"
@@ -404,7 +404,7 @@ export default function Cabinet({ user, companies = [] }) {
                     <label className="block text-sm text-slate-600 mb-1">Пароль</label>
                     <input
                       type="password"
-                      value={invitePassword}
+                      value={invitePassword || ""}
                       onChange={(e) => setInvitePassword(e.target.value)}
                       className="w-full rounded-xl border border-slate-300 px-3 py-2"
                       placeholder="Пароль из доступа"

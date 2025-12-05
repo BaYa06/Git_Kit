@@ -122,10 +122,10 @@ export default function Home() {
               <div className={styles.heroImage} />
             </div>
 
-            <h1 className={styles.title}>Ваш проводник к безупречным турам.</h1>
+            <h1 className={styles.title}>Ваш проводник к безупречным турам</h1>
             <p className={styles.subtitle}>
               Идеальный инструмент для гидов и туркомпаний, который помогает
-              организовывать, управлять и масштабировать туристический бизнес.
+              организовывать, управлять и масштабировать туристический бизнес
             </p>
           </section>
 
@@ -136,7 +136,7 @@ export default function Home() {
               href="/register"
               className={`${styles.button} ${styles.buttonPrimary}`}
             >
-              <span>Добавить компанию</span>
+              <span>Регистарция</span>
             </Link>
 
             {/* 👉 "Войти" = логин */}

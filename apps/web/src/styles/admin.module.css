@@ -410,7 +410,7 @@
   border-radius: 9999px;
   background-color: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(55, 65, 81, 0.9);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .searchIcon {
@@ -426,7 +426,7 @@
   outline: none;
   background: transparent;
   color: #e5e7eb;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .searchInput::placeholder {
@@ -748,7 +748,7 @@
   border: 1px solid rgba(55, 65, 81, 0.9);
   background-color: #020617;
   padding: 0 0 0 12px;
-  font-size: 14px;
+  font-size: 16px;
   color: #e5e7eb;
   outline: none;
   width: 100%;
@@ -950,9 +950,22 @@
   display: flex;
   flex-direction: column;
   background-color: #111621;
-  border-radius: 18px;
   border: 1px solid rgba(31, 41, 55, 0.9);
   overflow: hidden;
+}
+
+.fullscreenOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;       /* то же самое, что inset: 0; */
+  z-index: 50;   /* поверх всего */
+  
+  background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1)); /* вместо bg-slate-900 */
+  color: #f9fafb;            /* вместо text-slate-100 */
+
+  overflow-y: auto;          /* скролл, если контент высокий */
 }
 
 /* Верхняя панель */
@@ -1023,7 +1036,7 @@
   padding: 0 14px;
   background-color: #252f46;
   color: #f9fafb;
-  font-size: 14px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -1122,6 +1135,117 @@
   gap: 12px;
 }
 
+.templateAccordionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .templateAccordionGrid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+}
+
+.toursFilters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.toursTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.toursTabBtn {
+  flex: 1;
+  padding: 10px 12px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+  border-bottom: 3px solid transparent;
+}
+
+.toursTabBtnActive {
+  color: #e2e8f0;
+  border-bottom-color: #2d65e6;
+  background: #111827;
+}
+
+.toursFiltersRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.toursFilterField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toursFilterLabel {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.toursFilterInput {
+  width: 100%;
+  height: 100px;
+  border-radius: 12px;
+  border: 1px solid #354364;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+.toursFilterInput:focus {
+  outline: 2px solid #2d65e6;
+  outline-offset: 1px;
+}
+
+.toursStatusFilter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toursStatusLabel {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.toursStatusButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toursStatusBtn {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #354364;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.toursStatusBtnActive {
+  background: #2d65e6;
+  border-color: #2d65e6;
+  color: #fff;
+}
+
 /* Аккордеоны (как itinerary в code.html) */
 
 .templateAccordion {
@@ -1188,7 +1312,7 @@
   padding: 0 12px;
   background-color: #252f46;
   color: #f9fafb;
-  font-size: 13px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -1334,3 +1458,8 @@
   color: #f97373;
 }
 
+@media screen and (max-width: 375px) {
+    .toursFilterInput {
+      width: 90%;
+  }
+}

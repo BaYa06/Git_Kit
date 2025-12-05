@@ -49,16 +49,17 @@ export default function BaseTab({
   const filteredGuides = (guides || []).filter((g) => {
     if (!query) return true;
     const text = [
-        g.first_name,
-        g.last_name,
-        g.phone,
-        g.email,
+      g.full_name,
+      g.phone,
+      g.email,
+      Array.isArray(g.languages) ? g.languages.join(" ") : "",
+      g.notes,
     ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     return text.includes(query);
-    });
+  });
 
     const filteredHotels = (hotels || []).filter((h) => {
     if (!query) return true;
@@ -217,13 +218,20 @@ export default function BaseTab({
                         )}
 
                         <div className={s.guideRow}>
-                        <span className={s.guideLabel}>Языки</span>
-                        <span className={s.guideValue}>
+                          <span className={s.guideLabel}>Языки</span>
+                          <span className={s.guideValue}>
                             {Array.isArray(g.languages) && g.languages.length > 0
-                            ? g.languages.join(', ')
-                            : '-'}
-                        </span>
+                              ? g.languages.join(", ")
+                              : "-"}
+                          </span>
                         </div>
+
+                        {g.notes && (
+                          <div className={s.guideRow}>
+                            <span className={s.guideLabel}>Заметки</span>
+                            <span className={s.guideValue}>{g.notes}</span>
+                          </div>
+                        )}
                     </div>
                     ))}
 

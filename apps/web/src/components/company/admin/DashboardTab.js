@@ -1,7 +1,55 @@
 import { Flag, Hotel, Users, Orbit, CircleCheck, CirclePause } from "lucide-react";
 import s from "../../../styles/admin.module.css";
 
-export default function DashboardTab() {
+const parseDate = (value) => {
+  if (!value) return null;
+  // добавляем T00:00:00Z, чтобы избежать смещений по таймзоне
+  const iso = `${value}T00:00:00Z`;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+const monthLabel = (d) =>
+  d
+    ? d.toLocaleString("en-US", {
+        month: "short",
+        timeZone: "UTC",
+      })
+    : "";
+
+const dayLabel = (d) => (d ? d.getUTCDate() : "");
+
+export default function DashboardTab({ tours = [], guides = [], hotels = [] }) {
+  const today = new Date();
+  const todayUTC = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate()
+  );
+
+  const activeTours = (tours || []).filter((t) => {
+    const d = parseDate(t.start_date);
+    if (!d) return false;
+    return d.getTime() >= todayUTC;
+  });
+
+  const nearestTours = activeTours
+    .filter((t) => {
+      const d = parseDate(t.start_date);
+      if (!d) return false;
+      const diffDays = Math.floor((d.getTime() - todayUTC) / 86400000);
+      return diffDays >= 0 && diffDays <= 2;
+    })
+    .sort((a, b) => {
+      const da = parseDate(a.start_date)?.getTime() || 0;
+      const db = parseDate(b.start_date)?.getTime() || 0;
+      return da - db;
+    });
+
+  const activeToursCount = activeTours.length;
+  const partnerHotelsCount = hotels.length || 0;
+  const guidesAvailable = guides.length || 0;
+
   return (
     <>
       {/* Карточки-статистика */}
@@ -13,8 +61,8 @@ export default function DashboardTab() {
               <Flag className={`w-4 h-4 ${s.icons_color}`} />
             </span>
           </div>
-          <p className={s.cardValue}>12</p>
-          <p className={s.cardSub}>на этой неделе</p>
+          <p className={s.cardValue}>{activeToursCount}</p>
+          <p className={s.cardSub}>активные туры</p>
         </div>
 
         <div className={s.card}>
@@ -24,8 +72,8 @@ export default function DashboardTab() {
               <Users className={`w-4 h-4 ${s.icons_color}`} />
             </span>
           </div>
-          <p className={s.cardValue}>8</p>
-          <p className={s.cardSub}>свободны завтра</p>
+          <p className={s.cardValue}>{guidesAvailable}</p>
+          <p className={s.cardSub}>На завтра</p>
         </div>
 
         <div className={s.card}>
@@ -35,7 +83,7 @@ export default function DashboardTab() {
               <Hotel className={`w-4 h-4 ${s.icons_color}`} />
             </span>
           </div>
-          <p className={s.cardValue}>25</p>
+          <p className={s.cardValue}>{partnerHotelsCount}</p>
           <p className={s.cardSub}>в базе</p>
         </div>
 
@@ -54,76 +102,74 @@ export default function DashboardTab() {
       {/* Ближайшие туры */}
       <h3 className={s.sectionHeading}>Ближайшие туры</h3>
 
-      <div className={s.toursList}>
-        {/* Тур 1 */}
-        <div className={s.tourItem}>
-          <div className={s.tourDate}>
-            <span className={s.tourMonth}>Nov</span>
-            <span className={s.tourDay}>12</span>
-          </div>
-          <div className={s.tourBody}>
-            <p className={s.tourTitle}>Ala-Archa Day Tour</p>
-            <p className={s.tourMeta}>Сбор 08:30 • Гид: Асан</p>
-            <div className={s.tour_position_confirmed}>
-              <CircleCheck className={`w-4 h-4 ${s.icons_color_green}`} />
-              <p className={s.tour_ready}>Confirmed</p>
-            </div>
-          </div>
-          <div className={s.tourChevron}>
-            <div className={s.count_people}>
-              <Users className={`w-4 h-4 ${s.icons_color}`} />
-              <p className={s.people_count_number}>10/12</p>
-            </div>
-            <p className={s.people_count_right}>›</p>
-          </div>
+      {nearestTours.length === 0 && (
+        <div className={s.emptyState}>
+          <p className={s.emptyTitle}>Нет ближайших туров</p>
+          <p className={s.emptyText}>Сегодня, завтра и послезавтра туров нет.</p>
         </div>
+      )}
 
-        {/* Тур 2 */}
-        <div className={s.tourItem}>
-          <div className={s.tourDate}>
-            <span className={s.tourMonth}>Nov</span>
-            <span className={s.tourDay}>15</span>
-          </div>
-          <div className={s.tourBody}>
-            <p className={s.tourTitle}>Issyk-Kul Weekend</p>
-            <p className={s.tourMeta}>2 дня • 32 туриста • Отель: Karven</p>
-            <div className={s.tour_position_waiting}>
-              <CirclePause className={`w-4 h-4 ${s.icons_color_green}`} />
-              <p className={s.tour_ready}>Pending</p>
-            </div>
-          </div>
-          <div className={s.tourChevron}>
-            <div className={s.count_people}>
-              <Users className={`w-4 h-4 ${s.icons_color}`} />
-              <p className={s.people_count_number}>5/10</p>
-            </div>
-            <p className={s.people_count_right}>›</p>
-          </div>
-        </div>
+      {nearestTours.length > 0 && (
+        <div className={s.toursList}>
+          {nearestTours.map((t) => {
+            const dateObj = parseDate(t.start_date);
+            const month = monthLabel(dateObj);
+            const day = dayLabel(dateObj);
+            const guides = Array.isArray(t.guide_names)
+              ? t.guide_names.filter(Boolean)
+              : [];
+            const guideLabel = guides.length > 0 ? guides.join(", ") : "-";
+            const status =
+              t.status === "confirmed" || t.status === "active"
+                ? "confirmed"
+                : t.status === "planned" || t.status === "draft"
+                ? "planned"
+                : "other";
+            const signed = Number.isFinite(t.tourists_signed)
+              ? t.tourists_signed
+              : "-";
+            const needed = Number.isFinite(t.tourists_count)
+              ? t.tourists_count
+              : "-";
 
-        {/* Тур 3 */}
-        <div className={s.tourItem}>
-          <div className={s.tourDate}>
-            <span className={s.tourMonth}>Nov</span>
-            <span className={s.tourDay}>20</span>
-          </div>
-          <div className={s.tourBody}>
-            <p className={s.tourTitle}>City Tour Bishkek</p>
-            <p className={s.tourMeta}>Вечерний тур • Гид: Асель</p>
-            <div className={s.tour_position_waiting}>
-              <CirclePause className={`w-4 h-4 ${s.icons_color_green}`} />
-              <p className={s.tour_ready}>Pending</p>
-            </div>
-          </div>
-          <div className={s.tourChevron}>
-            <div className={s.count_people}>
-              <Users className={`w-4 h-4 ${s.icons_color}`} />
-              <p className={s.people_count_number}>0/8</p>
-            </div>
-            <p className={s.people_count_right}>›</p>
-          </div>
+            return (
+              <div className={s.tourItem} key={t.id}>
+                <div className={s.tourDate}>
+                  <span className={s.tourMonth}>{month}</span>
+                  <span className={s.tourDay}>{day}</span>
+                </div>
+                <div className={s.tourBody}>
+                  <p className={s.tourTitle}>{t.name}</p>
+                  <p className={s.tourMeta}>Гид: {guideLabel}</p>
+                  <div
+                    className={
+                      status === "confirmed"
+                        ? s.tour_position_confirmed
+                        : s.tour_position_waiting
+                    }
+                  >
+                    {status === "confirmed" ? (
+                      <CircleCheck className={`w-4 h-4 ${s.icons_color_green}`} />
+                    ) : (
+                      <CirclePause className={`w-4 h-4 ${s.icons_color_green}`} />
+                    )}
+                    <p className={s.tour_ready}>{t.status || "planned"}</p>
+                  </div>
+                </div>
+                <div className={s.tourChevron}>
+                  <div className={s.count_people}>
+                    <Users className={`w-4 h-4 ${s.icons_color}`} />
+                    <p className={s.people_count_number}>
+                      {signed}/{needed}
+                    </p>
+                  </div>
+                  <p className={s.people_count_right}>›</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      )}
     </>
   );
 }

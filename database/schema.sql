@@ -140,8 +140,22 @@ CREATE TABLE IF NOT EXISTS tours (
   status text DEFAULT 'planned' CHECK (status IN ('draft','planned','confirmed','active','completed','canceled')),
   start_date date,
   end_date date,
+  tourists_count int,
   coordinator_id uuid,
   main_guide_id uuid REFERENCES guides(id),
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tour_components (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tour_id uuid NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('transport','hotel','guide')),
+  mode text NOT NULL DEFAULT 'base' CHECK (mode IN ('base','custom')),
+  comment text,
+  guide_id uuid REFERENCES guides(id),
+  hotel_id uuid REFERENCES hotels(id),
+  driver_id uuid REFERENCES drivers(id),
+  custom jsonb,
   created_at timestamptz DEFAULT now()
 );
 
@@ -254,6 +268,18 @@ CREATE TABLE IF NOT EXISTS tour_segment_drivers (
   snapshot_vehicle_plate text,
   snapshot_vehicle_desc text,
   UNIQUE (tour_segment_id, role)
+);
+
+CREATE TABLE tour_templates (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id   UUID NOT NULL REFERENCES companies(id),
+  name         TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'active', -- 'active' / 'draft'
+  start_date   DATE,
+  end_date     DATE,
+  created_by   UUID REFERENCES users(id),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Billing

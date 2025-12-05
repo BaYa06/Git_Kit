@@ -124,6 +124,33 @@ export default async function handler(req, res) {
       );
     }
 
+    // если роль — guide, создаём запись в guides (если её ещё нет) на основе профиля пользователя
+    if (invite.role === 'guide') {
+      const { rows: guideExists } = await client.query(
+        `SELECT id FROM guides WHERE company_id = $1 AND email = (
+            SELECT email FROM users WHERE id = $2 LIMIT 1
+         ) LIMIT 1`,
+        [invite.company_id, auth.sub],
+      );
+
+      if (!guideExists[0]) {
+        const { rows: userRow } = await client.query(
+          `SELECT first_name, last_name, email, phone FROM users WHERE id = $1 LIMIT 1`,
+          [auth.sub],
+        );
+        const u = userRow[0] || {};
+        const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || 'Гид';
+
+        await client.query(
+          `
+          INSERT INTO guides (company_id, full_name, phone, email, is_active, notes)
+          VALUES ($1, $2, $3, $4, true, $5)
+          `,
+          [invite.company_id, fullName, u.phone || null, u.email || null, 'Добавлен через приглашение'],
+        );
+      }
+    }
+
     // помечаем приглашение как ИСПОЛЬЗОВАННОЕ (одноразовое)
     const hasUsed = (await client.query(
       `SELECT column_name

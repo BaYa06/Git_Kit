@@ -1,0 +1,24 @@
+.searchWrapper { composes: searchWrapper from "./base.module.css"; }
+.searchIcon { composes: searchIcon from "./base.module.css"; }
+.searchInput { composes: searchInput from "./base.module.css"; }
+.listHeader { composes: listHeader from "./base.module.css"; }
+.listHeaderLabel {}
+.toursFilters { composes: toursFilters from "./base.module.css"; }
+.toursFiltersRow { composes: toursFiltersRow from "./base.module.css"; }
+.toursFilter { composes: toursFilter from "./base.module.css"; }
+.toursFilterRow { composes: toursFilterRow from "./base.module.css"; }
+.toursFilterField { composes: toursFilterField from "./base.module.css"; }
+.toursFilterLabel { composes: toursFilterLabel from "./base.module.css"; }
+.toursFilterInputWrapper { composes: toursFilterInputWrapper from "./base.module.css"; }
+.toursFilterInput { composes: toursFilterInput from "./base.module.css"; }
+.toursFilterIcon { composes: toursFilterIcon from "./base.module.css"; }
+.toursChipsRow { composes: toursChipsRow from "./base.module.css"; }
+.toursChip { composes: toursChip from "./base.module.css"; }
+.toursChipPrimary { composes: toursChipPrimary from "./base.module.css"; }
+.toursChipText { composes: toursChipText from "./base.module.css"; }
+.toursChipIcon { composes: toursChipIcon from "./base.module.css"; }
+.toursStatusFilter { composes: toursStatusFilter from "./base.module.css"; }
+.toursStatusLabel { composes: toursStatusLabel from "./base.module.css"; }
+.toursStatusButtons { composes: toursStatusButtons from "./base.module.css"; }
+.toursStatusBtn { composes: toursStatusBtn from "./base.module.css"; }
+.toursStatusBtnActive { composes: toursStatusBtnActive from "./base.module.css"; }

@@ -15,8 +15,33 @@ import {
   Clock,
   Star,
   Utensils,
+  Search,
+  MoreVertical,
+  CheckCircle2,
 } from "lucide-react";
-import s from "../../../styles/admin.module.css";
+import base from "../../../styles/admin/base.module.css";
+import cards from "../../../styles/admin/cards.module.css";
+import tabs from "../../../styles/admin/tabs.module.css";
+import filters from "../../../styles/admin/filters.module.css";
+import guidesStyles from "../../../styles/admin/guides.module.css";
+import hotelsStyles from "../../../styles/admin/hotels.module.css";
+import transportStyles from "../../../styles/admin/transport.module.css";
+import templatesStyles from "../../../styles/admin/templates.module.css";
+import editorStyles from "../../../styles/admin/editor.module.css";
+import touristsStyles from "../../../styles/admin/tourists.module.css";
+
+const s = {
+  ...base,
+  ...cards,
+  ...tabs,
+  ...filters,
+  ...guidesStyles,
+  ...hotelsStyles,
+  ...transportStyles,
+  ...templatesStyles,
+  ...editorStyles,
+  ...touristsStyles,
+};
 import { useEffect, useState, useMemo } from "react";
 const COMPONENT_LABELS = {
   transport: "Транспорт",
@@ -61,6 +86,22 @@ const entityLabelByType = (type) => {
   if (type === "guide") return "гид";
   if (type === "hotel") return "отель";
   return "транспорт";
+};
+
+const formatCents = (value) => {
+  if (!Number.isFinite(value)) return "";
+  return `${(value / 100).toLocaleString("ru-RU", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })} с`;
+};
+
+const parseMoneyToCents = (value) => {
+  if (value === null || value === undefined) return 0;
+  const cleaned = String(value).replace(/[^0-9.,-]/g, "");
+  const normalized = cleaned.replace(/,/g, "");
+  const num = Number.parseFloat(normalized);
+  return Number.isFinite(num) ? Math.round(num * 100) : 0;
 };
 
 export default function ToursTab({ tours = [], onTourClick }) {
@@ -210,10 +251,10 @@ export default function ToursTab({ tours = [], onTourClick }) {
             const day = dateObj ? dateObj.getUTCDate() : "";
             const signed = Number.isFinite(t.tourists_signed)
               ? t.tourists_signed
-              : "-";
+              : 0;
             const needed = Number.isFinite(t.tourists_count)
               ? t.tourists_count
-              : "-";
+              : 0;
             const guides = Array.isArray(t.guide_names)
               ? t.guide_names.filter(Boolean)
               : [];
@@ -692,6 +733,275 @@ export function NewTourFromTemplateScreen({
   const [saveError, setSaveError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const isEditMode = mode === "edit" && !!tourId;
+  const [actionRowId, setActionRowId] = useState(null);
+  const [guestSearch, setGuestSearch] = useState("");
+  const [guestFilter, setGuestFilter] = useState("all"); // all | paid | unpaid
+
+  const [tourists, setTourists] = useState([]);
+  const updateGuestField = (id, field, value) => {
+    setTourists((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const next = { ...t, [field]: value };
+        if (field === "cost" || field === "prepayment") {
+          const costCents = parseMoneyToCents(
+            field === "cost" ? value : t.cost
+          );
+          const prepayCents = parseMoneyToCents(
+            field === "prepayment" ? value : t.prepayment
+          );
+          next.balance = formatCents(costCents - prepayCents);
+        }
+        return next;
+      })
+    );
+  };
+  const loadTourGuests = async (tourIdToLoad) => {
+    if (!tourIdToLoad) return;
+    try {
+      const res = await fetch(`/api/v1/tours/guests/list?tour_id=${tourIdToLoad}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data.guests)) return;
+
+      const rows = [];
+      const primaryMap = new Map();
+
+      // сначала добавляем основных
+  data.guests
+    .filter((g) => g.is_primary === true)
+    .forEach((g) => {
+      const mainId = g.id;
+      const costCents = Number.isFinite(g.cost_cents) ? g.cost_cents : 0;
+      const prepayCents = Number.isFinite(g.prepayment_cents)
+        ? g.prepayment_cents
+        : 0;
+
+          const mainRow = {
+            id: mainId,
+            baseId: mainId,
+            isExtra: false,
+            name: g.full_name || "",
+            phone: g.phone || "",
+            cost: formatCents(costCents),
+            prepayment: formatCents(prepayCents),
+            balance: formatCents(costCents - prepayCents),
+            paid: !!g.is_paid,
+          };
+          rows.push(mainRow);
+          primaryMap.set(mainId, mainRow);
+        });
+
+      // затем добавляем допов, привязывая к primary_id
+      data.guests
+        .filter((g) => g.is_primary === false)
+        .forEach((g, idx) => {
+          const baseId = g.primary_id || g.base_id || null;
+          if (!baseId || !primaryMap.has(baseId)) return;
+          rows.push({
+            id: g.id || `${baseId}-extra-${idx}`,
+            baseId,
+            isExtra: true,
+            name: g.full_name || "",
+            phone: g.phone || "",
+            cost: "",
+            prepayment: "",
+            balance: "",
+            paid: !!primaryMap.get(baseId)?.paid,
+          });
+        });
+
+      setTourists(rows);
+    } catch (e) {
+      console.error("loadTourGuests error", e);
+    }
+  };
+
+  const GROUP_COLORS = {
+    A: "#3b82f6",
+    B: "#a855f7",
+  };
+
+  const zebraColors = [
+    "rgba(32, 41, 54, 0.85)",
+    "rgba(36, 29, 45, 0.7)",
+  ];
+
+  const getExtras = (baseId) =>
+    tourists.filter((x) => x.isExtra && x.baseId === baseId);
+
+  const displayTourists = [];
+  const baseRows = tourists.filter((t) => !t.isExtra);
+  const filteredBases =
+    guestFilter === "paid"
+      ? baseRows.filter((b) => b.paid)
+      : guestFilter === "unpaid"
+      ? baseRows.filter((b) => !b.paid)
+      : baseRows;
+
+  filteredBases.forEach((base, idx) => {
+    const groupLabel = idx % 2 === 0 ? "A" : "B";
+    const color = GROUP_COLORS[groupLabel] || "#3b82f6";
+    const rowColor = zebraColors[idx % zebraColors.length];
+    const extras = getExtras(base.id);
+
+    displayTourists.push({
+      ...base,
+      group: groupLabel,
+      color,
+      isExtra: false,
+      rowColor,
+      baseId: base.id,
+      paid: !!base.paid,
+      count: 1 + extras.length,
+    });
+
+    extras.forEach((ex) => {
+      displayTourists.push({
+        ...ex,
+        group: groupLabel,
+        color,
+        isExtra: true,
+        rowColor,
+        baseId: base.id,
+        paid: !!base.paid,
+      });
+    });
+  });
+
+  const filteredDisplay = displayTourists.filter((row) => {
+    if (!guestSearch.trim()) return true;
+    const q = guestSearch.trim().toLowerCase();
+    return (
+      (row.name || "").toLowerCase().includes(q) ||
+      (row.phone || "").toLowerCase().includes(q)
+    );
+  });
+
+  const handleCountChange = (baseId, value) => {
+    const parsed = Math.max(1, Number.parseInt(value, 10) || 1);
+    setTourists((prev) => {
+      const base = prev.find((t) => t.id === baseId && !t.isExtra);
+      if (!base) return prev;
+      const currentExtras = prev.filter((t) => t.isExtra && t.baseId === baseId);
+      const extrasToAdd = parsed - 1 - currentExtras.length;
+
+      let next = prev.filter((t) => !(t.isExtra && t.baseId === baseId));
+      if (extrasToAdd > 0) {
+        const newExtras = Array.from({ length: extrasToAdd }).map((_, idx) => ({
+          id: `${baseId}-extra-${Date.now()}-${idx}`,
+          baseId,
+          isExtra: true,
+          name: "",
+          phone: "",
+          cost: "",
+          prepayment: "",
+          balance: "",
+          paid: !!base.paid,
+        }));
+        next = [...next, ...currentExtras, ...newExtras];
+      } else if (extrasToAdd < 0) {
+        const keep = currentExtras.slice(0, parsed - 1);
+        next = [...next, ...keep];
+      } else {
+        next = [...next, ...currentExtras];
+      }
+      return next;
+    });
+  };
+
+  const handleRemoveExtra = (row) => {
+    const baseId = row.baseId || row.id;
+    setTourists((prev) => prev.filter((t) => t.id !== row.id));
+    setActionRowId(null);
+  };
+
+  const handleRemoveGroup = (row) => {
+    setTourists((prev) => prev.filter((t) => t.baseId !== row.baseId && t.id !== row.id));
+    setActionRowId(null);
+  };
+
+  const handleAddTraveler = () => {
+    const newId = `new-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    setTourists((prev) => [
+      ...prev,
+      {
+        id: newId,
+        baseId: newId,
+        isExtra: false,
+        name: "",
+        phone: "",
+        cost: "",
+        prepayment: "",
+        balance: "",
+        paid: false,
+      },
+    ]);
+  };
+
+  const handleTogglePaid = (row) => {
+    const baseId = row.baseId || row.id;
+    setTourists((prev) =>
+      prev.map((t) =>
+        t.id === baseId
+          ? {
+              ...t,
+              paid: !t.paid,
+            }
+          : t
+      )
+    );
+  };
+
+  const saveTourGuests = async (targetTourId) => {
+    if (!targetTourId) return;
+    const baseRows = tourists.filter((t) => !t.isExtra);
+    const extras = tourists.filter((t) => t.isExtra);
+    const payload = {
+      tour_id: targetTourId,
+      guests: [
+        ...baseRows.map((t) => ({
+          temp_id: t.id,
+          is_extra: false,
+          full_name: t.name || "",
+          phone: t.phone || "",
+          cost_cents: parseMoneyToCents(t.cost),
+          prepayment_cents: parseMoneyToCents(t.prepayment),
+          is_paid: !!t.paid,
+          group_label: null,
+        })),
+        ...extras.map((t) => ({
+          temp_id: t.id,
+          base_temp_id: t.baseId,
+          is_extra: true,
+          full_name: t.name || "",
+          phone: t.phone || "",
+          cost_cents: parseMoneyToCents(t.cost),
+          prepayment_cents: parseMoneyToCents(t.prepayment),
+          is_paid: !!t.paid,
+          group_label: null,
+        })),
+      ],
+    };
+
+    try {
+      const res = await fetch("/api/v1/tours/guests/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось сохранить туристов");
+      }
+    } catch (e) {
+      console.error("saveTourGuests error", e);
+      throw e;
+    }
+  };
 
   // сброс формы при открытии нового контекста
   useEffect(() => {
@@ -785,6 +1095,7 @@ export function NewTourFromTemplateScreen({
             custom: c.custom || {},
           }))
         );
+        await loadTourGuests(tourId);
       } catch (e) {
         console.error(e);
         setError(e.message);
@@ -793,6 +1104,7 @@ export function NewTourFromTemplateScreen({
       }
     };
 
+    setTourists([]);
     loadTour();
   }, [open, isEditMode, tourId]);
 
@@ -830,6 +1142,9 @@ export function NewTourFromTemplateScreen({
     setSaveError(null);
 
     try {
+      const baseRows = tourists.filter((t) => !t.isExtra);
+      const extrasCount = tourists.filter((t) => t.isExtra).length;
+      const totalGuests = baseRows.length + extrasCount;
       const parsedTourists = Number.isFinite(parseInt(touristsCount, 10))
         ? parseInt(touristsCount, 10)
         : null;
@@ -840,7 +1155,7 @@ export function NewTourFromTemplateScreen({
         name: name.trim(),
         start_date: startDate || null,
         end_date: endDate || null,
-        tourists_count: parsedTourists,
+        tourists_count: parsedTourists ?? totalGuests,
         components: (components || []).map((c) => ({
           type: c.type,
           comment: c.comment || "",
@@ -872,6 +1187,11 @@ export function NewTourFromTemplateScreen({
           ? `${data.message || "Не удалось сохранить тур"}: ${data.detail}`
           : data.message || "Не удалось сохранить тур";
         throw new Error(msg);
+      }
+
+      const savedTourId = isEditMode ? tourId : data?.tour?.id;
+      if (savedTourId) {
+        await saveTourGuests(savedTourId);
       }
 
       alert(isEditMode ? "Тур обновлён" : "Тур сохранён");
@@ -929,49 +1249,50 @@ export function NewTourFromTemplateScreen({
             </p>
           )}
 
-          <label className={s.templateEditorField}>
-            <span className={s.templateFieldLabel}>Название тура</span>
-            <input
-              type="text"
-              className={s.templateEditorInput}
-              placeholder="Например: Тур по Швейцарии"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-
-          <div className={s.templateEditorDatesRow}>
+          <div className={s.templateEditorMainRow}>
             <label className={s.templateEditorField}>
-              <span className={s.templateEditorLabel}>Старт</span>
+              <span className={s.templateFieldLabel}>Название тура</span>
               <input
-                type="date"
+                type="text"
                 className={s.templateEditorInput}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Например: Тур по Швейцарии"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </label>
-            <label className={s.templateEditorField}>
-              <span className={s.templateEditorLabel}>Конец</span>
-              <input
-                type="date"
-                className={s.templateEditorInput}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </label>
-          </div>
 
-          {/* 👇 НОВЫЙ БЛОК — КОЛИЧЕСТВО ТУРИСТОВ */}
-          <div className={s.templateEditorField}>
-            <span className={s.templateEditorLabel}>Количество туристов</span>
-            <input
-              type="number"
-              min="1"
-              className={s.templateEditorInput}
-              value={touristsCount}
-              onChange={(e) => setTouristsCount(e.target.value)}
-              placeholder="Например: 17"
-            />
+            <div className={s.templateEditorDatesInline}>
+              <label className={s.templateEditorField}>
+                <span className={s.templateEditorLabel}>Старт</span>
+                <input
+                  type="date"
+                  className={s.templateEditorInput}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </label>
+              <label className={s.templateEditorField}>
+                <span className={s.templateEditorLabel}>Конец</span>
+                <input
+                  type="date"
+                  className={s.templateEditorInput}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className={s.templateEditorField}>
+              <span className={s.templateEditorLabel}>Количество туристов</span>
+              <input
+                type="number"
+                min="1"
+                className={s.templateEditorInput}
+                value={touristsCount}
+                onChange={(e) => setTouristsCount(e.target.value)}
+                placeholder="Например: 17"
+              />
+            </div>
           </div>
 
           {/* статус НЕ показываем */}
@@ -1119,11 +1440,262 @@ export function NewTourFromTemplateScreen({
           )}
 
           {activeTab === "tourists" && (
-            <div className={s.templateEditorEmpty}>
-              <p className={s.templateEditorEmptyTitle}>Туристы</p>
-              <p className={s.templateEditorEmptyText}>
-                Здесь позже будет список туристов, привязанный к этому туру.
-              </p>
+            <div className={s.touristsCard}>
+              <div className={s.touristsCardHeader}>
+                <div>
+                  <p className={s.touristsTitle}>Туристы</p>
+                  <p className={s.touristsSubtitle}>
+                    Добавьте всех участников этого тура
+                  </p>
+                </div>
+                <div className={s.touristsActions}>
+                  <div className={s.touristsSearch}>
+                    <Search className={s.touristsSearchIcon} />
+                    <input
+                      type="search"
+                      placeholder="Поиск по имени или телефону"
+                      className={s.touristsSearchInput}
+                      value={guestSearch}
+                      onChange={(e) => setGuestSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className={s.toursStatusButtons}>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${
+                        guestFilter === "all" ? s.toursStatusBtnActive : ""
+                      }`}
+                      onClick={() => setGuestFilter("all")}
+                    >
+                      Все
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${
+                        guestFilter === "paid" ? s.toursStatusBtnActive : ""
+                      }`}
+                      onClick={() => setGuestFilter("paid")}
+                    >
+                      Оплаченные
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${
+                        guestFilter === "unpaid" ? s.toursStatusBtnActive : ""
+                      }`}
+                      onClick={() => setGuestFilter("unpaid")}
+                    >
+                      Не оплаченные
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={s.touristsPrimaryBtn}
+                    onClick={handleAddTraveler}
+                  >
+                    <span className={s.touristsPrimaryPlus}>+</span>
+                    Добавить туриста
+                  </button>
+                </div>
+              </div>
+
+              <div className={s.touristsTableScroll}>
+                <table className={s.touristsTable}>
+                  <thead>
+                    <tr>
+                      <th className={s.touristsTh} />
+                      <th className={s.touristsTh}>ФИО</th>
+                      <th className={s.touristsTh}>Телефон</th>
+                      <th className={s.touristsTh}>Стоимость тура</th>
+                      <th className={s.touristsTh}>Предоплата</th>
+                      <th className={s.touristsTh}>Остаток</th>
+                      <th className={s.touristsTh}>Кол-во</th>
+                      <th className={s.touristsTh}>Оплачено</th>
+                      <th className={s.touristsTh}>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredDisplay.map((t) => (
+                      <tr
+                        key={t.id}
+                        className={s.touristsRow}
+                        style={{ backgroundColor: t.rowColor }}
+                      >
+                        <td className={s.touristsTd}>
+                          {!t.isExtra ? (
+                            <span
+                              className={s.touristsBadge}
+                              style={{ backgroundColor: `${t.color}1a`, color: t.color }}
+                            >
+                              {t.group}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className={`${s.touristsTd} ${s.touristsName}`}>
+                          <input
+                            type="text"
+                            className={s.templateEditorInput}
+                            value={t.name}
+                            placeholder="ФИО"
+                            onChange={(e) =>
+                              updateGuestField(t.id, "name", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className={s.touristsTd}>
+                          <input
+                            type="tel"
+                            className={s.templateEditorInput}
+                            value={t.phone}
+                            placeholder="+996 ..."
+                            onChange={(e) =>
+                              updateGuestField(t.id, "phone", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className={s.touristsTd}>
+                          {t.isExtra ? (
+                            t.cost
+                          ) : (
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.cost || ""}
+                              placeholder="0"
+                              onChange={(e) =>
+                                updateGuestField(t.id, "cost", e.target.value)
+                              }
+                            />
+                          )}
+                        </td>
+                        <td className={s.touristsTd}>
+                          {t.isExtra ? (
+                            t.prepayment
+                          ) : (
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.prepayment || ""}
+                              placeholder="0"
+                              onChange={(e) =>
+                                updateGuestField(
+                                  t.id,
+                                  "prepayment",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          )}
+                        </td>
+                        <td className={s.touristsTd}>
+                          {t.isExtra ? (
+                            t.balance
+                          ) : (
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.balance || ""}
+                              placeholder="0"
+                              onChange={(e) =>
+                                updateGuestField(
+                                  t.id,
+                                  "balance",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          )}
+                        </td>
+                        <td className={s.touristsTd}>
+                          {!t.isExtra ? (
+                            <input
+                              type="number"
+                              min="1"
+                              className={s.touristsCountInput}
+                              value={t.count}
+                              onChange={(e) => handleCountChange(t.id, e.target.value)}
+                            />
+                          ) : (
+                            ""
+                          )}
+                        </td>
+                        <td className={s.touristsTd}>
+                          {!t.isExtra && (
+                            <button
+                              type="button"
+                              className={`${s.touristsPaidToggle} ${
+                                t.paid ? s.touristsPaidToggleActive : ""
+                              }`}
+                              onClick={() => handleTogglePaid(t)}
+                            >
+                              {t.paid ? (
+                                <CheckCircle2 className={s.touristsPaidIcon} />
+                              ) : (
+                                <span className={s.touristsPaidDot} />
+                              )}
+                            </button>
+                          )}
+                        </td>
+                        <td className={`${s.touristsTd} ${s.touristsActionsCell}`}>
+                          <button
+                            type="button"
+                            className={s.touristsMenuBtn}
+                            onClick={() =>
+                              setActionRowId((prev) => (prev === t.id ? null : t.id))
+                            }
+                          >
+                            <MoreVertical className={s.touristsMenuIcon} />
+                          </button>
+
+                          {actionRowId === t.id && (
+                            <div className={s.touristsMenu}>
+                              {t.isExtra ? (
+                                <button
+                                  type="button"
+                                  className={s.touristsMenuItem}
+                                  onClick={() => handleRemoveExtra(t)}
+                                >
+                                  Удалить доп
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className={s.touristsMenuItem}
+                                  onClick={() => handleRemoveGroup(t)}
+                                >
+                                  Удалить группу
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={s.touristsFooter}>
+                <span>Всего туристов: {displayTourists.length}</span>
+                <span className={s.touristsDotDivider}>·</span>
+                <span>
+                  Оплачено:{" "}
+                  {
+                    displayTourists.filter(
+                      (row) => !row.isExtra && row.paid
+                    ).length
+                  }
+                </span>
+                <span className={s.touristsDotDivider}>·</span>
+                <span>
+                  Не оплачено:{" "}
+                  {
+                    displayTourists.filter(
+                      (row) => !row.isExtra && !row.paid
+                    ).length
+                  }
+                </span>
+              </div>
             </div>
           )}
         </div>

@@ -1,0 +1,11 @@
+.transportList { composes: transportList from "./base.module.css"; }
+.transportCard { composes: transportCard from "./base.module.css"; }
+.transportHeader { composes: transportHeader from "./base.module.css"; }
+.transportTitle { composes: transportTitle from "./base.module.css"; }
+.transportPlate { composes: transportPlate from "./base.module.css"; }
+.transportAction { composes: transportAction from "./base.module.css"; }
+.transportBody { composes: transportBody from "./base.module.css"; }
+.transportRow { composes: transportRow from "./base.module.css"; }
+.transportLabel { composes: transportLabel from "./base.module.css"; }
+.transportValue { composes: transportValue from "./base.module.css"; }
+.transportRowLink { composes: transportRowLink from "./base.module.css"; }

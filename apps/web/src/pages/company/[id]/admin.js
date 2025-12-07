@@ -1,7 +1,11 @@
 // pages/company/[id]/admin.js
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import s from "../../../styles/admin.module.css";
+import base from "../../../styles/admin/base.module.css";
+import navigation from "../../../styles/admin/navigation.module.css";
+import cards from "../../../styles/admin/cards.module.css";
+
+const s = { ...base, ...navigation, ...cards };
 import {
   Flag,
   Hotel,
@@ -128,6 +132,7 @@ export async function getServerSideProps({ req, params }) {
           t.start_date,
           t.end_date,
           t.tourists_count,
+          COALESCE(tg.total_guests, 0) AS tourists_signed,
           t.created_at,
           g.full_name AS main_guide_name,
           gc.guide_names
@@ -141,6 +146,11 @@ export async function getServerSideProps({ req, params }) {
             AND tc.type = 'guide'
             AND tc.guide_id IS NOT NULL
         ) gc ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS total_guests
+          FROM tour_guests tg
+          WHERE tg.tour_id = t.id
+        ) tg ON TRUE
         WHERE t.company_id = $1
         ORDER BY t.start_date DESC NULLS LAST, t.created_at DESC
         `,
@@ -204,6 +214,7 @@ export async function getServerSideProps({ req, params }) {
       start_date: formatDate(row.start_date),
       end_date: formatDate(row.end_date),
       tourists_count: row.tourists_count,
+      tourists_signed: Number(row.tourists_signed) || 0,
       guide_names: Array.isArray(row.guide_names) ? row.guide_names : [],
       main_guide_name: row.main_guide_name || "",
     }));
@@ -817,6 +828,12 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
               tours={tourList}
               guides={guideList}
               hotels={hotelList}
+              onTourClick={(tour) => {
+                setEditingTourId(tour?.id || null);
+                setNewTourTemplateId(null);
+                setTemplatePickerOpen(false);
+                setNewTourOpen(true);
+              }}
             />
           )}
           {tab === "tours" && (

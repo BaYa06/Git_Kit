@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
-import s from "../../../styles/admin.module.css";
+import filters from "../../../styles/admin/filters.module.css";
+import templatesStyles from "../../../styles/admin/templates.module.css";
+import cards from "../../../styles/admin/cards.module.css";
 import { Copy, CalendarCheck, Route, Search, Trash2 } from "lucide-react";
+
+const s = { ...filters, ...templatesStyles, ...cards };
 
 export default function TemplatesTab({
   templates,

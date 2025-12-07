@@ -1,5 +1,7 @@
 import { Flag, Hotel, Users, Orbit, CircleCheck, CirclePause } from "lucide-react";
-import s from "../../../styles/admin.module.css";
+import cards from "../../../styles/admin/cards.module.css";
+
+const s = { ...cards };
 
 const parseDate = (value) => {
   if (!value) return null;
@@ -19,7 +21,12 @@ const monthLabel = (d) =>
 
 const dayLabel = (d) => (d ? d.getUTCDate() : "");
 
-export default function DashboardTab({ tours = [], guides = [], hotels = [] }) {
+export default function DashboardTab({
+  tours = [],
+  guides = [],
+  hotels = [],
+  onTourClick,
+}) {
   const today = new Date();
   const todayUTC = Date.UTC(
     today.getUTCFullYear(),
@@ -133,7 +140,19 @@ export default function DashboardTab({ tours = [], guides = [], hotels = [] }) {
               : "-";
 
             return (
-              <div className={s.tourItem} key={t.id}>
+              <div
+                className={s.tourItem}
+                key={t.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onTourClick && onTourClick(t)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onTourClick && onTourClick(t);
+                  }
+                }}
+              >
                 <div className={s.tourDate}>
                   <span className={s.tourMonth}>{month}</span>
                   <span className={s.tourDay}>{day}</span>

@@ -1,0 +1,11 @@
+.hotelsList { composes: hotelsList from "./base.module.css"; }
+.hotelCard { composes: hotelCard from "./base.module.css"; }
+.hotelCardHeader { composes: hotelCardHeader from "./base.module.css"; }
+.hotelTitle { composes: hotelTitle from "./base.module.css"; }
+.hotelStarsRow { composes: hotelStarsRow from "./base.module.css"; }
+.hotelCardAction { composes: hotelCardAction from "./base.module.css"; }
+.hotelCardBody { composes: hotelCardBody from "./base.module.css"; }
+.hotelRow { composes: hotelRow from "./base.module.css"; }
+.hotelRowIcon { composes: hotelRowIcon from "./base.module.css"; }
+.hotelRowText { composes: hotelRowText from "./base.module.css"; }
+.hotelRowLink { composes: hotelRowLink from "./base.module.css"; }

@@ -1,5 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
-import s from "../../../styles/admin.module.css";
+import base from "../../../styles/admin/base.module.css";
+import cards from "../../../styles/admin/cards.module.css";
+import tabs from "../../../styles/admin/tabs.module.css";
+import filters from "../../../styles/admin/filters.module.css";
+import guidesStyles from "../../../styles/admin/guides.module.css";
+import hotelsStyles from "../../../styles/admin/hotels.module.css";
+import transportStyles from "../../../styles/admin/transport.module.css";
+import templatesStyles from "../../../styles/admin/templates.module.css";
+import editorStyles from "../../../styles/admin/editor.module.css";
+
+const s = {
+  ...base,
+  ...cards,
+  ...tabs,
+  ...filters,
+  ...guidesStyles,
+  ...hotelsStyles,
+  ...transportStyles,
+  ...templatesStyles,
+  ...editorStyles,
+};
 
 const COMPONENT_LABELS = {
   transport: "Транспорт",
@@ -390,4 +410,3 @@ export default function TemplateEditor({
     </div>
   );
 }
-

@@ -1,0 +1,30 @@
+.cardsGrid { composes: cardsGrid from "./base.module.css"; }
+.card { composes: card from "./base.module.css"; }
+.cardTopRow { composes: cardTopRow from "./base.module.css"; }
+.cardTitle { composes: cardTitle from "./base.module.css"; }
+.cardIcon { composes: cardIcon from "./base.module.css"; }
+.cardValue { composes: cardValue from "./base.module.css"; }
+.cardSub { composes: cardSub from "./base.module.css"; }
+.sectionHeading { composes: sectionHeading from "./base.module.css"; }
+.toursList { composes: toursList from "./base.module.css"; }
+.tourItem { composes: tourItem from "./base.module.css"; }
+.tourDate { composes: tourDate from "./base.module.css"; }
+.tourMonth { composes: tourMonth from "./base.module.css"; }
+.tourDay { composes: tourDay from "./base.module.css"; }
+.tourBody { composes: tourBody from "./base.module.css"; }
+.tourTitle { composes: tourTitle from "./base.module.css"; }
+.tourMeta { composes: tourMeta from "./base.module.css"; }
+.tourChevron { composes: tourChevron from "./base.module.css"; }
+.emptyState { composes: emptyState from "./base.module.css"; }
+.emptyTitle { composes: emptyTitle from "./base.module.css"; }
+.emptyText { composes: emptyText from "./base.module.css"; }
+.icons_color { composes: icons_color from "./base.module.css"; }
+.icons_color_green {}
+.icons_color_grey {}
+.count_people { composes: count_people from "./base.module.css"; }
+.people_count_number { composes: people_count_number from "./base.module.css"; }
+.people_count_right { composes: people_count_right from "./base.module.css"; }
+.round { composes: round from "./base.module.css"; }
+.tour_ready { composes: tour_ready from "./base.module.css"; }
+.tour_position_confirmed { composes: tour_position_confirmed from "./base.module.css"; }
+.tour_position_waiting { composes: tour_position_waiting from "./base.module.css"; }

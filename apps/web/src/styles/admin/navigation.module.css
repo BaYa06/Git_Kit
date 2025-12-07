@@ -1,0 +1,8 @@
+.backButton { composes: backButton from "./base.module.css"; }
+.backIcon { composes: backIcon from "./base.module.css"; }
+.bottomNav { composes: bottomNav from "./base.module.css"; }
+.bottomNavInner { composes: bottomNavInner from "./base.module.css"; }
+.navItem { composes: navItem from "./base.module.css"; }
+.navItemActive { composes: navItemActive from "./base.module.css"; }
+.navDot { composes: navDot from "./base.module.css"; }
+.navLabel { composes: navLabel from "./base.module.css"; }

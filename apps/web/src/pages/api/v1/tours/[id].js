@@ -43,19 +43,25 @@ export default async function handler(req, res) {
     const tourRes = await client.query(
       `
       SELECT
-        id,
-        company_id,
-        template_id,
-        name,
-        status,
-        start_date,
-        end_date,
-        tourists_count,
-        coordinator_id,
-        main_guide_id,
-        created_at
-      FROM tours
-      WHERE id = $1
+        t.id,
+        t.company_id,
+        t.template_id,
+        t.name,
+        t.status,
+        t.start_date,
+        t.end_date,
+        t.tourists_count,
+        COALESCE(tg.total_guests, 0) AS tourists_signed,
+        t.coordinator_id,
+        t.main_guide_id,
+        t.created_at
+      FROM tours t
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) AS total_guests
+        FROM tour_guests tg
+        WHERE tg.tour_id = t.id
+      ) tg ON TRUE
+      WHERE t.id = $1
       LIMIT 1
     `,
       [tourId]
@@ -109,6 +115,7 @@ export default async function handler(req, res) {
             : c.driver_id || "",
         custom: c.custom || {},
       })),
+      tourists_signed: Number(tourRow.tourists_signed) || 0,
     };
 
     return res.status(200).json({ tour });

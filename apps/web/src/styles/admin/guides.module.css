@@ -1,0 +1,8 @@
+.guideList { composes: guideList from "./base.module.css"; }
+.guideCard { composes: guideCard from "./base.module.css"; }
+.guideCardHeader { composes: guideCardHeader from "./base.module.css"; }
+.guideName { composes: guideName from "./base.module.css"; }
+.guideMenuBtn { composes: guideMenuBtn from "./base.module.css"; }
+.guideRow { composes: guideRow from "./base.module.css"; }
+.guideLabel { composes: guideLabel from "./base.module.css"; }
+.guideValue { composes: guideValue from "./base.module.css"; }

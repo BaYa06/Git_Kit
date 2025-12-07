@@ -1,0 +1,7 @@
+.baseTabs { composes: baseTabs from "./base.module.css"; }
+.baseTabsInner { composes: baseTabsInner from "./base.module.css"; }
+.baseTab { composes: baseTab from "./base.module.css"; }
+.baseTabActive { composes: baseTabActive from "./base.module.css"; }
+.toursTabs { composes: toursTabs from "./base.module.css"; }
+.toursTabBtn { composes: toursTabBtn from "./base.module.css"; }
+.toursTabBtnActive { composes: toursTabBtnActive from "./base.module.css"; }

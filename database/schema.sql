@@ -209,6 +209,28 @@ CREATE TABLE IF NOT EXISTS tour_people (
   notes text
 );
 
+-- Tour guests (grouped travelers)
+CREATE TABLE IF NOT EXISTS tour_guests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tour_id uuid NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+  primary_id uuid REFERENCES tour_guests(id) ON DELETE CASCADE,
+  is_primary boolean NOT NULL DEFAULT true,
+  group_label text,
+  full_name text NOT NULL,
+  phone text,
+  cost_cents int NOT NULL DEFAULT 0,
+  prepayment_cents int NOT NULL DEFAULT 0,
+  is_paid boolean NOT NULL DEFAULT false,
+  paid_at timestamptz,
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS tour_guests_tour_id_idx ON tour_guests(tour_id);
+CREATE INDEX IF NOT EXISTS tour_guests_primary_idx ON tour_guests(tour_id, primary_id);
+CREATE INDEX IF NOT EXISTS tour_guests_paid_idx ON tour_guests(tour_id, is_paid);
+
 -- Files
 CREATE TABLE IF NOT EXISTS files (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

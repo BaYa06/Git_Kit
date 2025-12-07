@@ -212,7 +212,7 @@ export default function Cabinet({ user, companies = [] }) {
           {tab === 'companies' ? (
             <>
               {/* СПИСОК КОМПАНИЙ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-4">
                 {list.map((c) => (
                   <Link
                     href={`/company/${c.id}`}

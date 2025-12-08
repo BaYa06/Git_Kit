@@ -42,7 +42,7 @@ const s = {
   ...editorStyles,
   ...touristsStyles,
 };
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 const COMPONENT_LABELS = {
   transport: "Транспорт",
   hotel: "Отель",
@@ -109,6 +109,8 @@ export default function ToursTab({ tours = [], onTourClick }) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // all | confirmed | planned
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const filteredTours = useMemo(() => {
     const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00Z`).getTime() : null;
@@ -120,7 +122,7 @@ export default function ToursTab({ tours = [], onTourClick }) {
       today.getUTCDate()
     );
 
-    return (tours || []).filter((t) => {
+    const filtered = (tours || []).filter((t) => {
       // status filter
       if (statusFilter !== "all") {
         if (statusFilter === "confirmed") {
@@ -150,7 +152,52 @@ export default function ToursTab({ tours = [], onTourClick }) {
       }
       return true;
     });
+
+    const withSort = [...filtered].sort((a, b) => {
+      const tsA = a.start_date ? new Date(`${a.start_date}T00:00:00Z`).getTime() : null;
+      const tsB = b.start_date ? new Date(`${b.start_date}T00:00:00Z`).getTime() : null;
+
+      // Активные — от самого ближайшего будущего к более дальнему
+      if (listTab === "active") {
+        if (Number.isFinite(tsA) && Number.isFinite(tsB)) return tsA - tsB;
+        if (Number.isFinite(tsA)) return -1;
+        if (Number.isFinite(tsB)) return 1;
+        return 0;
+      }
+
+      // Прошедшие — от самого недавнего прошедшего к более старым
+      if (listTab === "past") {
+        if (Number.isFinite(tsA) && Number.isFinite(tsB)) return tsB - tsA;
+        if (Number.isFinite(tsA)) return -1;
+        if (Number.isFinite(tsB)) return 1;
+        return 0;
+      }
+
+      // Fallback
+      if (Number.isFinite(tsA) && Number.isFinite(tsB)) return tsA - tsB;
+      if (Number.isFinite(tsA)) return -1;
+      if (Number.isFinite(tsB)) return 1;
+      return 0;
+    });
+
+    // прошедшие — показываем только первые 100 ближайших, остальные скрываем
+    if (listTab === "past") {
+      return withSort.slice(0, 100);
+    }
+
+    return withSort;
   }, [tours, dateFrom, dateTo, statusFilter, listTab]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [listTab, dateFrom, dateTo, statusFilter, tours]);
+
+  const totalPages = Math.max(1, Math.ceil((filteredTours.length || 0) / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedTours = filteredTours.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <>
@@ -241,9 +288,9 @@ export default function ToursTab({ tours = [], onTourClick }) {
         </div>
       )}
 
-      {filteredTours && filteredTours.length > 0 && (
+      {paginatedTours && paginatedTours.length > 0 && (
         <div className={s.toursList}>
-          {filteredTours.map((t) => {
+          {paginatedTours.map((t) => {
             const dateObj = t.start_date ? new Date(t.start_date) : null;
             const month = dateObj
               ? dateObj.toLocaleString("en-US", { month: "short", timeZone: "UTC" })
@@ -316,6 +363,30 @@ export default function ToursTab({ tours = [], onTourClick }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {filteredTours.length > PAGE_SIZE && (
+        <div className={s.toursPagination}>
+          <button
+            type="button"
+            className={s.toursPaginationBtn}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            ← Назад
+          </button>
+          <span className={s.toursPaginationInfo}>
+            Страница {currentPage} из {totalPages}
+          </span>
+          <button
+            type="button"
+            className={s.toursPaginationBtn}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Вперед →
+          </button>
         </div>
       )}
     </>
@@ -720,6 +791,8 @@ export function NewTourFromTemplateScreen({
   onCreated,
   mode = "create",
   tourId = null,
+  editTitleOverride = null,
+  guideView = false,
 }) {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -736,8 +809,24 @@ export function NewTourFromTemplateScreen({
   const [actionRowId, setActionRowId] = useState(null);
   const [guestSearch, setGuestSearch] = useState("");
   const [guestFilter, setGuestFilter] = useState("all"); // all | paid | unpaid
+  const actionMenuRef = useRef(null);
 
   const [tourists, setTourists] = useState([]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        actionRowId &&
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(e.target)
+      ) {
+        setActionRowId(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [actionRowId]);
   const updateGuestField = (id, field, value) => {
     setTourists((prev) =>
       prev.map((t) => {
@@ -1208,6 +1297,15 @@ export function NewTourFromTemplateScreen({
 
   if (!open) return null;
 
+  const headerTitle =
+    guideView && isEditMode
+      ? ""
+      : isEditMode && editTitleOverride
+      ? editTitleOverride
+      : isEditMode
+      ? "Редактировать тур"
+      : "Новый тур";
+
   return (
     <div className={s.fullscreenOverlay}>
       <div className={s.templateEditor}>
@@ -1221,9 +1319,13 @@ export function NewTourFromTemplateScreen({
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <h1 className={s.templateEditorTitle}>
-            {isEditMode ? "Редактировать тур" : "Новый тур"}
-          </h1>
+          {headerTitle ? (
+            <h1 className={s.templateEditorTitle}>
+              {headerTitle}
+            </h1>
+          ) : (
+            <div className={s.templateEditorTitle} />
+          )}
 
           <button
             type="button"
@@ -1237,6 +1339,13 @@ export function NewTourFromTemplateScreen({
 
         {/* ОСНОВНЫЕ ПОЛЯ — 1в1 как в шаблоне */}
         <div className={s.templateEditorBody}>
+          {guideView && name && (
+            <div className={s.templateEditorField} style={{ marginBottom: 8 }}>
+              <span className={s.templateFieldLabel}>Название тура</span>
+              <div className={s.templateEditorLabel}>{name}</div>
+            </div>
+          )}
+
           {saveError && (
             <p className={s.templateEditorError || ""}>
               {saveError}
@@ -1250,48 +1359,62 @@ export function NewTourFromTemplateScreen({
           )}
 
           <div className={s.templateEditorMainRow}>
-            <label className={s.templateEditorField}>
-              <span className={s.templateFieldLabel}>Название тура</span>
-              <input
-                type="text"
-                className={s.templateEditorInput}
-                placeholder="Например: Тур по Швейцарии"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </label>
+            {!guideView && (
+              <label className={s.templateEditorField}>
+                <span className={s.templateFieldLabel}>Название тура</span>
+                <input
+                  type="text"
+                  className={s.templateEditorInput}
+                  placeholder="Например: Тур по Швейцарии"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+            )}
 
             <div className={s.templateEditorDatesInline}>
               <label className={s.templateEditorField}>
                 <span className={s.templateEditorLabel}>Старт</span>
-                <input
-                  type="date"
-                  className={s.templateEditorInput}
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+                {guideView ? (
+                  <div className={s.templateEditorLabel}>{startDate || "—"}</div>
+                ) : (
+                  <input
+                    type="date"
+                    className={s.templateEditorInput}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                )}
               </label>
               <label className={s.templateEditorField}>
                 <span className={s.templateEditorLabel}>Конец</span>
-                <input
-                  type="date"
-                  className={s.templateEditorInput}
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+                {guideView ? (
+                  <div className={s.templateEditorLabel}>{endDate || "—"}</div>
+                ) : (
+                  <input
+                    type="date"
+                    className={s.templateEditorInput}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                )}
               </label>
             </div>
 
             <div className={s.templateEditorField}>
               <span className={s.templateEditorLabel}>Количество туристов</span>
-              <input
-                type="number"
-                min="1"
-                className={s.templateEditorInput}
-                value={touristsCount}
-                onChange={(e) => setTouristsCount(e.target.value)}
-                placeholder="Например: 17"
-              />
+              {guideView ? (
+                <div className={s.templateEditorLabel}>{touristsCount || "—"}</div>
+              ) : (
+                <input
+                  type="number"
+                  min="1"
+                  className={s.templateEditorInput}
+                  value={touristsCount}
+                  onChange={(e) => setTouristsCount(e.target.value)}
+                  placeholder="Например: 17"
+                />
+              )}
             </div>
           </div>
 
@@ -1317,6 +1440,15 @@ export function NewTourFromTemplateScreen({
             onClick={() => setActiveTab("tourists")}
           >
             Туристы
+          </button>
+          <button
+            type="button"
+            className={`${s.templateEditorTab} ${
+              activeTab === "reviews" ? s.templateEditorTabActive : ""
+            }`}
+            onClick={() => setActiveTab("reviews")}
+          >
+            Отзывы
           </button>
         </div>
 
@@ -1608,13 +1740,16 @@ export function NewTourFromTemplateScreen({
                         </td>
                         <td className={s.touristsTd}>
                           {!t.isExtra ? (
-                            <input
-                              type="number"
-                              min="1"
-                              className={s.touristsCountInput}
-                              value={t.count}
-                              onChange={(e) => handleCountChange(t.id, e.target.value)}
-                            />
+                            <div className={s.touristsCountWrap}>
+                              <span className={s.touristsCountValue}>{t.count}</span>
+                              <button
+                                type="button"
+                                className={s.touristsCountAdd}
+                                onClick={() => handleCountChange(t.id, (t.count || 1) + 1)}
+                              >
+                                +
+                              </button>
+                            </div>
                           ) : (
                             ""
                           )}
@@ -1636,7 +1771,10 @@ export function NewTourFromTemplateScreen({
                             </button>
                           )}
                         </td>
-                        <td className={`${s.touristsTd} ${s.touristsActionsCell}`}>
+                        <td
+                          className={`${s.touristsTd} ${s.touristsActionsCell}`}
+                          ref={actionRowId === t.id ? actionMenuRef : null}
+                        >
                           <button
                             type="button"
                             className={s.touristsMenuBtn}
@@ -1696,6 +1834,12 @@ export function NewTourFromTemplateScreen({
                   }
                 </span>
               </div>
+            </div>
+          )}
+
+          {activeTab === "reviews" && (
+            <div className={s.templateEditorEmptyText}>
+              Здесь будут отзывы
             </div>
           )}
         </div>

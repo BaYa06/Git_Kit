@@ -163,6 +163,43 @@
   gap: 10px;
 }
 
+.toursPagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.toursPaginationInfo {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.toursPaginationBtn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #283039;
+  background-color: #101922;
+  color: #e5e7eb;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+}
+
+.toursPaginationBtn:hover:not(:disabled) {
+  background-color: #1a2330;
+}
+
+.toursPaginationBtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.toursPaginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tourItem {
   display: flex;
   align-items: center;
@@ -1492,7 +1529,7 @@
   border-radius: 18px;
   background-color: #1a232e;
   border: 1px solid #283039;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 16px 30px rgba(0, 0, 0, 0.28);
 }
 
@@ -1772,6 +1809,47 @@
   text-align: center;
   outline: none;
   -webkit-appearance: none;
+}
+
+.touristsCountWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.touristsCountValue {
+  min-width: 48px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #283039;
+  background-color: #101922;
+  color: #e5e7eb;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touristsCountAdd {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #283039;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.touristsCountAdd:hover {
+  background-color: #27313f;
+}
+
+.touristsCountAdd:active {
+  transform: translateY(1px);
 }
 
 .touristsFooter {

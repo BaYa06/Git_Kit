@@ -3,6 +3,8 @@ import { useState } from 'react'
 import jwt from 'jsonwebtoken'
 import { Pool } from 'pg'
 import Link from 'next/link'
+import { ArrowLeft, LockKeyhole, Save } from 'lucide-react'
+import s from '../../styles/profile.module.css'
 
 export async function getServerSideProps({ req, query }) {
   const cookie = req.headers.cookie || ''
@@ -36,10 +38,12 @@ export default function PasswordPage({ user, force }) {
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState(null)
 
   async function submit(e) {
     e.preventDefault()
     setSaving(true)
+    setMsg(null)
     try {
       const res = await fetch('/api/v1/profile/password', {
         method: 'POST',
@@ -52,75 +56,115 @@ export default function PasswordPage({ user, force }) {
       // успех — назад в кабинет
       window.location.href = '/cabinet'
     } catch (err) {
-      alert(err.message)
+      setMsg(err.message)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xl p-6">
-        <div className="text-center">
-          <div className="text-sm text-slate-500">Смена пароля</div>
-          <div className="text-lg font-semibold text-slate-900 mt-1 truncate">{user?.name || 'Пользователь'}</div>
+    <div className={s.page}>
+      <div className={s.shell}>
+        <div className={s.header}>
+          <Link href="/cabinet" className={s.backBtn}>
+            <ArrowLeft className="w-4 h-4" />
+            В кабинет
+          </Link>
+          <span className={s.badge}>Смена пароля</span>
         </div>
 
-        {force && (
-          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            Для продолжения работы необходимо сменить пароль.
-          </div>
-        )}
-
-        <form onSubmit={submit} className="mt-5 space-y-4">
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Текущий пароль</label>
-            <input
-              type="password"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              placeholder="Временный/текущий пароль"
-              required
-            />
+        <div className={s.card}>
+          <div className={s.cardHead}>
+            <div className={s.titleBlock}>
+              <div className={s.cardCaption}>Безопасность</div>
+              <div className={s.cardTitle}>Обновить пароль</div>
+              <div className={s.cardHint}>
+                Придумайте сложный пароль не короче 8 символов. Мы не храним его в открытом виде.
+              </div>
+            </div>
+            <div className={s.status}>
+              <LockKeyhole className="w-4 h-4" />
+              Доступ
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Новый пароль</label>
-            <input
-              type="password"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              placeholder="Не менее 8 символов"
-              required
-              minLength={8}
-            />
-          </div>
+          {force && (
+            <div className={s.notice}>
+              Для продолжения работы нужно сменить пароль. Используйте новые данные — старый перестанет работать.
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Повторите новый пароль</label>
-            <input
-              type="password"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              minLength={8}
-            />
-          </div>
+          <form onSubmit={submit} className={s.form}>
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="current">
+                  Текущий пароль
+                </label>
+                <span className={s.hint}>Временный или действующий</span>
+              </div>
+              <input
+                id="current"
+                type="password"
+                className={s.input}
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                placeholder="Введите текущий пароль"
+                required
+              />
+            </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <Link href="/cabinet" className="text-sm text-slate-600 hover:text-slate-900">← В кабинет</Link>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:opacity-95 active:scale-[.99]"
-            >
-              {saving ? 'Сохраняем…' : 'Сменить пароль'}
-            </button>
-          </div>
-        </form>
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="next">
+                  Новый пароль
+                </label>
+                <span className={s.hint}>Мин. 8 символов</span>
+              </div>
+              <input
+                id="next"
+                type="password"
+                className={s.input}
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                placeholder="Придумайте новый пароль"
+                required
+                minLength={8}
+              />
+            </div>
+
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="confirm">
+                  Подтверждение
+                </label>
+              </div>
+              <input
+                id="confirm"
+                type="password"
+                className={s.input}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Повторите новый пароль"
+                required
+                minLength={8}
+              />
+            </div>
+
+            {msg && <div className={s.message}>{msg}</div>}
+
+            <hr className={s.divider} />
+
+            <div className={s.actions}>
+              <Link href="/cabinet" className={s.ghostBtn}>
+                Отмена
+              </Link>
+              <button type="submit" disabled={saving} className={s.primaryBtn}>
+                <Save className="w-4 h-4" />
+                {saving ? 'Сохраняем…' : 'Сменить пароль'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

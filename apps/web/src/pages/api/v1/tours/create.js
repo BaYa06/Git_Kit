@@ -20,6 +20,21 @@ function tokenFromCookie(req) {
   return pair ? decodeURIComponent(pair.split("=")[1]) : null;
 }
 
+const isComponentFilled = (c) => {
+  if (!c || !c.type) return false;
+  const hasId = !!c.selectedId;
+  const hasCustom =
+    c.mode === "custom" && c.custom && Object.keys(c.custom || {}).length > 0;
+  return hasId || hasCustom;
+};
+
+const calcStatus = (components = []) => {
+  const normalized = (components || []).filter((c) => c && c.type);
+  if (normalized.length === 0) return "planned";
+  const allFilled = normalized.every(isComponentFilled);
+  return allFilled ? "confirmed" : "planned";
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -71,6 +86,7 @@ export default async function handler(req, res) {
     }
 
     // создаём тур
+    const status = calcStatus(components);
     const tourRes = await client.query(
       `
       INSERT INTO tours (company_id, template_id, name, status, start_date, end_date, tourists_count, coordinator_id, main_guide_id)
@@ -81,7 +97,7 @@ export default async function handler(req, res) {
         company_id,
         template_id || null,
         name.trim(),
-        "planned",
+        status,
         start_date || null,
         end_date || null,
         Number.isFinite(parseInt(tourists_count, 10))

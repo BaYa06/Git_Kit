@@ -20,6 +20,21 @@ function tokenFromCookie(req) {
   return pair ? decodeURIComponent(pair.split("=")[1]) : null;
 }
 
+const isComponentFilled = (c) => {
+  if (!c || !c.type) return false;
+  const hasId = !!c.selectedId;
+  const hasCustom =
+    c.mode === "custom" && c.custom && Object.keys(c.custom || {}).length > 0;
+  return hasId || hasCustom;
+};
+
+const calcStatus = (components = []) => {
+  const normalized = (components || []).filter((c) => c && c.type);
+  if (normalized.length === 0) return "planned";
+  const allFilled = normalized.every(isComponentFilled);
+  return allFilled ? "confirmed" : "planned";
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -85,6 +100,8 @@ export default async function handler(req, res) {
       ? parseInt(tourists_count, 10)
       : null;
 
+    const status = calcStatus(components);
+
     const updateRes = await client.query(
       `
       UPDATE tours
@@ -92,11 +109,12 @@ export default async function handler(req, res) {
         name = $2,
         start_date = $3,
         end_date = $4,
-        tourists_count = $5
+        tourists_count = $5,
+        status = $6
       WHERE id = $1
       RETURNING id, company_id, template_id, name, status, start_date, end_date, tourists_count, created_at
     `,
-      [tour_id, name.trim(), start_date || null, end_date || null, touristsParsed]
+      [tour_id, name.trim(), start_date || null, end_date || null, touristsParsed, status]
     );
 
     // пересобираем компоненты заново

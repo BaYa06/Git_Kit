@@ -40,6 +40,22 @@ export default function DashboardTab({
     return d.getTime() >= todayUTC;
   });
 
+  const { signedTotal, neededTotal } = activeTours.reduce(
+    (acc, t) => {
+      const signed = Number.isFinite(t.tourists_signed) ? t.tourists_signed : 0;
+      const needed = Number.isFinite(t.tourists_count) ? t.tourists_count : 0;
+      acc.signedTotal += signed;
+      acc.neededTotal += needed;
+      return acc;
+    },
+    { signedTotal: 0, neededTotal: 0 }
+  );
+
+  const occupancyPct =
+    neededTotal > 0
+      ? Math.round((Math.max(signedTotal, 0) * 100) / neededTotal)
+      : 0;
+
   const nearestTours = activeTours
     .filter((t) => {
       const d = parseDate(t.start_date);
@@ -101,8 +117,10 @@ export default function DashboardTab({
               <Orbit className={`w-4 h-4 ${s.icons_color}`} />
             </span>
           </div>
-          <p className={s.cardValue}>85%</p>
-          <p className={s.cardSub}>заполненность туров</p>
+          <p className={s.cardValue}>{occupancyPct}%</p>
+          <p className={s.cardSub}>
+            заполненность туров ({signedTotal}/{neededTotal || 0})
+          </p>
         </div>
       </div>
 

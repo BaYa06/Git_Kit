@@ -68,7 +68,15 @@ export default async function handler(req, res) {
         COALESCE(tg.total_guests, 0) AS tourists_signed,
         t.created_at,
         g.full_name AS main_guide_name,
-        gc.guide_names
+        gc.guide_names,
+        COALESCE(tc_meta.total_components, 0) AS total_components,
+        COALESCE(tc_meta.filled_components, 0) AS filled_components,
+        CASE
+          WHEN COALESCE(tc_meta.total_components, 0) = 0 THEN 'planned'
+          WHEN COALESCE(tc_meta.filled_components, 0) = COALESCE(tc_meta.total_components, 0)
+            THEN 'confirmed'
+          ELSE 'planned'
+        END AS computed_status
       FROM tours t
       LEFT JOIN guides g ON g.id = t.main_guide_id
       LEFT JOIN LATERAL (
@@ -84,6 +92,18 @@ export default async function handler(req, res) {
         FROM tour_guests tg
         WHERE tg.tour_id = t.id
       ) tg ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*) AS total_components,
+          COUNT(*) FILTER (
+            WHERE tc.guide_id IS NOT NULL
+               OR tc.hotel_id IS NOT NULL
+               OR tc.driver_id IS NOT NULL
+               OR tc.custom IS NOT NULL
+          ) AS filled_components
+        FROM tour_components tc
+        WHERE tc.tour_id = t.id
+      ) tc_meta ON TRUE
       WHERE t.company_id = $1
       ORDER BY t.start_date DESC NULLS LAST, t.created_at DESC
     `,
@@ -98,6 +118,11 @@ export default async function handler(req, res) {
         tourists_count: row.tourists_count,
         tourists_signed: Number(row.tourists_signed) || 0,
         guide_names: Array.isArray(row.guide_names) ? row.guide_names : [],
+        status:
+          row.computed_status ||
+          (row.status === "confirmed" || row.status === "active"
+            ? "confirmed"
+            : "planned"),
       })) || [];
 
     return res.status(200).json({ tours });

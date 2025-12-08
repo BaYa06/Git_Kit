@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken'
 import { Pool } from 'pg'
 import Link from 'next/link'
 import { useState } from 'react'
+import { ArrowLeft, Save, User as UserIcon } from 'lucide-react'
+import s from '../../styles/profile.module.css'
 
 export async function getServerSideProps({ req }) {
   const cookie = req.headers.cookie || ''
@@ -59,62 +61,111 @@ export default function EditProfile({ user }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
-        <h1 className="text-xl font-semibold text-slate-900 text-center">Изменить данные</h1>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Имя</label>
-            <input
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
-              value={form.first_name}
-              onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Фамилия</label>
-            <input
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
-              value={form.last_name}
-              onChange={(e) => setForm({ ...form, last_name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Почта</label>
-            <input
-              type="email"
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-600 mb-1">Телефон</label>
-            <input
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-          </div>
-
-          {msg && <div className="text-sm text-red-600">{msg}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-slate-900 text-white py-2.5 hover:opacity-95 active:scale-[.99] transition"
-          >
-            {loading ? 'Сохраняем…' : 'Сохранить'}
-          </button>
-
-          <Link
-            href="/cabinet"
-            className="block text-center text-sm text-slate-600 hover:text-slate-900 mt-2"
-          >
-            Отмена
+    <div className={s.page}>
+      <div className={s.shell}>
+        <div className={s.header}>
+          <Link href="/cabinet" className={s.backBtn}>
+            <ArrowLeft className="w-4 h-4" />
+            В кабинет
           </Link>
-        </form>
+          <span className={s.badge}>Изменить данные</span>
+        </div>
+
+        <div className={s.card}>
+          <div className={s.cardHead}>
+            <div className={s.titleBlock}>
+              <div className={s.cardCaption}>Профиль</div>
+              <div className={s.cardTitle}>Контакты и имя</div>
+              <div className={s.cardHint}>
+                Обновите свои данные, чтобы коллеги видели актуальные контакты.
+              </div>
+            </div>
+            <div className={s.status}>
+              <UserIcon className="w-4 h-4" />
+              Аккаунт
+            </div>
+          </div>
+
+          <form onSubmit={onSubmit} className={s.form}>
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="firstName">
+                  Имя
+                </label>
+                <span className={s.hint}>Отображается в карточках</span>
+              </div>
+              <input
+                id="firstName"
+                className={s.input}
+                value={form.first_name}
+                placeholder="Иван"
+                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+              />
+            </div>
+
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="lastName">
+                  Фамилия
+                </label>
+              </div>
+              <input
+                id="lastName"
+                className={s.input}
+                value={form.last_name}
+                placeholder="Иванов"
+                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              />
+            </div>
+
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="email">
+                  Почта
+                </label>
+                <span className={s.hint}>Для уведомлений и входа</span>
+              </div>
+              <input
+                id="email"
+                type="email"
+                className={s.input}
+                value={form.email}
+                placeholder="you@example.com"
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+
+            <div className={s.field}>
+              <div className={s.labelRow}>
+                <label className={s.label} htmlFor="phone">
+                  Телефон
+                </label>
+                <span className={s.hint}>+7 900 000-00-00</span>
+              </div>
+              <input
+                id="phone"
+                className={s.input}
+                value={form.phone}
+                placeholder="+7 ___ ___-__-__"
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+
+            {msg && <div className={s.message}>{msg}</div>}
+
+            <hr className={s.divider} />
+
+            <div className={s.actions}>
+              <Link href="/cabinet" className={s.ghostBtn}>
+                Отмена
+              </Link>
+              <button type="submit" disabled={loading} className={s.primaryBtn}>
+                <Save className="w-4 h-4" />
+                {loading ? 'Сохраняем…' : 'Сохранить'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

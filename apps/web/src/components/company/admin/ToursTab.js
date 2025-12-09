@@ -29,6 +29,7 @@ import transportStyles from "../../../styles/admin/transport.module.css";
 import templatesStyles from "../../../styles/admin/templates.module.css";
 import editorStyles from "../../../styles/admin/editor.module.css";
 import touristsStyles from "../../../styles/admin/tourists.module.css";
+import { GuideTouristsMock } from "../guide/Tours";
 
 const s = {
   ...base,
@@ -48,6 +49,60 @@ const COMPONENT_LABELS = {
   hotel: "Отель",
   guide: "Гид",
 };
+const REVIEWS_MOCK = [
+  {
+    id: 1,
+    name: "Иван Петров",
+    initials: "ИП",
+    date: "24.06.2024",
+    time: "10:30",
+    badge: { label: "Отзыв", color: "#2d65e6" },
+    ratings: { tour: 5, transport: 5, guide: 5 },
+    blocks: [
+      {
+        title: "Гид",
+        text: "Отличный гид, все было интересно и познавательно.",
+        score: 5,
+      },
+      {
+        title: "Транспорт",
+        text: "Транспорт был комфортным.",
+        score: 5,
+      },
+      {
+        title: "Тур",
+        text: "Сам тур превзошел все ожидания. Обязательно порекомендую друзьям!",
+        score: 5,
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: "Анна Васильева",
+    initials: "АВ",
+    date: "22.06.2024",
+    time: "12:45",
+    badge: { label: "Via QR", color: "#10b981" },
+    ratings: { tour: 5, transport: 3, guide: 5 },
+    blocks: [
+      {
+        title: "Гид",
+        text: "Гид — профессионал своего дела, рассказывал очень увлекательно.",
+        score: 5,
+      },
+      {
+        title: "Транспорт",
+        text: "Автобус был немного старый.",
+        score: 3,
+      },
+      {
+        title: "Тур",
+        text: "Тур понравился.",
+        score: 5,
+      },
+    ],
+  },
+];
 
 const formatTime = (t) => {
   if (!t) return null;
@@ -88,12 +143,147 @@ const entityLabelByType = (type) => {
   return "транспорт";
 };
 
+function EntityPreview({ type, entity }) {
+  if (!entity) return null;
+
+  if (type === "guide") {
+    return (
+      <div className={s.guideCard}>
+        <div className={s.guideCardHeader}>
+          <p className={s.guideName}>
+            {entity.full_name || entity.email || "Без имени"}
+          </p>
+        </div>
+        {entity.phone && (
+          <div className={s.guideRow}>
+            <span className={s.guideLabel}>Телефон</span>
+            <span className={s.guideValue}>{entity.phone}</span>
+          </div>
+        )}
+        {entity.email && (
+          <div className={s.guideRow}>
+            <span className={s.guideLabel}>Email</span>
+            <span className={s.guideValue}>{entity.email}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (type === "transport") {
+    return (
+      <div className={s.transportCard}>
+        <div className={s.transportHeader}>
+          <div>
+            <p className={s.transportTitle}>{entity.car_name || "Транспорт"}</p>
+            <p className={s.transportPlate}>{entity.plate_number}</p>
+          </div>
+        </div>
+        <div className={s.transportBody}>
+          <div className={s.transportRow}>
+            <span className={s.transportLabel}>Водитель:</span>
+            <span className={s.transportValue}>
+              {entity.full_name || "—"}
+            </span>
+          </div>
+          {entity.phone && (
+            <div className={s.transportRow}>
+              <span className={s.transportLabel}>Телефон:</span>
+              <span className={s.transportValue}>{entity.phone}</span>
+            </div>
+          )}
+          <div className={s.transportRow}>
+            <span className={s.transportLabel}>Мест:</span>
+            <span className={s.transportValue}>{entity.seats || "-"}</span>
+          </div>
+          {entity.notes && (
+            <div className={s.transportRow}>
+              <span className={s.transportLabel}>Заметки:</span>
+              <span className={s.transportValue}>{entity.notes}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={s.hotelCard}>
+      <div className={s.hotelCardHeader}>
+        <div>
+          <h2 className={s.hotelTitle}>{entity.name}</h2>
+          {entity.stars ? (
+            <div className={s.hotelStarsRow}>{renderStars(entity.stars)}</div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className={s.hotelCardBody}>
+        {entity.phone && (
+          <div className={`${s.hotelRow}`}>
+            <div className={s.hotelRowIcon}>
+              <Phone className="w-4 h-4" />
+            </div>
+            <p className={s.hotelRowText}>{entity.phone}</p>
+          </div>
+        )}
+
+        {entity.meal_plan && (
+          <div className={s.hotelRow}>
+            <div className={s.hotelRowIcon}>
+              <Utensils className="w-4 h-4" />
+            </div>
+            <p className={s.hotelRowText}>{entity.meal_plan}</p>
+          </div>
+        )}
+
+        {entity.address && (
+          <a
+            href={getAddressHref(entity.address)}
+            target="_blank"
+            rel="noreferrer"
+            className={`${s.hotelRow} ${s.hotelRowLink}`}
+          >
+            <div className={s.hotelRowIcon}>
+              <MapPin className="w-4 h-4" />
+            </div>
+            <p className={s.hotelRowText}>{entity.address}</p>
+          </a>
+        )}
+
+        {(entity.checkin_from || entity.checkout_until) && (
+          <div className={s.hotelRow}>
+            <div className={s.hotelRowIcon}>
+              <Clock className="w-4 h-4" />
+            </div>
+            <p className={s.hotelRowText}>
+              Заезд с {formatTime(entity.checkin_from) || "14:00"} · Выезд до{" "}
+              {formatTime(entity.checkout_until) || "12:00"}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 const formatCents = (value) => {
   if (!Number.isFinite(value)) return "";
   return `${(value / 100).toLocaleString("ru-RU", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })} с`;
+};
+
+const formatDateDisplay = (value) => {
+  if (!value) return "—";
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return value;
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const yyyy = d.getUTCFullYear();
+  return `${dd}.${mm}.${yyyy}`;
 };
 
 const parseMoneyToCents = (value) => {
@@ -553,125 +743,7 @@ function SelectFromBase({
 
       {selected && (
         <div style={{ marginTop: 12 }}>
-          {type === "guide" && (
-            <div className={s.guideCard}>
-              <div className={s.guideCardHeader}>
-                <p className={s.guideName}>
-                  {selected.full_name || selected.email || "Без имени"}
-                </p>
-              </div>
-              {selected.phone && (
-                <div className={s.guideRow}>
-                  <span className={s.guideLabel}>Телефон</span>
-                  <span className={s.guideValue}>{selected.phone}</span>
-                </div>
-              )}
-              {selected.email && (
-                <div className={s.guideRow}>
-                  <span className={s.guideLabel}>Email</span>
-                  <span className={s.guideValue}>{selected.email}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {type === "transport" && (
-            <div className={s.transportCard}>
-              <div className={s.transportHeader}>
-                <div>
-                  <p className={s.transportTitle}>
-                    {selected.car_name || "Транспорт"}
-                  </p>
-                  <p className={s.transportPlate}>{selected.plate_number}</p>
-                </div>
-              </div>
-              <div className={s.transportBody}>
-                <div className={s.transportRow}>
-                  <span className={s.transportLabel}>Водитель:</span>
-                  <span className={s.transportValue}>
-                    {selected.full_name || "—"}
-                  </span>
-                </div>
-                {selected.phone && (
-                  <div className={s.transportRow}>
-                    <span className={s.transportLabel}>Телефон:</span>
-                    <span className={s.transportValue}>{selected.phone}</span>
-                  </div>
-                )}
-                <div className={s.transportRow}>
-                  <span className={s.transportLabel}>Мест:</span>
-                  <span className={s.transportValue}>{selected.seats || "-"}</span>
-                </div>
-                {selected.notes && (
-                  <div className={s.transportRow}>
-                    <span className={s.transportLabel}>Заметки:</span>
-                    <span className={s.transportValue}>{selected.notes}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {type === "hotel" && (
-            <div className={s.hotelCard}>
-              <div className={s.hotelCardHeader}>
-                <div>
-                  <h2 className={s.hotelTitle}>{selected.name}</h2>
-                  {selected.stars ? (
-                    <div className={s.hotelStarsRow}>
-                      {renderStars(selected.stars)}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className={s.hotelCardBody}>
-                {selected.phone && (
-                  <div className={`${s.hotelRow}`}>
-                    <div className={s.hotelRowIcon}>
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <p className={s.hotelRowText}>{selected.phone}</p>
-                  </div>
-                )}
-
-                {selected.meal_plan && (
-                  <div className={s.hotelRow}>
-                    <div className={s.hotelRowIcon}>
-                      <Utensils className="w-4 h-4" />
-                    </div>
-                    <p className={s.hotelRowText}>{selected.meal_plan}</p>
-                  </div>
-                )}
-
-                {selected.address && (
-                  <a
-                    href={getAddressHref(selected.address)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`${s.hotelRow} ${s.hotelRowLink}`}
-                  >
-                    <div className={s.hotelRowIcon}>
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <p className={s.hotelRowText}>{selected.address}</p>
-                  </a>
-                )}
-
-                {(selected.checkin_from || selected.checkout_until) && (
-                  <div className={s.hotelRow}>
-                    <div className={s.hotelRowIcon}>
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <p className={s.hotelRowText}>
-                      Заезд с {formatTime(selected.checkin_from) || "14:00"} ·
-                      Выезд до {formatTime(selected.checkout_until) || "12:00"}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <EntityPreview type={type} entity={selected} />
         </div>
       )}
     </div>
@@ -910,6 +982,11 @@ export function NewTourFromTemplateScreen({
     A: "#3b82f6",
     B: "#a855f7",
   };
+  const GUIDE_CARD_COLORS = [
+    { bg: "#1f2b3a", accent: "#2d65e6" },
+    { bg: "#2b1b3d", accent: "#8b5cf6" },
+    { bg: "#163441", accent: "#06b6d4" },
+  ];
 
   const zebraColors = [
     "rgba(32, 41, 54, 0.85)",
@@ -1030,17 +1107,45 @@ export function NewTourFromTemplateScreen({
 
   const handleTogglePaid = (row) => {
     const baseId = row.baseId || row.id;
-    setTourists((prev) =>
-      prev.map((t) =>
-        t.id === baseId
-          ? {
-              ...t,
-              paid: !t.paid,
-            }
+    setTourists((prev) => {
+      const baseRow = prev.find((t) => t.id === baseId && !t.isExtra);
+      const nextPaid = baseRow ? !baseRow.paid : !row.paid;
+      return prev.map((t) =>
+        t.id === baseId || t.baseId === baseId
+          ? { ...t, paid: nextPaid }
           : t
-      )
-    );
+      );
+    });
   };
+
+  const guideSignedCount = tourists.filter((t) => !t.isExtra).length + tourists.filter((t) => t.isExtra).length;
+
+  const guideCards = baseRows.map((base, idx) => {
+    const extras = getExtras(base.id);
+    const palette = GUIDE_CARD_COLORS[idx % GUIDE_CARD_COLORS.length];
+    const travelers = [
+      { name: base.name || "—", phone: base.phone || "—" },
+      ...extras.map((ex) => ({ name: ex.name || "—", phone: ex.phone || "—" })),
+    ];
+    const balanceCents = parseMoneyToCents(base.balance);
+    const prepayCents = parseMoneyToCents(base.prepayment);
+    let balanceTone = "neutral";
+    if (balanceCents === 0) balanceTone = "success";
+    else if (!prepayCents) balanceTone = "danger";
+
+    return {
+      id: base.id,
+      group: `Группа ${idx + 1}`,
+      groupColor: palette.bg,
+      accent: palette.accent,
+      travelers,
+      cost: base.cost || "—",
+      prepay: base.prepayment || "—",
+      balance: base.balance || "—",
+      paid: !!base.paid,
+      balanceTone,
+    };
+  });
 
   const saveTourGuests = async (targetTourId) => {
     if (!targetTourId) return;
@@ -1297,14 +1402,11 @@ export function NewTourFromTemplateScreen({
 
   if (!open) return null;
 
-  const headerTitle =
-    guideView && isEditMode
-      ? ""
-      : isEditMode && editTitleOverride
-      ? editTitleOverride
-      : isEditMode
-      ? "Редактировать тур"
-      : "Новый тур";
+  const headerTitle = isEditMode
+    ? guideView
+      ? editTitleOverride || name || "Тур"
+      : editTitleOverride || "Редактировать тур"
+    : "Новый тур";
 
   return (
     <div className={s.fullscreenOverlay}>
@@ -1339,13 +1441,6 @@ export function NewTourFromTemplateScreen({
 
         {/* ОСНОВНЫЕ ПОЛЯ — 1в1 как в шаблоне */}
         <div className={s.templateEditorBody}>
-          {guideView && name && (
-            <div className={s.templateEditorField} style={{ marginBottom: 8 }}>
-              <span className={s.templateFieldLabel}>Название тура</span>
-              <div className={s.templateEditorLabel}>{name}</div>
-            </div>
-          )}
-
           {saveError && (
             <p className={s.templateEditorError || ""}>
               {saveError}
@@ -1376,7 +1471,7 @@ export function NewTourFromTemplateScreen({
               <label className={s.templateEditorField}>
                 <span className={s.templateEditorLabel}>Старт</span>
                 {guideView ? (
-                  <div className={s.templateEditorLabel}>{startDate || "—"}</div>
+                  <div className={s.templateEditorLabel}>{formatDateDisplay(startDate)}</div>
                 ) : (
                   <input
                     type="date"
@@ -1389,7 +1484,7 @@ export function NewTourFromTemplateScreen({
               <label className={s.templateEditorField}>
                 <span className={s.templateEditorLabel}>Конец</span>
                 {guideView ? (
-                  <div className={s.templateEditorLabel}>{endDate || "—"}</div>
+                  <div className={s.templateEditorLabel}>{formatDateDisplay(endDate)}</div>
                 ) : (
                   <input
                     type="date"
@@ -1404,7 +1499,9 @@ export function NewTourFromTemplateScreen({
             <div className={s.templateEditorField}>
               <span className={s.templateEditorLabel}>Количество туристов</span>
               {guideView ? (
-                <div className={s.templateEditorLabel}>{touristsCount || "—"}</div>
+                <div className={s.templateEditorLabel}>
+                  {guideSignedCount > 0 ? `${guideSignedCount}/${touristsCount || "—"}` : touristsCount || "—"}
+                </div>
               ) : (
                 <input
                   type="number"
@@ -1470,100 +1567,154 @@ export function NewTourFromTemplateScreen({
                       open
                       key={item.id}
                     >
-                      <summary className={s.templateAccordionSummary}>
-                        <span className={s.templateAccordionTitle}>
-                          {COMPONENT_LABELS[item.type] || "Компонент"}
-                        </span>
-                        <span className={s.templateAccordionIcon}>⌄</span>
-                      </summary>
+                      {(() => {
+                        const list =
+                          entityListsByType(item.type, {
+                            guides,
+                            hotels,
+                            drivers,
+                          }) || [];
+                        const selectedEntity =
+                          list.find(
+                            (row) =>
+                              String(row.id) === String(item.selectedId || "")
+                          ) || null;
+                        const customEntity =
+                          item.custom &&
+                          Object.keys(item.custom || {}).length > 0
+                            ? item.custom
+                            : null;
+                        const displayEntity =
+                          item.mode === "custom" ? customEntity : selectedEntity;
+                        const phone =
+                          displayEntity &&
+                          typeof displayEntity.phone === "string" &&
+                          displayEntity.phone.trim()
+                            ? displayEntity.phone.trim()
+                            : null;
 
-                      <div className={s.templateAccordionControls}>
-                        <input
-                          type="text"
-                          className={s.templateAccordionInput}
-                          placeholder={
-                            COMPONENT_LABELS[item.type]
-                              ? `Комментарий: ${COMPONENT_LABELS[item.type]}`
-                              : "Комментарий"
-                          }
-                          value={item.comment}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setComponents((prev) =>
-                              prev.map((c) =>
-                                c.id === item.id ? { ...c, comment: val } : c
-                              )
-                            );
-                          }}
-                        />
-                      </div>
+                        return (
+                          <>
+                            <summary className={s.templateAccordionSummary}>
+                              <span className={s.templateAccordionTitle}>
+                                {COMPONENT_LABELS[item.type] || "Компонент"}
+                              </span>
+                              <span className={s.templateAccordionIcon}>⌄</span>
+                            </summary>
 
-                      <div className={s.templateEditorField}>
-                        <span className={s.templateEditorLabel}>Источник данных</span>
-                        <div className={s.templateEditorTagsRow}>
-                          <button
-                            type="button"
-                            className={`${s.templateTag} ${item.mode !== "custom" ? s.templateTagActive : ""}`}
-                            onClick={() => {
-                              setComponents((prev) =>
-                                prev.map((c) =>
-                                  c.id === item.id
-                                    ? { ...c, mode: "base" }
-                                    : c
-                                )
-                              );
-                            }}
-                          >
-                            Выбрать из базы
-                          </button>
-                          <button
-                            type="button"
-                            className={`${s.templateTag} ${item.mode === "custom" ? s.templateTagActive : ""}`}
-                            onClick={() => {
-                              setComponents((prev) =>
-                                prev.map((c) =>
-                                  c.id === item.id
-                                    ? { ...c, mode: "custom", selectedId: "" }
-                                    : c
-                                )
-                              );
-                            }}
-                          >
-                            Ввести вручную
-                          </button>
-                        </div>
-                      </div>
+                            {guideView ? (
+                              <div className={s.templateAccordionControls}>
+                                {item.comment ? (
+                                  <p className={s.templateEditorLabel}>{item.comment}</p>
+                                ) : null}
+                                {displayEntity ? (
+                                  <div style={{ marginTop: item.comment ? 12 : 0 }}>
+                                    <EntityPreview type={item.type} entity={displayEntity} />
+                                  </div>
+                                ) : (
+                                  <p className={s.templateEditorEmptyText}>Нет данных</p>
+                                )}
+                                {phone ? (
+                                  <a href={`tel:${phone}`} className={s.callButton}>
+                                    <Phone className="w-4 h-4" />
+                                    Позвонить
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <>
+                                <div className={s.templateAccordionControls}>
+                                  <input
+                                    type="text"
+                                    className={s.templateAccordionInput}
+                                    placeholder={
+                                      COMPONENT_LABELS[item.type]
+                                        ? `Комментарий: ${COMPONENT_LABELS[item.type]}`
+                                        : "Комментарий"
+                                    }
+                                    value={item.comment}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setComponents((prev) =>
+                                        prev.map((c) =>
+                                          c.id === item.id ? { ...c, comment: val } : c
+                                        )
+                                      );
+                                    }}
+                                  />
+                                </div>
 
-                      {item.mode === "base" ? (
-                        <SelectFromBase
-                          type={item.type}
-                          guides={guides}
-                          hotels={hotels}
-                          drivers={drivers}
-                          selectedId={item.selectedId || ""}
-                          onSelect={(val) => {
-                            setComponents((prev) =>
-                              prev.map((c) =>
-                                c.id === item.id ? { ...c, selectedId: val } : c
-                              )
-                            );
-                          }}
-                        />
-                      ) : (
-                        <CustomFields
-                          type={item.type}
-                          value={item.custom || {}}
-                          onChange={(patch) => {
-                            setComponents((prev) =>
-                              prev.map((c) =>
-                                c.id === item.id
-                                  ? { ...c, custom: { ...(c.custom || {}), ...patch } }
-                                  : c
-                              )
-                            );
-                          }}
-                        />
-                      )}
+                                <div className={s.templateEditorField}>
+                                  <span className={s.templateEditorLabel}>Источник данных</span>
+                                  <div className={s.templateEditorTagsRow}>
+                                    <button
+                                      type="button"
+                                      className={`${s.templateTag} ${item.mode !== "custom" ? s.templateTagActive : ""}`}
+                                      onClick={() => {
+                                        setComponents((prev) =>
+                                          prev.map((c) =>
+                                            c.id === item.id
+                                              ? { ...c, mode: "base" }
+                                              : c
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      Выбрать из базы
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`${s.templateTag} ${item.mode === "custom" ? s.templateTagActive : ""}`}
+                                      onClick={() => {
+                                        setComponents((prev) =>
+                                          prev.map((c) =>
+                                            c.id === item.id
+                                              ? { ...c, mode: "custom", selectedId: "" }
+                                              : c
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      Ввести вручную
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {item.mode === "base" ? (
+                                  <SelectFromBase
+                                    type={item.type}
+                                    guides={guides}
+                                    hotels={hotels}
+                                    drivers={drivers}
+                                    selectedId={item.selectedId || ""}
+                                    onSelect={(val) => {
+                                      setComponents((prev) =>
+                                        prev.map((c) =>
+                                          c.id === item.id ? { ...c, selectedId: val } : c
+                                        )
+                                      );
+                                    }}
+                                  />
+                                ) : (
+                                  <CustomFields
+                                    type={item.type}
+                                    value={item.custom || {}}
+                                    onChange={(patch) => {
+                                      setComponents((prev) =>
+                                        prev.map((c) =>
+                                          c.id === item.id
+                                            ? { ...c, custom: { ...(c.custom || {}), ...patch } }
+                                            : c
+                                        )
+                                      );
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
+                          </>
+                        );
+                      })()}
                     </details>
                   ))}
                 </div>
@@ -1572,274 +1723,333 @@ export function NewTourFromTemplateScreen({
           )}
 
           {activeTab === "tourists" && (
-            <div className={s.touristsCard}>
-              <div className={s.touristsCardHeader}>
-                <div>
-                  <p className={s.touristsTitle}>Туристы</p>
-                  <p className={s.touristsSubtitle}>
-                    Добавьте всех участников этого тура
-                  </p>
-                </div>
-                <div className={s.touristsActions}>
-                  <div className={s.touristsSearch}>
-                    <Search className={s.touristsSearchIcon} />
-                    <input
-                      type="search"
-                      placeholder="Поиск по имени или телефону"
-                      className={s.touristsSearchInput}
-                      value={guestSearch}
-                      onChange={(e) => setGuestSearch(e.target.value)}
-                    />
+            guideView ? (
+              <GuideTouristsMock
+                showAddButton={false}
+                touristsData={guideCards}
+                onTogglePaid={(card) => handleTogglePaid(card)}
+              />
+            ) : (
+              <div className={s.touristsCard}>
+                <div className={s.touristsCardHeader}>
+                  <div>
+                    <p className={s.touristsTitle}>Туристы</p>
+                    <p className={s.touristsSubtitle}>
+                      Добавьте всех участников этого тура
+                    </p>
                   </div>
-                  <div className={s.toursStatusButtons}>
-                    <button
-                      type="button"
-                      className={`${s.toursStatusBtn} ${
-                        guestFilter === "all" ? s.toursStatusBtnActive : ""
-                      }`}
-                      onClick={() => setGuestFilter("all")}
-                    >
-                      Все
-                    </button>
-                    <button
-                      type="button"
-                      className={`${s.toursStatusBtn} ${
-                        guestFilter === "paid" ? s.toursStatusBtnActive : ""
-                      }`}
-                      onClick={() => setGuestFilter("paid")}
-                    >
-                      Оплаченные
-                    </button>
-                    <button
-                      type="button"
-                      className={`${s.toursStatusBtn} ${
-                        guestFilter === "unpaid" ? s.toursStatusBtnActive : ""
-                      }`}
-                      onClick={() => setGuestFilter("unpaid")}
-                    >
-                      Не оплаченные
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    className={s.touristsPrimaryBtn}
-                    onClick={handleAddTraveler}
-                  >
-                    <span className={s.touristsPrimaryPlus}>+</span>
-                    Добавить туриста
-                  </button>
-                </div>
-              </div>
-
-              <div className={s.touristsTableScroll}>
-                <table className={s.touristsTable}>
-                  <thead>
-                    <tr>
-                      <th className={s.touristsTh} />
-                      <th className={s.touristsTh}>ФИО</th>
-                      <th className={s.touristsTh}>Телефон</th>
-                      <th className={s.touristsTh}>Стоимость тура</th>
-                      <th className={s.touristsTh}>Предоплата</th>
-                      <th className={s.touristsTh}>Остаток</th>
-                      <th className={s.touristsTh}>Кол-во</th>
-                      <th className={s.touristsTh}>Оплачено</th>
-                      <th className={s.touristsTh}>Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredDisplay.map((t) => (
-                      <tr
-                        key={t.id}
-                        className={s.touristsRow}
-                        style={{ backgroundColor: t.rowColor }}
+                  <div className={s.touristsActions}>
+                    <div className={s.touristsSearch}>
+                      <Search className={s.touristsSearchIcon} />
+                      <input
+                        type="search"
+                        placeholder="Поиск по имени или телефону"
+                        className={s.touristsSearchInput}
+                        value={guestSearch}
+                        onChange={(e) => setGuestSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className={s.toursStatusButtons}>
+                      <button
+                        type="button"
+                        className={`${s.toursStatusBtn} ${
+                          guestFilter === "all" ? s.toursStatusBtnActive : ""
+                        }`}
+                        onClick={() => setGuestFilter("all")}
                       >
-                        <td className={s.touristsTd}>
-                          {!t.isExtra ? (
-                            <span
-                              className={s.touristsBadge}
-                              style={{ backgroundColor: `${t.color}1a`, color: t.color }}
-                            >
-                              {t.group}
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className={`${s.touristsTd} ${s.touristsName}`}>
-                          <input
-                            type="text"
-                            className={s.templateEditorInput}
-                            value={t.name}
-                            placeholder="ФИО"
-                            onChange={(e) =>
-                              updateGuestField(t.id, "name", e.target.value)
-                            }
-                          />
-                        </td>
-                        <td className={s.touristsTd}>
-                          <input
-                            type="tel"
-                            className={s.templateEditorInput}
-                            value={t.phone}
-                            placeholder="+996 ..."
-                            onChange={(e) =>
-                              updateGuestField(t.id, "phone", e.target.value)
-                            }
-                          />
-                        </td>
-                        <td className={s.touristsTd}>
-                          {t.isExtra ? (
-                            t.cost
-                          ) : (
+                        Все
+                      </button>
+                      <button
+                        type="button"
+                        className={`${s.toursStatusBtn} ${
+                          guestFilter === "paid" ? s.toursStatusBtnActive : ""
+                        }`}
+                        onClick={() => setGuestFilter("paid")}
+                      >
+                        Оплаченные
+                      </button>
+                      <button
+                        type="button"
+                        className={`${s.toursStatusBtn} ${
+                          guestFilter === "unpaid" ? s.toursStatusBtnActive : ""
+                        }`}
+                        onClick={() => setGuestFilter("unpaid")}
+                      >
+                        Не оплаченные
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className={s.touristsPrimaryBtn}
+                      onClick={handleAddTraveler}
+                    >
+                      <span className={s.touristsPrimaryPlus}>+</span>
+                      Добавить туриста
+                    </button>
+                  </div>
+                </div>
+
+                <div className={s.touristsTableScroll}>
+                  <table className={s.touristsTable}>
+                    <thead>
+                      <tr>
+                        <th className={s.touristsTh} />
+                        <th className={s.touristsTh}>ФИО</th>
+                        <th className={s.touristsTh}>Телефон</th>
+                        <th className={s.touristsTh}>Стоимость тура</th>
+                        <th className={s.touristsTh}>Предоплата</th>
+                        <th className={s.touristsTh}>Остаток</th>
+                        <th className={s.touristsTh}>Кол-во</th>
+                        <th className={s.touristsTh}>Оплачено</th>
+                        <th className={s.touristsTh}>Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredDisplay.map((t) => (
+                        <tr
+                          key={t.id}
+                          className={s.touristsRow}
+                          style={{ backgroundColor: t.rowColor }}
+                        >
+                          <td className={s.touristsTd}>
+                            {!t.isExtra ? (
+                              <span
+                                className={s.touristsBadge}
+                                style={{ backgroundColor: `${t.color}1a`, color: t.color }}
+                              >
+                                {t.group}
+                              </span>
+                            ) : null}
+                          </td>
+                          <td className={`${s.touristsTd} ${s.touristsName}`}>
                             <input
                               type="text"
-                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
-                              value={t.cost || ""}
-                              placeholder="0"
+                              className={s.templateEditorInput}
+                              value={t.name}
+                              placeholder="ФИО"
                               onChange={(e) =>
-                                updateGuestField(t.id, "cost", e.target.value)
+                                updateGuestField(t.id, "name", e.target.value)
                               }
                             />
-                          )}
-                        </td>
-                        <td className={s.touristsTd}>
-                          {t.isExtra ? (
-                            t.prepayment
-                          ) : (
+                          </td>
+                          <td className={s.touristsTd}>
                             <input
-                              type="text"
-                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
-                              value={t.prepayment || ""}
-                              placeholder="0"
+                              type="tel"
+                              className={s.templateEditorInput}
+                              value={t.phone}
+                              placeholder="+996 ..."
                               onChange={(e) =>
-                                updateGuestField(
-                                  t.id,
-                                  "prepayment",
-                                  e.target.value
-                                )
+                                updateGuestField(t.id, "phone", e.target.value)
                               }
                             />
-                          )}
-                        </td>
-                        <td className={s.touristsTd}>
-                          {t.isExtra ? (
-                            t.balance
-                          ) : (
-                            <input
-                              type="text"
-                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
-                              value={t.balance || ""}
-                              placeholder="0"
-                              onChange={(e) =>
-                                updateGuestField(
-                                  t.id,
-                                  "balance",
-                                  e.target.value
-                                )
-                              }
-                            />
-                          )}
-                        </td>
-                        <td className={s.touristsTd}>
-                          {!t.isExtra ? (
-                            <div className={s.touristsCountWrap}>
-                              <span className={s.touristsCountValue}>{t.count}</span>
+                          </td>
+                          <td className={s.touristsTd}>
+                            {t.isExtra ? (
+                              t.cost
+                            ) : (
+                              <input
+                                type="text"
+                                className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                                value={t.cost || ""}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateGuestField(t.id, "cost", e.target.value)
+                                }
+                              />
+                            )}
+                          </td>
+                          <td className={s.touristsTd}>
+                            {t.isExtra ? (
+                              t.prepayment
+                            ) : (
+                              <input
+                                type="text"
+                                className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                                value={t.prepayment || ""}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateGuestField(
+                                    t.id,
+                                    "prepayment",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            )}
+                          </td>
+                          <td className={s.touristsTd}>
+                            {t.isExtra ? (
+                              t.balance
+                            ) : (
+                              <input
+                                type="text"
+                                className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                                value={t.balance || ""}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateGuestField(
+                                    t.id,
+                                    "balance",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            )}
+                          </td>
+                          <td className={s.touristsTd}>
+                            {!t.isExtra ? (
+                              <div className={s.touristsCountWrap}>
+                                <span className={s.touristsCountValue}>{t.count}</span>
+                                <button
+                                  type="button"
+                                  className={s.touristsCountAdd}
+                                  onClick={() => handleCountChange(t.id, (t.count || 1) + 1)}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              ""
+                            )}
+                          </td>
+                          <td className={s.touristsTd}>
+                            {!t.isExtra && (
                               <button
                                 type="button"
-                                className={s.touristsCountAdd}
-                                onClick={() => handleCountChange(t.id, (t.count || 1) + 1)}
+                                className={`${s.touristsPaidToggle} ${
+                                  t.paid ? s.touristsPaidToggleActive : ""
+                                }`}
+                                onClick={() => handleTogglePaid(t)}
                               >
-                                +
+                                {t.paid ? (
+                                  <CheckCircle2 className={s.touristsPaidIcon} />
+                                ) : (
+                                  <span className={s.touristsPaidDot} />
+                                )}
                               </button>
-                            </div>
-                          ) : (
-                            ""
-                          )}
-                        </td>
-                        <td className={s.touristsTd}>
-                          {!t.isExtra && (
+                            )}
+                          </td>
+                          <td
+                            className={`${s.touristsTd} ${s.touristsActionsCell}`}
+                            ref={actionRowId === t.id ? actionMenuRef : null}
+                          >
                             <button
                               type="button"
-                              className={`${s.touristsPaidToggle} ${
-                                t.paid ? s.touristsPaidToggleActive : ""
-                              }`}
-                              onClick={() => handleTogglePaid(t)}
+                              className={s.touristsMenuBtn}
+                              onClick={() =>
+                                setActionRowId((prev) => (prev === t.id ? null : t.id))
+                              }
                             >
-                              {t.paid ? (
-                                <CheckCircle2 className={s.touristsPaidIcon} />
-                              ) : (
-                                <span className={s.touristsPaidDot} />
-                              )}
+                              <MoreVertical className={s.touristsMenuIcon} />
                             </button>
-                          )}
-                        </td>
-                        <td
-                          className={`${s.touristsTd} ${s.touristsActionsCell}`}
-                          ref={actionRowId === t.id ? actionMenuRef : null}
-                        >
-                          <button
-                            type="button"
-                            className={s.touristsMenuBtn}
-                            onClick={() =>
-                              setActionRowId((prev) => (prev === t.id ? null : t.id))
-                            }
-                          >
-                            <MoreVertical className={s.touristsMenuIcon} />
-                          </button>
 
-                          {actionRowId === t.id && (
-                            <div className={s.touristsMenu}>
-                              {t.isExtra ? (
-                                <button
-                                  type="button"
-                                  className={s.touristsMenuItem}
-                                  onClick={() => handleRemoveExtra(t)}
-                                >
-                                  Удалить доп
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className={s.touristsMenuItem}
-                                  onClick={() => handleRemoveGroup(t)}
-                                >
-                                  Удалить группу
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                            {actionRowId === t.id && (
+                              <div className={s.touristsMenu}>
+                                {t.isExtra ? (
+                                  <button
+                                    type="button"
+                                    className={s.touristsMenuItem}
+                                    onClick={() => handleRemoveExtra(t)}
+                                  >
+                                    Удалить доп
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className={s.touristsMenuItem}
+                                    onClick={() => handleRemoveGroup(t)}
+                                  >
+                                    Удалить группу
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-              <div className={s.touristsFooter}>
-                <span>Всего туристов: {displayTourists.length}</span>
-                <span className={s.touristsDotDivider}>·</span>
-                <span>
-                  Оплачено:{" "}
-                  {
-                    displayTourists.filter(
-                      (row) => !row.isExtra && row.paid
-                    ).length
-                  }
-                </span>
-                <span className={s.touristsDotDivider}>·</span>
-                <span>
-                  Не оплачено:{" "}
-                  {
-                    displayTourists.filter(
-                      (row) => !row.isExtra && !row.paid
-                    ).length
-                  }
-                </span>
+                <div className={s.touristsFooter}>
+                  <span>Всего туристов: {displayTourists.length}</span>
+                  <span className={s.touristsDotDivider}>·</span>
+                  <span>
+                    Оплачено:{" "}
+                    {
+                      displayTourists.filter(
+                        (row) => !row.isExtra && row.paid
+                      ).length
+                    }
+                  </span>
+                  <span className={s.touristsDotDivider}>·</span>
+                  <span>
+                    Не оплачено:{" "}
+                    {
+                      displayTourists.filter(
+                        (row) => !row.isExtra && !row.paid
+                      ).length
+                    }
+                  </span>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {activeTab === "reviews" && (
-            <div className={s.templateEditorEmptyText}>
-              Здесь будут отзывы
+            <div className={s.reviewsList}>
+              {REVIEWS_MOCK.map((rev, idx) => (
+                <div
+                  key={rev.id || idx}
+                  className={s.reviewCard}
+                  style={{
+                    background: idx % 2 === 0
+                      ? "linear-gradient(145deg, #1c2a3a, #15212e)"
+                      : "linear-gradient(145deg, #1c2433, #111c2b)",
+                  }}
+                >
+                  <div className={s.reviewHeader}>
+                    <div className={s.reviewUser}>
+                      <div className={s.reviewAvatar}>{rev.initials}</div>
+                      <div>
+                        <p className={s.reviewName}>{rev.name}</p>
+                        <p className={s.reviewDate}>
+                          {rev.date}
+                          {rev.time ? ` · ${rev.time}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={s.reviewPill}
+                      style={{ color: rev.badge.color, backgroundColor: `${rev.badge.color}22` }}
+                    >
+                      {rev.badge.label}
+                    </span>
+                  </div>
+
+                  <div className={s.reviewRatingsRow}>
+                    <span className={s.reviewChip}>★ Тур: {rev.ratings.tour}/5</span>
+                    <span className={s.reviewChip}>🚌 Транспорт: {rev.ratings.transport}/5</span>
+                    <span className={s.reviewChip}>👤 Гид: {rev.ratings.guide}/5</span>
+                  </div>
+
+                    <div className={s.reviewDivider} />
+
+                  <div className={s.reviewBlocks}>
+                    {rev.blocks.map((block, blockIdx) => (
+                      <div key={blockIdx} className={s.reviewBlock}>
+                        <div className={s.reviewBlockTitleRow}>
+                          <span className={s.reviewBlockTitle}>{block.title}</span>
+                          <span className={s.reviewStars}>
+                            {"★".repeat(block.score).padEnd(5, "☆")}
+                          </span>
+                        </div>
+                        <p className={s.reviewText}>{block.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

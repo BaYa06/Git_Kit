@@ -116,7 +116,7 @@
 .tourDateMobile {}
 
 .tourDatePast {
-  background: rgb(55 65 81 / 0.55);
+  background: #4b5563;
 }
 
 .tourTitleMobile {}
@@ -213,4 +213,256 @@
     align-items: flex-end;
     min-width: 62px;
   }
+}
+
+.touristPage {
+  min-height: 100vh;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 24px;
+}
+
+.touristHeader {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 18px 18px 8px;
+  background: linear-gradient(180deg, #0b1220 40%, rgba(11, 18, 32, 0.7));
+  backdrop-filter: blur(10px);
+}
+
+.touristHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.touristIconButton {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.touristIcon {
+  font-size: 16px;
+}
+
+.touristTitleBlock {
+  margin-top: 14px;
+}
+
+.touristTitle {
+  font-size: 28px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.touristSubtitle {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.touristMain {
+  flex: 1;
+  padding: 0 0 50px;
+  display: flex;
+  justify-content: center;
+}
+
+.touristCards {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.touristCard {
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.touristCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.touristBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.touristPerson {
+  margin: 12px 0 6px;
+}
+
+.touristPersonList {
+  display: flex;
+  flex-direction: column;
+}
+
+.touristPerson + .touristPerson {
+  margin-top: 10px;
+}
+
+.touristPersonRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.touristName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.touristPhone {
+  margin-top: 4px;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.touristPhoneCall {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.touristPhoneCall:active {
+  transform: translateY(1px);
+}
+
+.touristMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 10px;
+  padding-top: 8px;
+}
+
+.touristMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.touristMetaLabel {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.touristMetaValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.touristSuccess {
+  color: #34d399;
+}
+
+.touristDanger {
+  color: #f87171;
+}
+
+.touristDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 12px 0;
+}
+
+.touristFooterRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.touristFooterLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.touristToggle {
+  width: 48px;
+  height: 26px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.touristToggleKnob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f8fafc;
+  transition: transform 0.2s ease;
+}
+
+.touristToggleOn {
+  background: #2d65e6;
+  justify-content: flex-end;
+}
+
+.touristFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  padding: 14px;
+  background: linear-gradient(180deg, transparent, #0b1220 30%, #0b1220);
+  display: flex;
+  justify-content: center;
+}
+
+.touristAddButton {
+  width: 100%;
+  max-width: 440px;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #2d65e6, #1f9cf6);
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 18px 38px rgba(45, 101, 230, 0.32);
+}
+
+.touristAddIcon {
+  font-size: 20px;
+  line-height: 1;
 }

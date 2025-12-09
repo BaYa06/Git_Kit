@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     await client.query("BEGIN");
 
     const tourRes = await client.query(
-      `SELECT id, company_id FROM tours WHERE id = $1 LIMIT 1`,
+      `SELECT id, company_id, main_guide_id FROM tours WHERE id = $1 LIMIT 1`,
       [tour_id]
     );
 
@@ -78,6 +78,7 @@ export default async function handler(req, res) {
     }
 
     const companyId = tourRes.rows[0].company_id;
+    const mainGuideId = tourRes.rows[0].main_guide_id || null;
 
     const perm = await client.query(
       `
@@ -91,9 +92,59 @@ export default async function handler(req, res) {
       [auth.sub, companyId]
     );
 
+    // если это не владелец/админ — проверяем, является ли пользователь гидом этого тура
     if (perm.rowCount === 0) {
-      await client.query("ROLLBACK");
-      return res.status(403).json({ message: "Нет прав редактировать тур" });
+      const userRes = await client.query(
+        `SELECT email, phone FROM users WHERE id = $1 LIMIT 1`,
+        [auth.sub]
+      );
+      const user = userRes.rows[0] || {};
+
+      const guideRes = await client.query(
+        `
+        SELECT id
+        FROM guides
+        WHERE company_id = $1
+          AND (
+            (email IS NOT NULL AND email = $2)
+            OR (phone IS NOT NULL AND phone = $3)
+          )
+        LIMIT 1
+        `,
+        [companyId, user.email || null, user.phone || null]
+      );
+
+      const guideId = guideRes.rows[0]?.id || null;
+
+      if (!guideId) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({ message: "Нет прав редактировать тур" });
+      }
+
+      const tourAccess = await client.query(
+        `
+        SELECT 1
+        FROM tours t
+        WHERE t.id = $1
+          AND t.company_id = $2
+          AND (
+            t.main_guide_id = $3
+            OR EXISTS (
+              SELECT 1 FROM tour_components tc
+              WHERE tc.tour_id = t.id
+                AND tc.type = 'guide'
+                AND tc.guide_id = $3
+            )
+          )
+        LIMIT 1
+        `,
+        [tour_id, companyId, guideId]
+      );
+
+      if (tourAccess.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(403).json({ message: "Нет прав редактировать тур" });
+      }
     }
 
     const touristsParsed = Number.isFinite(parseInt(tourists_count, 10))

@@ -18,6 +18,7 @@ import {
   Search,
   MoreVertical,
   CheckCircle2,
+  QrCode,
 } from "lucide-react";
 import base from "../../../styles/admin/base.module.css";
 import cards from "../../../styles/admin/cards.module.css";
@@ -43,7 +44,7 @@ const s = {
   ...editorStyles,
   ...touristsStyles,
 };
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 const COMPONENT_LABELS = {
   transport: "Транспорт",
   hotel: "Отель",
@@ -143,125 +144,158 @@ const entityLabelByType = (type) => {
   return "транспорт";
 };
 
-function EntityPreview({ type, entity }) {
+function EntityPreview({ type, entity, comment }) {
   if (!entity) return null;
+
+  const badgeLabel =
+    type === "guide" ? "Гид" : type === "hotel" ? "Отель" : "Транспорт";
+  const displayComment =
+    (comment && String(comment).trim()) ||
+    "";
+  const phoneValue =
+    entity.phone ||
+    (type === "transport" ? entity.driver_phone : null) ||
+    (type === "hotel" ? entity.reception_phone : null) ||
+    "";
 
   if (type === "guide") {
     return (
-      <div className={s.guideCard}>
-        <div className={s.guideCardHeader}>
-          <p className={s.guideName}>
-            {entity.full_name || entity.email || "Без имени"}
-          </p>
+      <div className={`${s.entityCard} ${s.entityCardGuide}`}>
+        <div className={s.entityHeader}>
+          <span className={s.entityBadge}>{badgeLabel}</span>
+          {/* <button type="button" className={s.entityMenuBtn}>
+            <MoreVertical className="w-4 h-4" />
+          </button> */}
         </div>
-        {entity.phone && (
-          <div className={s.guideRow}>
-            <span className={s.guideLabel}>Телефон</span>
-            <span className={s.guideValue}>{entity.phone}</span>
+
+        <div className={s.entityBody}>
+          <div className={s.entityTitle}>{entity.full_name || entity.email || "Без имени"}</div>
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Телефон</span>
+            <span className={s.entityValue}>{entity.phone || "—"}</span>
           </div>
-        )}
-        {entity.email && (
-          <div className={s.guideRow}>
-            <span className={s.guideLabel}>Email</span>
-            <span className={s.guideValue}>{entity.email}</span>
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Email</span>
+            <span className={s.entityValue}>{entity.email || "—"}</span>
           </div>
-        )}
+        </div>
+
+        <div className={s.entityDivider} />
+        <div className={s.entityComment}>
+          {displayComment || "Без комментария"}
+        </div>
+
+        <div className={s.entityFooter}>
+          <a
+            className={`${s.entityCallBtn} ${!phoneValue ? s.entityCallBtnDisabled : ""}`}
+            href={phoneValue ? `tel:${phoneValue}` : undefined}
+            aria-disabled={!phoneValue}
+          >
+            <Phone className="w-4 h-4" />
+            <span>Позвонить</span>
+          </a>
+        </div>
       </div>
     );
   }
 
   if (type === "transport") {
     return (
-      <div className={s.transportCard}>
-        <div className={s.transportHeader}>
-          <div>
-            <p className={s.transportTitle}>{entity.car_name || "Транспорт"}</p>
-            <p className={s.transportPlate}>{entity.plate_number}</p>
+      <div className={`${s.entityCard} ${s.entityCardTransport}`}>
+        <div className={s.entityHeader}>
+          <span className={s.entityBadge}>{badgeLabel}</span>
+          {/* <button type="button" className={s.entityMenuBtn}>
+            <MoreVertical className="w-4 h-4" />
+          </button> */}
+        </div>
+
+        <div className={s.entityBody}>
+          <div className={s.entityTitle}>{entity.car_name || "Транспорт"}</div>
+          <div className={s.entitySub}>{entity.plate_number || "—"}</div>
+
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Водитель</span>
+            <span className={s.entityValue}>{entity.full_name || "—"}</span>
+          </div>
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Телефон</span>
+            <span className={s.entityValue}>{phoneValue || "—"}</span>
+          </div>
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Мест</span>
+            <span className={s.entityValue}>{entity.seats || "—"}</span>
           </div>
         </div>
-        <div className={s.transportBody}>
-          <div className={s.transportRow}>
-            <span className={s.transportLabel}>Водитель:</span>
-            <span className={s.transportValue}>
-              {entity.full_name || "—"}
-            </span>
-          </div>
-          {entity.phone && (
-            <div className={s.transportRow}>
-              <span className={s.transportLabel}>Телефон:</span>
-              <span className={s.transportValue}>{entity.phone}</span>
-            </div>
-          )}
-          <div className={s.transportRow}>
-            <span className={s.transportLabel}>Мест:</span>
-            <span className={s.transportValue}>{entity.seats || "-"}</span>
-          </div>
-          {entity.notes && (
-            <div className={s.transportRow}>
-              <span className={s.transportLabel}>Заметки:</span>
-              <span className={s.transportValue}>{entity.notes}</span>
-            </div>
-          )}
+
+        <div className={s.entityDivider} />
+        <div className={s.entityComment}>
+          {displayComment || "Без комментария"}
+        </div>
+
+        <div className={s.entityFooter}>
+          <a
+            className={`${s.entityCallBtn} ${!phoneValue ? s.entityCallBtnDisabled : ""}`}
+            href={phoneValue ? `tel:${phoneValue}` : undefined}
+            aria-disabled={!phoneValue}
+          >
+            <Phone className="w-4 h-4" />
+            <span>Позвонить</span>
+          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={s.hotelCard}>
-      <div className={s.hotelCardHeader}>
-        <div>
-          <h2 className={s.hotelTitle}>{entity.name}</h2>
-          {entity.stars ? (
-            <div className={s.hotelStarsRow}>{renderStars(entity.stars)}</div>
-          ) : null}
-        </div>
+    <div className={`${s.entityCard} ${s.entityCardHotel}`}>
+      <div className={s.entityHeader}>
+        <span className={s.entityBadge}>{badgeLabel}</span>
+        {/* <button type="button" className={s.entityMenuBtn}>
+          <MoreVertical className="w-4 h-4" />
+        </button> */}
       </div>
 
-      <div className={s.hotelCardBody}>
-        {entity.phone && (
-          <div className={`${s.hotelRow}`}>
-            <div className={s.hotelRowIcon}>
-              <Phone className="w-4 h-4" />
-            </div>
-            <p className={s.hotelRowText}>{entity.phone}</p>
-          </div>
-        )}
+      <div className={s.entityBody}>
+        <div className={s.entityTitle}>{entity.name || "Отель"}</div>
+        {entity.stars ? (
+          <div className={s.entityStars}>{renderStars(entity.stars)}</div>
+        ) : null}
 
-        {entity.meal_plan && (
-          <div className={s.hotelRow}>
-            <div className={s.hotelRowIcon}>
-              <Utensils className="w-4 h-4" />
-            </div>
-            <p className={s.hotelRowText}>{entity.meal_plan}</p>
-          </div>
-        )}
-
-        {entity.address && (
-          <a
-            href={getAddressHref(entity.address)}
-            target="_blank"
-            rel="noreferrer"
-            className={`${s.hotelRow} ${s.hotelRowLink}`}
-          >
-            <div className={s.hotelRowIcon}>
-              <MapPin className="w-4 h-4" />
-            </div>
-            <p className={s.hotelRowText}>{entity.address}</p>
-          </a>
-        )}
-
+        <div className={s.entityRow}>
+          <span className={s.entityLabel}>Телефон</span>
+          <span className={s.entityValue}>{entity.phone || "—"}</span>
+        </div>
+        <div className={s.entityRow}>
+          <span className={s.entityLabel}>Адрес</span>
+          <span className={s.entityValue}>
+            {entity.address || "—"}
+          </span>
+        </div>
         {(entity.checkin_from || entity.checkout_until) && (
-          <div className={s.hotelRow}>
-            <div className={s.hotelRowIcon}>
-              <Clock className="w-4 h-4" />
-            </div>
-            <p className={s.hotelRowText}>
+          <div className={s.entityRow}>
+            <span className={s.entityLabel}>Заезд/выезд</span>
+            <span className={s.entityValue}>
               Заезд с {formatTime(entity.checkin_from) || "14:00"} · Выезд до{" "}
               {formatTime(entity.checkout_until) || "12:00"}
-            </p>
+            </span>
           </div>
         )}
+      </div>
+
+      <div className={s.entityDivider} />
+      <div className={s.entityComment}>
+        {displayComment || "Без комментария"}
+      </div>
+
+      <div className={s.entityFooter}>
+        <a
+          className={`${s.entityCallBtn} ${!phoneValue ? s.entityCallBtnDisabled : ""}`}
+          href={phoneValue ? `tel:${phoneValue}` : undefined}
+          aria-disabled={!phoneValue}
+        >
+          <Phone className="w-4 h-4" />
+          <span>Позвонить</span>
+        </a>
       </div>
     </div>
   );
@@ -284,6 +318,16 @@ const formatDateDisplay = (value) => {
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
   const yyyy = d.getUTCFullYear();
   return `${dd}.${mm}.${yyyy}`;
+};
+
+const formatDateFriendly = (value) => {
+  if (!value) return "";
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "short",
+  });
 };
 
 const parseMoneyToCents = (value) => {
@@ -700,6 +744,7 @@ function SelectFromBase({
   drivers = [],
   selectedId = "",
   onSelect,
+  guideView = false,
 }) {
   const list = entityListsByType(type, { guides, hotels, drivers }) || [];
   const selected =
@@ -711,6 +756,18 @@ function SelectFromBase({
       : type === "hotel"
       ? "Выберите отель"
       : "Выберите транспорт";
+
+  if (guideView) {
+    return (
+      <div style={{ marginTop: 4 }}>
+        {selected ? (
+          <EntityPreview type={type} entity={selected} comment={null} />
+        ) : (
+          <p className={s.templateEditorEmptyText}>Не выбрано</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={s.templateEditorField}>
@@ -882,8 +939,65 @@ export function NewTourFromTemplateScreen({
   const [guestSearch, setGuestSearch] = useState("");
   const [guestFilter, setGuestFilter] = useState("all"); // all | paid | unpaid
   const actionMenuRef = useRef(null);
+  const [showQrScreen, setShowQrScreen] = useState(false);
+  const feedbackToken = useMemo(() => "sample-token", []);
+  const [copyMsg, setCopyMsg] = useState("");
 
   const [tourists, setTourists] = useState([]);
+
+  const guideName = useMemo(() => {
+    const guideComponent = components.find((c) => c.type === "guide");
+    if (!guideComponent) return "";
+    if (guideComponent.mode === "custom" && guideComponent.custom?.full_name) {
+      return guideComponent.custom.full_name;
+    }
+    const list = guides || [];
+    const selected = list.find(
+      (row) => String(row.id) === String(guideComponent.selectedId || "")
+    );
+    return selected?.full_name || selected?.email || "";
+  }, [components, guides]);
+
+  const qrTourTitle = name || "Тур";
+  const qrDate = formatDateFriendly(startDate);
+  const qrMeta = [qrDate, guideName ? `Гид: ${guideName}` : ""]
+    .filter(Boolean)
+    .join(" • ");
+  const feedbackLink = useMemo(() => {
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_APP_URL || "";
+    const base = origin || "";
+    const path = feedbackToken ? `/feedback/${feedbackToken}` : "/feedback/sample-token";
+    return `${base}${path}`;
+  }, [feedbackToken]);
+  const handleCopyFeedback = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(feedbackLink);
+      setCopyMsg("Ссылка скопирована");
+      setTimeout(() => setCopyMsg(""), 1800);
+    } catch (_) {
+      setCopyMsg("Не удалось скопировать");
+      setTimeout(() => setCopyMsg(""), 1800);
+    }
+  }, [feedbackLink]);
+
+  const handleShareFeedback = useCallback(async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: qrTourTitle || "Отзыв о туре",
+          text: "Оставьте, пожалуйста, отзыв о туре",
+          url: feedbackLink,
+        });
+      } catch (_) {
+        // ignore cancel
+      }
+    } else {
+      handleCopyFeedback();
+    }
+  }, [feedbackLink, qrTourTitle, handleCopyFeedback]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -1559,7 +1673,39 @@ export function NewTourFromTemplateScreen({
                 </p>
               )}
 
-              {!isLoading && (
+              {!isLoading && guideView && (
+                <div className={s.templateAccordionGrid}>
+                  {components.map((item) => {
+                    const list =
+                      entityListsByType(item.type, { guides, hotels, drivers }) ||
+                      [];
+                    const selectedEntity =
+                      list.find(
+                        (row) => String(row.id) === String(item.selectedId || "")
+                      ) || null;
+                    const customEntity =
+                      item.custom && Object.keys(item.custom || {}).length > 0
+                        ? item.custom
+                        : null;
+                    const displayEntity =
+                      item.mode === "custom" ? customEntity : selectedEntity;
+
+                    return (
+                      <div key={item.id}>
+                        {displayEntity ? (
+                          <div style={{ marginTop: item.comment ? 12 : 0 }}>
+                            <EntityPreview type={item.type} entity={displayEntity} comment={item.comment} />
+                          </div>
+                        ) : (
+                          <p className={s.templateEditorEmptyText}>Нет данных</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!isLoading && !guideView && (
                 <div className={s.templateAccordionGrid}>
                   {components.map((item) => (
                     <details
@@ -1602,115 +1748,93 @@ export function NewTourFromTemplateScreen({
                               <span className={s.templateAccordionIcon}>⌄</span>
                             </summary>
 
-                            {guideView ? (
-                              <div className={s.templateAccordionControls}>
-                                {item.comment ? (
-                                  <p className={s.templateEditorLabel}>{item.comment}</p>
-                                ) : null}
-                                {displayEntity ? (
-                                  <div style={{ marginTop: item.comment ? 12 : 0 }}>
-                                    <EntityPreview type={item.type} entity={displayEntity} />
-                                  </div>
-                                ) : (
-                                  <p className={s.templateEditorEmptyText}>Нет данных</p>
-                                )}
-                                {phone ? (
-                                  <a href={`tel:${phone}`} className={s.callButton}>
-                                    <Phone className="w-4 h-4" />
-                                    Позвонить
-                                  </a>
-                                ) : null}
+                            <div className={s.templateAccordionControls}>
+                              <input
+                                type="text"
+                                className={s.templateAccordionInput}
+                                placeholder={
+                                  COMPONENT_LABELS[item.type]
+                                    ? `Комментарий: ${COMPONENT_LABELS[item.type]}`
+                                    : "Комментарий"
+                                }
+                                value={item.comment}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setComponents((prev) =>
+                                    prev.map((c) =>
+                                      c.id === item.id ? { ...c, comment: val } : c
+                                    )
+                                  );
+                                }}
+                              />
+                            </div>
+
+                            <div className={s.templateEditorField}>
+                              <span className={s.templateEditorLabel}>Источник данных</span>
+                              <div className={s.templateEditorTagsRow}>
+                                <button
+                                  type="button"
+                                  className={`${s.templateTag} ${item.mode !== "custom" ? s.templateTagActive : ""}`}
+                                  onClick={() => {
+                                    setComponents((prev) =>
+                                      prev.map((c) =>
+                                        c.id === item.id
+                                          ? { ...c, mode: "base" }
+                                          : c
+                                      )
+                                    );
+                                  }}
+                                >
+                                  Выбрать из базы
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`${s.templateTag} ${item.mode === "custom" ? s.templateTagActive : ""}`}
+                                  onClick={() => {
+                                    setComponents((prev) =>
+                                      prev.map((c) =>
+                                        c.id === item.id
+                                          ? { ...c, mode: "custom", selectedId: "" }
+                                          : c
+                                      )
+                                    );
+                                  }}
+                                >
+                                  Ввести вручную
+                                </button>
                               </div>
+                            </div>
+
+                            {item.mode === "base" ? (
+                              <SelectFromBase
+                                type={item.type}
+                                guides={guides}
+                                hotels={hotels}
+                                drivers={drivers}
+                                selectedId={item.selectedId || ""}
+                                guideView={guideView}
+                                onSelect={(val) => {
+                                  setComponents((prev) =>
+                                    prev.map((c) =>
+                                      c.id === item.id ? { ...c, selectedId: val } : c
+                                    )
+                                  );
+                                }}
+                              />
                             ) : (
-                              <>
-                                <div className={s.templateAccordionControls}>
-                                  <input
-                                    type="text"
-                                    className={s.templateAccordionInput}
-                                    placeholder={
-                                      COMPONENT_LABELS[item.type]
-                                        ? `Комментарий: ${COMPONENT_LABELS[item.type]}`
-                                        : "Комментарий"
-                                    }
-                                    value={item.comment}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setComponents((prev) =>
-                                        prev.map((c) =>
-                                          c.id === item.id ? { ...c, comment: val } : c
-                                        )
-                                      );
-                                    }}
-                                  />
-                                </div>
-
-                                <div className={s.templateEditorField}>
-                                  <span className={s.templateEditorLabel}>Источник данных</span>
-                                  <div className={s.templateEditorTagsRow}>
-                                    <button
-                                      type="button"
-                                      className={`${s.templateTag} ${item.mode !== "custom" ? s.templateTagActive : ""}`}
-                                      onClick={() => {
-                                        setComponents((prev) =>
-                                          prev.map((c) =>
-                                            c.id === item.id
-                                              ? { ...c, mode: "base" }
-                                              : c
-                                          )
-                                        );
-                                      }}
-                                    >
-                                      Выбрать из базы
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`${s.templateTag} ${item.mode === "custom" ? s.templateTagActive : ""}`}
-                                      onClick={() => {
-                                        setComponents((prev) =>
-                                          prev.map((c) =>
-                                            c.id === item.id
-                                              ? { ...c, mode: "custom", selectedId: "" }
-                                              : c
-                                          )
-                                        );
-                                      }}
-                                    >
-                                      Ввести вручную
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {item.mode === "base" ? (
-                                  <SelectFromBase
-                                    type={item.type}
-                                    guides={guides}
-                                    hotels={hotels}
-                                    drivers={drivers}
-                                    selectedId={item.selectedId || ""}
-                                    onSelect={(val) => {
-                                      setComponents((prev) =>
-                                        prev.map((c) =>
-                                          c.id === item.id ? { ...c, selectedId: val } : c
-                                        )
-                                      );
-                                    }}
-                                  />
-                                ) : (
-                                  <CustomFields
-                                    type={item.type}
-                                    value={item.custom || {}}
-                                    onChange={(patch) => {
-                                      setComponents((prev) =>
-                                        prev.map((c) =>
-                                          c.id === item.id
-                                            ? { ...c, custom: { ...(c.custom || {}), ...patch } }
-                                            : c
-                                        )
-                                      );
-                                    }}
-                                  />
-                                )}
-                              </>
+                              <CustomFields
+                                type={item.type}
+                                value={item.custom || {}}
+                                onChange={(patch) => {
+                                  setComponents((prev) =>
+                                    prev.map((c) =>
+                                      c.id === item.id
+                                        ? { ...c, custom: { ...(c.custom || {}), ...patch } }
+                                        : c
+                                    )
+                                  );
+                                }}
+                              />
                             )}
                           </>
                         );
@@ -1997,63 +2121,151 @@ export function NewTourFromTemplateScreen({
           )}
 
           {activeTab === "reviews" && (
-            <div className={s.reviewsList}>
-              {REVIEWS_MOCK.map((rev, idx) => (
-                <div
-                  key={rev.id || idx}
-                  className={s.reviewCard}
-                  style={{
-                    background: idx % 2 === 0
-                      ? "linear-gradient(145deg, #1c2a3a, #15212e)"
-                      : "linear-gradient(145deg, #1c2433, #111c2b)",
-                  }}
-                >
-                  <div className={s.reviewHeader}>
-                    <div className={s.reviewUser}>
-                      <div className={s.reviewAvatar}>{rev.initials}</div>
-                      <div>
-                        <p className={s.reviewName}>{rev.name}</p>
-                        <p className={s.reviewDate}>
-                          {rev.date}
-                          {rev.time ? ` · ${rev.time}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={s.reviewPill}
-                      style={{ color: rev.badge.color, backgroundColor: `${rev.badge.color}22` }}
-                    >
-                      {rev.badge.label}
-                    </span>
-                  </div>
-
-                  <div className={s.reviewRatingsRow}>
-                    <span className={s.reviewChip}>★ Тур: {rev.ratings.tour}/5</span>
-                    <span className={s.reviewChip}>🚌 Транспорт: {rev.ratings.transport}/5</span>
-                    <span className={s.reviewChip}>👤 Гид: {rev.ratings.guide}/5</span>
-                  </div>
-
-                    <div className={s.reviewDivider} />
-
-                  <div className={s.reviewBlocks}>
-                    {rev.blocks.map((block, blockIdx) => (
-                      <div key={blockIdx} className={s.reviewBlock}>
-                        <div className={s.reviewBlockTitleRow}>
-                          <span className={s.reviewBlockTitle}>{block.title}</span>
-                          <span className={s.reviewStars}>
-                            {"★".repeat(block.score).padEnd(5, "☆")}
-                          </span>
-                        </div>
-                        <p className={s.reviewText}>{block.text}</p>
-                      </div>
-                    ))}
-                  </div>
+            <div className={s.reviewsSection}>
+              {guideView && (
+                <div className={s.reviewsActions}>
+                  <button type="button" className={s.reviewGenerateBtn} onClick={() => setShowQrScreen(true)}>
+                    <QrCode className={s.reviewGenerateIcon} />
+                    <span>Сгенерировать ссылку / QR</span>
+                  </button>
                 </div>
-              ))}
+              )}
+              <div className={s.reviewsList}>
+                {REVIEWS_MOCK.map((rev, idx) => (
+                  <div
+                    key={rev.id || idx}
+                    className={s.reviewCard}
+                    style={{
+                      background: idx % 2 === 0
+                        ? "linear-gradient(145deg, #1c2a3a, #15212e)"
+                        : "linear-gradient(145deg, #1c2433, #111c2b)",
+                    }}
+                  >
+                    <div className={s.reviewHeader}>
+                      <div className={s.reviewUser}>
+                        <div className={s.reviewAvatar}>{rev.initials}</div>
+                        <div>
+                          <p className={s.reviewName}>{rev.name}</p>
+                          <p className={s.reviewDate}>
+                            {rev.date}
+                            {rev.time ? ` · ${rev.time}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={s.reviewPill}
+                        style={{ color: rev.badge.color, backgroundColor: `${rev.badge.color}22` }}
+                      >
+                        {rev.badge.label}
+                      </span>
+                    </div>
+
+                    <div className={s.reviewRatingsRow}>
+                      <span className={s.reviewChip}>★ Тур: {rev.ratings.tour}/5</span>
+                      <span className={s.reviewChip}>🚌 Транспорт: {rev.ratings.transport}/5</span>
+                      <span className={s.reviewChip}>👤 Гид: {rev.ratings.guide}/5</span>
+                    </div>
+
+                      <div className={s.reviewDivider} />
+
+                    <div className={s.reviewBlocks}>
+                      {rev.blocks.map((block, blockIdx) => (
+                        <div key={blockIdx} className={s.reviewBlock}>
+                          <div className={s.reviewBlockTitleRow}>
+                            <span className={s.reviewBlockTitle}>{block.title}</span>
+                            <span className={s.reviewStars}>
+                              {"★".repeat(block.score).padEnd(5, "☆")}
+                            </span>
+                          </div>
+                          <p className={s.reviewText}>{block.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
-        
+
+        {showQrScreen && guideView ? (
+          <div className={s.qrOverlay} role="dialog" aria-modal="true">
+            <div className={s.qrSheet}>
+              <header className={s.qrHeader}>
+                <button
+                  type="button"
+                  className={s.qrBack}
+                  onClick={() => setShowQrScreen(false)}
+                  aria-label="Назад"
+                >
+                  <span className={s.qrBackIcon}>‹</span>
+                </button>
+                <div className={s.qrHeaderCenter}>
+                  <h1 className={s.qrTitle}>Отзывы после тура</h1>
+                  <span className={s.qrSubtitle}>Tour feedback QR</span>
+                </div>
+                <div style={{ width: 40 }} />
+              </header>
+
+              <div className={s.qrContent}>
+                    <div className={s.qrCard}>
+                      <div className={s.qrTourInfo}>
+                        <h2 className={s.qrTourTitle}>{qrTourTitle}</h2>
+                        <p className={s.qrTourMeta}>{qrMeta || "—"}</p>
+                      </div>
+
+                  <div className={s.qrBlock}>
+                    <div className={s.qrImageWrap}>
+                      <img
+                        alt="QR code for tour feedback"
+                        className={s.qrImage}
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4Tv1i9kiE6AymwD9WNBba1b8S_fjXQmqE7Q9vw9FNkkGBwqBssk1viDlVt7nejMenF0dRsMGInuSia6OWH4zBus9PFGRK9LBbjlvi3YxtInzsJdMqLgJlPLCGqAIsVMbp_94gaHn1QFkd-L5N5IvcrVIQU2TRJWtA3LxVuXMk9r_ATY6CY5AJOhaxiKoxAxWsR_iK4PfJjg5uv2TjA1y1GN6m_gf6UOMxv3MSFjP4cgNcEViWb6sE6VJaIyyuVUY8RgIxHJJZ5g"
+                      />
+                    </div>
+                    <p className={s.qrHint}>
+                      Попросите туристов отсканировать QR-код, чтобы оставить отзыв о гиде, водителе и самом туре.
+                    </p>
+                  </div>
+
+                      <div className={s.qrActions}>
+                        <div className={s.qrLinkRow}>
+                          <span className={s.qrLinkIcon}>🔗</span>
+                          <a className={s.qrLinkText} href={feedbackLink}>{feedbackLink}</a>
+                          <button type="button" className={s.qrCopyBtn} onClick={handleCopyFeedback}>Скопировать</button>
+                        </div>
+                        <button className={s.qrShareBtn} type="button" onClick={handleShareFeedback}>
+                          <span className={s.qrShareIcon}>⇪</span>
+                          Поделиться ссылкой
+                        </button>
+                        {copyMsg ? (
+                          <div className={s.qrCopyNote} role="status" aria-live="polite">
+                            {copyMsg}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                <div className={s.qrHowTo}>
+                  <h3 className={s.qrHowTitle}>Как использовать</h3>
+                  <ul className={s.qrHowList}>
+                    <li className={s.qrHowItem}>
+                      <span className={s.qrHowBadge}>1</span>
+                      <p>Откройте этот экран после завершения экскурсии.</p>
+                    </li>
+                    <li className={s.qrHowItem}>
+                      <span className={s.qrHowBadge}>2</span>
+                      <p>Покажите QR-код группе для быстрого перехода к форме.</p>
+                    </li>
+                    <li className={s.qrHowItem}>
+                      <span className={s.qrHowBadge}>3</span>
+                      <p>При необходимости скопируйте ссылку и отправьте её в чат группы вручную.</p>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

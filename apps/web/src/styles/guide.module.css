@@ -466,3 +466,658 @@
   font-size: 20px;
   line-height: 1;
 }
+
+/* GUIDE SCHEDULE */
+
+.scheduleLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendarCard {
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  background: #0f172a;
+  padding: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.scheduleHeading {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.monthNav {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monthNavButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.monthNavButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.monthNavButton:active {
+  transform: translateY(1px);
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px 8px;
+}
+
+.weekdayLabel {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+.dayEmpty {
+  height: 44px;
+}
+
+.dayButton {
+  height: 44px;
+  width: 100%;
+  border-radius: 9999px;
+  border: 1px solid #111827;
+  background: #0b1220;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dayButton:hover {
+  transform: translateY(-1px);
+}
+
+.dayNeutral {
+  border-color: #1f2937;
+  background: #111827;
+  color: #cbd5e1;
+}
+
+.dayAvailable {
+  border-color: #1c3a29;
+  background: #0f291a;
+  color: #cfe7d9;
+}
+
+.dayBusy {
+  border-color: #3c1b22;
+  background: #2c1216;
+  color: #f2c2c5;
+}
+
+.daySelected {
+  border-color: #3b82f6;
+  background: #2563eb;
+  color: #f8fafc;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+}
+
+.weekSection {
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  background: #0f172a;
+  padding: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+}
+
+.weekList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.weekRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.weekdayName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.selectWrap {
+  position: relative;
+  width: 180px;
+}
+
+.selectWrapFree {
+  border-radius: 12px;
+  border: 1px solid #1c3a29;
+  box-shadow: 0 0 0 1px #1c3a29;
+}
+
+.selectWrapBusy {
+  border-radius: 12px;
+  border: 1px solid #3c1b22;
+  box-shadow: 0 0 0 1px #3c1b22;
+}
+
+.weekSelect {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  color: #e5e7eb;
+  font-size: 13px;
+  appearance: none;
+}
+
+.selectIcon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.eventsSection {
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  background: #0f172a;
+  padding: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eventsList {
+  display: grid;
+  gap: 12px;
+}
+
+.eventCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.eventIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #132347;
+  color: #5ca0ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eventBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.eventTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.eventSubtitle {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.eventChevron {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* MODAL */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modalBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.modalSheet {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #121621;
+  border-radius: 18px 18px 0 0;
+  border: 1px solid #1f2937;
+  padding: 12px 16px 18px;
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.4);
+  animation: slideUp 160ms ease-out;
+}
+
+.modalHandle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: #354364;
+  margin: 6px auto 12px;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.statusList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.statusOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #354364;
+  background: #0f172a;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.statusOption:hover {
+  border-color: #4b5563;
+  background: #131d33;
+}
+
+.statusInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.statusIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.statusIconNeutral {
+  color: #94a3b8;
+}
+
+.statusIconFree {
+  color: #34d399;
+}
+
+.statusIconBusy {
+  color: #f87171;
+}
+
+.statusLabelWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statusLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(12%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* GUIDE PROFILE */
+
+.profilePage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #0b1220;
+  color: #f8fafc;
+  min-height: 100%;
+  padding: 0 0 12px;
+}
+
+.profileHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 4px;
+}
+
+.profileAvatarWrap {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+
+.profileAvatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-size: cover;
+  background-position: center;
+  border: 4px solid #0b1220;
+  box-shadow: 0 20px 32px rgba(0, 0, 0, 0.35);
+}
+
+.profileAvatarBadge {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #2d65e6;
+  color: #f8fafc;
+  border: 2px solid #0b1220;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileNameBlock {
+  text-align: center;
+}
+
+.profileName {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+}
+
+.profileEmail {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.profileDivider {
+  height: 1px;
+  background: #1f2937;
+  margin: 0 16px;
+}
+
+.profileRatingRow {
+  display: flex;
+  gap: 18px;
+  padding: 0 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.profileRatingSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.profileRatingValue {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: #f8fafc;
+}
+
+.profileStars {
+  display: flex;
+  gap: 4px;
+  color: #fcd34d;
+}
+
+.profileStarFilled {
+  width: 18px;
+  height: 18px;
+  fill: #fcd34d;
+  stroke: #fcd34d;
+}
+
+.profileStarHalf {
+  width: 18px;
+  height: 18px;
+  stroke: #fcd34d;
+  color: #fcd34d;
+  opacity: 0.7;
+}
+
+.profileRatingCaption {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+.profileRatingBreakdown {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  column-gap: 10px;
+  row-gap: 6px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.profileRatingRowItem {
+  display: contents;
+}
+
+.profileRatingScore {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.profileRatingBar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #1f2937;
+  overflow: hidden;
+}
+
+.profileRatingBarFill {
+  height: 100%;
+  background: #2d65e6;
+}
+
+.profileRatingPercent {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: right;
+}
+
+.profileChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 16px;
+}
+
+.profileChip {
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(45, 101, 230, 0.12);
+  color: #9cc0ff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profileSectionSpacer {
+  height: 14px;
+  background: #0b1220;
+}
+
+.profileActionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.profileAction {
+  width: 100%;
+  min-height: 56px;
+  border: none;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.profileAction:hover {
+  background: #131d33;
+}
+
+.profileAction:active {
+  transform: translateY(1px);
+}
+
+.profileActionIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #1f2937;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+}
+
+.profileActionText {
+  flex: 1;
+  font-size: 15px;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileActionChevron {
+  color: #6b7280;
+  font-size: 20px;
+}
+
+.profileGrow {
+  flex: 1;
+}
+
+.profileLogoutRow {
+  padding: 0 16px 10px;
+}
+
+.profileLogoutButton {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 12px;
+  background: #0f172a;
+  border: none;
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.profileLogoutButton:hover {
+  background: #131d33;
+}
+
+.profileLogoutButton:active {
+  transform: translateY(1px);
+}
+
+.profileLogoutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileLogoutText {
+  font-size: 15px;
+  font-weight: 700;
+}

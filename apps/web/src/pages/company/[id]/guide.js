@@ -207,6 +207,13 @@ export async function getServerSideProps({ req, params }) {
       languages: Array.isArray(row.languages) ? row.languages : null,
       notes: row.notes || "",
     }))
+    const currentGuide = guides.find((g) => g.id === guideId) || null
+    const userFullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || user.email || "Без имени"
+    const guideProfile = {
+      name: currentGuide?.full_name || userFullName,
+      email: currentGuide?.email || user.email || "",
+      languages: Array.isArray(currentGuide?.languages) ? currentGuide.languages : null,
+    }
 
     const hotels = (hotelsRes.rows || []).map((row) => ({
       id: row.id,
@@ -230,13 +237,13 @@ export async function getServerSideProps({ req, params }) {
     }))
 
     await pool.end()
-    return { props: { company, tours, guides, hotels, drivers } }
+    return { props: { company, tours, guides, hotels, drivers, guideProfile } }
   } catch {
     return { redirect: { destination: '/login', permanent: false } }
   }
 }
 
-export default function CompanyGuidePage({ company, tours = [], guides = [], hotels = [], drivers = [] }) {
+export default function CompanyGuidePage({ company, tours = [], guides = [], hotels = [], drivers = [], guideProfile = null }) {
   const [tab, setTab] = useState('tours')
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTourId, setEditingTourId] = useState(null)
@@ -265,8 +272,8 @@ export default function CompanyGuidePage({ company, tours = [], guides = [], hot
       <main className={s.main}>
         <div className={s.mainInner}>
           {tab === 'tours' && <GuideTours tours={tours} onOpenTour={handleOpenTour} />}
-          {tab === 'schedule' && <GuideTable />}
-          {tab === 'profile' && <GuideProfile company={company} />}
+          {tab === 'schedule' && <GuideTable companyId={company.id} />}
+          {tab === 'profile' && <GuideProfile company={company} guide={guideProfile} />}
         </div>
       </main>
 

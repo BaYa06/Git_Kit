@@ -2,11 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/login": "pages/login.js",
   "/company/[id]/guide": "pages/company/[id]/guide.js",
-  "/api/v1/tours/update": "pages/api/v1/tours/update.js",
-  "/api/v1/tours/guests/save": "pages/api/v1/tours/guests/save.js",
-  "/cabinet": "pages/cabinet.js",
-  "/api/v1/tours/guests/list": "pages/api/v1/tours/guests/list.js",
-  "/api/v1/tours/[id]": "pages/api/v1/tours/[id].js"
+  "/feedback/[token]": "pages/feedback/[token].js",
+  "/api/v1/tours/[id]": "pages/api/v1/tours/[id].js",
+  "/api/v1/tours/guests/list": "pages/api/v1/tours/guests/list.js"
 }

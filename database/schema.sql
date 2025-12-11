@@ -373,6 +373,84 @@ CREATE TABLE IF NOT EXISTS company_usage_daily (
   PRIMARY KEY (date, company_id)
 );
 
+-- Guide availability (per-day)
+CREATE TABLE IF NOT EXISTS guide_availability (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guide_id uuid NOT NULL REFERENCES guides(id) ON DELETE CASCADE,
+  company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  date date NOT NULL,
+  status text NOT NULL CHECK (status IN ('free','busy','none')),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (guide_id, company_id, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_guide_availability_guide_date
+  ON guide_availability (guide_id, date);
+
+-- Tour reviews
+CREATE TABLE IF NOT EXISTS tour_reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tour_id uuid NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+  company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  guide_id uuid REFERENCES guides(id) ON DELETE SET NULL,
+  author_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  author_name text,
+  badge_label text,
+  badge_color text,
+  rating_overall smallint,
+  rating_tour smallint,
+  rating_transport smallint,
+  rating_guide smallint,
+  comment text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tour_review_blocks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  review_id uuid NOT NULL REFERENCES tour_reviews(id) ON DELETE CASCADE,
+  title text,
+  text text,
+  score smallint
+);
+
+CREATE INDEX IF NOT EXISTS idx_tour_reviews_tour ON tour_reviews (tour_id);
+CREATE INDEX IF NOT EXISTS idx_tour_reviews_company ON tour_reviews (company_id);
+CREATE INDEX IF NOT EXISTS idx_tour_reviews_guide ON tour_reviews (guide_id);
+
+-- Tour feedback links (public token -> tour)
+CREATE TABLE IF NOT EXISTS tour_feedback_links (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tour_id uuid NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+  company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  guide_id uuid REFERENCES guides(id) ON DELETE SET NULL,
+  driver_id uuid REFERENCES drivers(id) ON DELETE SET NULL,
+  hotel_id uuid REFERENCES hotels(id) ON DELETE SET NULL,
+  token text NOT NULL UNIQUE,
+  is_active boolean DEFAULT true,
+  expires_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tour_feedback_links_tour ON tour_feedback_links (tour_id);
+CREATE INDEX IF NOT EXISTS idx_tour_feedback_links_company ON tour_feedback_links (company_id);
+
+-- Tour feedback submissions
+CREATE TABLE IF NOT EXISTS tour_feedbacks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  feedback_link_id uuid NOT NULL REFERENCES tour_feedback_links(id) ON DELETE CASCADE,
+  tourist_name text,
+  rating_guide smallint,
+  rating_transport smallint,
+  rating_tour smallint,
+  guide_comment text,
+  driver_comment text,
+  tour_comment text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tour_feedbacks_link ON tour_feedbacks (feedback_link_id);
+
 -- Audit
 CREATE TABLE IF NOT EXISTS audit_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -488,53 +488,106 @@
   gap: 12px;
 }
 
-.guideCard {
+/* Generic entity card (guide / hotel / transport) */
+
+.entityCard {
   position: relative;
   border-radius: 18px;
-  padding: 12px 14px 10px;
-  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
-  border: 1px solid rgba(31, 41, 55, 1);
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(145deg, #182230, #0f1726);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
 }
 
-.guideCardHeader {
+.entityCardGuide {
+  background: linear-gradient(145deg, #1a2633, #111c2b);
+}
+
+.entityCardTransport {
+  background: linear-gradient(145deg, #231a33, #151026);
+}
+
+.entityCardHotel {
+  background: linear-gradient(145deg, #192631, #101824);
+}
+
+.entityHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
-.guideName {
-  font-size: 15px;
-  font-weight: 500;
-  color: #f9fafb;
+.entityBadge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.guideMenuBtn {
+.entityMenuBtn {
   border: none;
   outline: none;
-  background: transparent;
-  padding: 2px;
-  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.guideRow {
+.entityMenuBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.entityMenuBtn:active {
+  transform: translateY(1px);
+}
+
+.entityBody {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-  margin-top: 2px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.guideLabel {
+.entityTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.entitySub {
+  font-size: 14px;
   color: #9ca3af;
 }
 
-.guideValue {
+.entityStars {
+  display: flex;
+  gap: 4px;
+  color: #fcd34d;
+}
+
+.entityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.entityLabel {
+  color: #94a3b8;
+}
+
+.entityValue {
   color: #e5e7eb;
   text-align: right;
   max-width: 60%;
@@ -543,7 +596,55 @@
   text-overflow: ellipsis;
 }
 
-/* ====== HOTELS (вкладка "Отели" в Базе) ====== */
+.entityDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 12px 0 10px;
+}
+
+.entityComment {
+  font-size: 14px;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.entityFooter {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.entityCallBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #2d65e6;
+  background: #2d65e6;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.entityCallBtn:hover {
+  background: #3474ff;
+}
+
+.entityCallBtn:active {
+  transform: translateY(1px);
+}
+
+.entityCallBtnDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Legacy hotel list layouts (other screens) */
 
 .hotelsList {
   display: flex;
@@ -554,7 +655,7 @@
 .hotelCard {
   border-radius: 18px;
   padding: 16px 16px 14px;
-  background-color: #1a2232; /* как в code.html dark:bg-[#1a2232] */
+  background-color: #1a2232;
   border: 1px solid rgba(31, 41, 55, 1);
 }
 
@@ -1067,7 +1168,7 @@
 }
 
 .templateEditorLabel {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -1895,6 +1996,47 @@
   gap: 12px;
 }
 
+.reviewsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reviewsActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.reviewGenerateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: linear-gradient(135deg, #1b2534, #111827);
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease, opacity 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.reviewGenerateBtn:hover {
+  border-color: #2d65e6;
+  background: linear-gradient(135deg, #21304a, #0f172a);
+}
+
+.reviewGenerateBtn:active {
+  transform: translateY(1px);
+}
+
+.reviewGenerateIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .reviewCard {
   border-radius: 22px;
   padding: 16px;
@@ -2000,4 +2142,266 @@
   font-size: 14px;
   color: #92adc9;
   line-height: 1.55;
+}
+
+/* QR overlay for guide reviews */
+
+.qrOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 14px;
+}
+
+.qrSheet {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(180deg, #f6f7f8, #eef1f4);
+  color: #111618;
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-color-scheme: dark) {
+  .qrSheet {
+    background: #101d22;
+    color: #e5e7eb;
+  }
+}
+
+.qrHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.qrBack {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.qrBack:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.qrBackIcon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.qrHeaderCenter {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qrTitle {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.qrSubtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.qrContent {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qrCard {
+  border-radius: 16px;
+  background: #ffffff;
+  color: #111618;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .qrCard {
+    background: #1a2c32;
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .qrSubtitle {
+    color: #9ca3af;
+  }
+}
+
+.qrTourInfo {
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 10px;
+}
+
+.qrTourTitle {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.qrTourMeta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.qrBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.qrImageWrap {
+  padding: 10px;
+  border-radius: 16px;
+  background: #fff;
+  border: 2px dashed rgba(43, 189, 238, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(43, 189, 238, 0.1);
+}
+
+.qrImage {
+  width: 192px;
+  height: 192px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.qrHint {
+  font-size: 13px;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.qrActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qrLinkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #f6f7f8;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.qrLinkIcon {
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.qrLinkText {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qrCopyBtn {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #111618;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.qrShareBtn {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(43, 189, 238, 0.25);
+  background: rgba(43, 189, 238, 0.12);
+  color: #2bbdee;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.qrShareIcon {
+  font-size: 16px;
+}
+
+.qrCopyNote {
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  text-align: center;
+}
+
+.qrHowTo {
+  margin-top: 4px;
+}
+
+.qrHowTitle {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.qrHowList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qrHowItem {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(43, 189, 238, 0.06);
+}
+
+.qrHowBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(43, 189, 238, 0.16);
+  color: #2bbdee;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
 }

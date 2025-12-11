@@ -152,6 +152,7 @@ export default async function handler(req, res) {
     );
 
     let linkToken = existing.rows[0]?.token || null;
+    const existingId = existing.rows[0]?.id || null;
 
     if (!linkToken) {
       linkToken = randomUUID();
@@ -161,6 +162,15 @@ export default async function handler(req, res) {
           VALUES ($1, $2, $3, $4, true, now())
         `,
         [tour_id, companyId, guideId, linkToken]
+      );
+    } else if (existingId) {
+      await client.query(
+        `
+          UPDATE tour_feedback_links
+          SET guide_id = COALESCE(guide_id, $2)
+          WHERE id = $1
+        `,
+        [existingId, guideId]
       );
     }
 

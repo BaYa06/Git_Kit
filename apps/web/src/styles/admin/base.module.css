@@ -485,7 +485,7 @@
 .guideList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* Generic entity card (guide / hotel / transport) */
@@ -644,6 +644,103 @@
   pointer-events: none;
 }
 
+/* Base tab cards */
+.guideCard {
+  position: relative;
+  border-radius: 18px;
+  padding: 14px 16px 12px;
+  background: linear-gradient(145deg, #1a2633, #0f1726);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.32);
+}
+
+.guideCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.guideName {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.guideNameRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guideRating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fcd34d;
+  font-size: 12px;
+}
+
+.guideRatingValue {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.guideRatingStars {
+  letter-spacing: 0.2px;
+}
+
+.guideRatingCount {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.guideCardAction {
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.guideCardAction:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.guideRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.guideRow:last-of-type {
+  border-bottom: none;
+}
+
+.guideLabel {
+  color: #9ca3af;
+}
+
+.guideValue {
+  color: #e5e7eb;
+  text-align: right;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Legacy hotel list layouts (other screens) */
 
 .hotelsList {
@@ -654,9 +751,10 @@
 
 .hotelCard {
   border-radius: 18px;
-  padding: 16px 16px 14px;
-  background-color: #1a2232;
-  border: 1px solid rgba(31, 41, 55, 1);
+  padding: 14px 16px 12px;
+  background: linear-gradient(145deg, #192631, #101824);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.32);
 }
 
 .hotelCardHeader {
@@ -748,11 +846,12 @@
 /* Карточка транспорта */
 .transportCard {
   border-radius: 18px;
-  padding: 10px 12px;
-  background-color: #1a2232;       /* как общий тёмный фон карточек */
-  border: 1px solid #1f2937;         /* тонкая рамка */
+  padding: 14px 16px 12px;
+  background: linear-gradient(145deg, #231a33, #151026);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.32);
 }
 
 /* hover без тени */
@@ -2359,6 +2458,11 @@
 
 .qrShareIcon {
   font-size: 16px;
+}
+
+.qrShareBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .qrCopyNote {

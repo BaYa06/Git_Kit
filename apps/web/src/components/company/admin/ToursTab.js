@@ -940,8 +940,12 @@ export function NewTourFromTemplateScreen({
   const [guestFilter, setGuestFilter] = useState("all"); // all | paid | unpaid
   const actionMenuRef = useRef(null);
   const [showQrScreen, setShowQrScreen] = useState(false);
-  const feedbackToken = useMemo(() => "sample-token", []);
+  const [feedbackToken, setFeedbackToken] = useState(null);
   const [copyMsg, setCopyMsg] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   const [tourists, setTourists] = useState([]);
 
@@ -964,12 +968,13 @@ export function NewTourFromTemplateScreen({
     .filter(Boolean)
     .join(" • ");
   const feedbackLink = useMemo(() => {
+    if (!feedbackToken) return "";
     const origin =
       typeof window !== "undefined"
         ? window.location.origin
         : process.env.NEXT_PUBLIC_APP_URL || "";
     const base = origin || "";
-    const path = feedbackToken ? `/feedback/${feedbackToken}` : "/feedback/sample-token";
+    const path = `/feedback/${feedbackToken}`;
     return `${base}${path}`;
   }, [feedbackToken]);
   const handleCopyFeedback = useCallback(async () => {
@@ -998,6 +1003,67 @@ export function NewTourFromTemplateScreen({
       handleCopyFeedback();
     }
   }, [feedbackLink, qrTourTitle, handleCopyFeedback]);
+
+  const fetchReviews = useCallback(async () => {
+    if (!tourId) return;
+    setIsLoadingReviews(true);
+    setLinkError("");
+    try {
+      const res = await fetch(`/api/v1/feedback/list?tour_id=${tourId}`);
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось загрузить отзывы");
+      }
+      const data = await res.json();
+      const items = Array.isArray(data.items) ? data.items : [];
+      setReviews(items);
+    } catch (e) {
+      setLinkError(e.message || "Ошибка загрузки отзывов");
+      setReviews([]);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [tourId]);
+
+  const generateFeedbackLink = useCallback(async () => {
+    if (!tourId) {
+      setLinkError("Сначала сохраните тур");
+      return;
+    }
+    setIsGeneratingLink(true);
+    setLinkError("");
+    try {
+      const res = await fetch("/api/v1/feedback/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tour_id: tourId }),
+      });
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось сгенерировать ссылку");
+      }
+      const data = await res.json();
+      if (data.token) {
+        setFeedbackToken(data.token);
+      }
+    } catch (e) {
+      setLinkError(e.message || "Ошибка генерации ссылки");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  }, [tourId]);
+
+  useEffect(() => {
+    if (activeTab === "reviews" && tourId) {
+      fetchReviews();
+    }
+  }, [activeTab, tourId, fetchReviews]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -2124,65 +2190,107 @@ export function NewTourFromTemplateScreen({
             <div className={s.reviewsSection}>
               {guideView && (
                 <div className={s.reviewsActions}>
-                  <button type="button" className={s.reviewGenerateBtn} onClick={() => setShowQrScreen(true)}>
+                  <button
+                    type="button"
+                    className={s.reviewGenerateBtn}
+                    onClick={() => {
+                      generateFeedbackLink();
+                      setShowQrScreen(true);
+                    }}
+                    disabled={isGeneratingLink}
+                  >
                     <QrCode className={s.reviewGenerateIcon} />
-                    <span>Сгенерировать ссылку / QR</span>
+                    <span>{isGeneratingLink ? "Генерируем..." : "Сгенерировать ссылку / QR"}</span>
                   </button>
                 </div>
               )}
               <div className={s.reviewsList}>
-                {REVIEWS_MOCK.map((rev, idx) => (
-                  <div
-                    key={rev.id || idx}
-                    className={s.reviewCard}
-                    style={{
-                      background: idx % 2 === 0
-                        ? "linear-gradient(145deg, #1c2a3a, #15212e)"
-                        : "linear-gradient(145deg, #1c2433, #111c2b)",
-                    }}
-                  >
-                    <div className={s.reviewHeader}>
-                      <div className={s.reviewUser}>
-                        <div className={s.reviewAvatar}>{rev.initials}</div>
-                        <div>
-                          <p className={s.reviewName}>{rev.name}</p>
-                          <p className={s.reviewDate}>
-                            {rev.date}
-                            {rev.time ? ` · ${rev.time}` : ""}
-                          </p>
+                {isLoadingReviews ? (
+                  <p className={s.templateEditorEmptyText}>Загружаем отзывы...</p>
+                ) : reviews.length === 0 ? (
+                  <p className={s.templateEditorEmptyText}>Отзывов пока нет</p>
+                ) : (
+                  reviews.map((rev, idx) => {
+                    const dateObj = rev.created_at ? new Date(rev.created_at) : null;
+                    const dateStr = dateObj
+                      ? dateObj.toLocaleDateString("ru-RU")
+                      : "";
+                    const timeStr = dateObj
+                      ? dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+                      : "";
+                    const name = rev.tourist_name || "Гость";
+                    const initials = name
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase() || "ГТ";
+
+                    const blocks = [
+                      { title: "Гид", text: rev.guide_comment || "Без комментария", score: rev.rating_guide || 0 },
+                      { title: "Транспорт", text: rev.driver_comment || "Без комментария", score: rev.rating_transport || 0 },
+                      { title: "Тур", text: rev.tour_comment || "Без комментария", score: rev.rating_tour || 0 },
+                    ];
+                    const ratings = {
+                      tour: rev.rating_tour || 0,
+                      transport: rev.rating_transport || 0,
+                      guide: rev.rating_guide || 0,
+                    };
+
+                    return (
+                      <div
+                        key={rev.id || idx}
+                        className={s.reviewCard}
+                        style={{
+                          background: idx % 2 === 0
+                            ? "linear-gradient(145deg, #1c2a3a, #15212e)"
+                            : "linear-gradient(145deg, #1c2433, #111c2b)",
+                        }}
+                      >
+                        <div className={s.reviewHeader}>
+                          <div className={s.reviewUser}>
+                            <div className={s.reviewAvatar}>{initials}</div>
+                            <div>
+                              <p className={s.reviewName}>{name}</p>
+                              <p className={s.reviewDate}>
+                                {dateStr}
+                                {timeStr ? ` · ${timeStr}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <span
+                            className={s.reviewPill}
+                            style={{ color: "#2d65e6", backgroundColor: "#2d65e622" }}
+                          >
+                            Отзыв
+                          </span>
+                        </div>
+
+                        <div className={s.reviewRatingsRow}>
+                          <span className={s.reviewChip}>★ Тур: {ratings.tour}/5</span>
+                          <span className={s.reviewChip}>🚌 Транспорт: {ratings.transport}/5</span>
+                          <span className={s.reviewChip}>👤 Гид: {ratings.guide}/5</span>
+                        </div>
+
+                        <div className={s.reviewDivider} />
+
+                        <div className={s.reviewBlocks}>
+                          {blocks.map((block, blockIdx) => (
+                            <div key={blockIdx} className={s.reviewBlock}>
+                              <div className={s.reviewBlockTitleRow}>
+                                <span className={s.reviewBlockTitle}>{block.title}</span>
+                                <span className={s.reviewStars}>
+                                  {"★".repeat(Math.max(0, Math.min(5, block.score || 0))).padEnd(5, "☆")}
+                                </span>
+                              </div>
+                              <p className={s.reviewText}>{block.text}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <span
-                        className={s.reviewPill}
-                        style={{ color: rev.badge.color, backgroundColor: `${rev.badge.color}22` }}
-                      >
-                        {rev.badge.label}
-                      </span>
-                    </div>
-
-                    <div className={s.reviewRatingsRow}>
-                      <span className={s.reviewChip}>★ Тур: {rev.ratings.tour}/5</span>
-                      <span className={s.reviewChip}>🚌 Транспорт: {rev.ratings.transport}/5</span>
-                      <span className={s.reviewChip}>👤 Гид: {rev.ratings.guide}/5</span>
-                    </div>
-
-                      <div className={s.reviewDivider} />
-
-                    <div className={s.reviewBlocks}>
-                      {rev.blocks.map((block, blockIdx) => (
-                        <div key={blockIdx} className={s.reviewBlock}>
-                          <div className={s.reviewBlockTitleRow}>
-                            <span className={s.reviewBlockTitle}>{block.title}</span>
-                            <span className={s.reviewStars}>
-                              {"★".repeat(block.score).padEnd(5, "☆")}
-                            </span>
-                          </div>
-                          <p className={s.reviewText}>{block.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </div>
           )}
@@ -2230,16 +2338,32 @@ export function NewTourFromTemplateScreen({
                       <div className={s.qrActions}>
                         <div className={s.qrLinkRow}>
                           <span className={s.qrLinkIcon}>🔗</span>
-                          <a className={s.qrLinkText} href={feedbackLink}>{feedbackLink}</a>
-                          <button type="button" className={s.qrCopyBtn} onClick={handleCopyFeedback}>Скопировать</button>
+                          {feedbackLink ? (
+                            <>
+                              <a className={s.qrLinkText} href={feedbackLink}>{feedbackLink}</a>
+                              <button type="button" className={s.qrCopyBtn} onClick={handleCopyFeedback}>Скопировать</button>
+                            </>
+                          ) : (
+                            <span className={s.qrLinkText}>Сначала сгенерируйте ссылку</span>
+                          )}
                         </div>
-                        <button className={s.qrShareBtn} type="button" onClick={handleShareFeedback}>
+                        <button
+                          className={s.qrShareBtn}
+                          type="button"
+                          onClick={handleShareFeedback}
+                          disabled={!feedbackLink}
+                        >
                           <span className={s.qrShareIcon}>⇪</span>
                           Поделиться ссылкой
                         </button>
                         {copyMsg ? (
                           <div className={s.qrCopyNote} role="status" aria-live="polite">
                             {copyMsg}
+                          </div>
+                        ) : null}
+                        {linkError ? (
+                          <div className={s.qrCopyNote} style={{ color: "#ef4444" }}>
+                            {linkError}
                           </div>
                         ) : null}
                       </div>

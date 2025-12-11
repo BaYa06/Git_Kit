@@ -8,14 +8,16 @@ import {
 } from "lucide-react";
 import s from "../../../styles/guide.module.css";
 
-export default function GuideProfile({ company, guide }) {
-  const ratingStats = [
-    { score: 5, percent: 80 },
-    { score: 4, percent: 15 },
-    { score: 3, percent: 3 },
-    { score: 2, percent: 1 },
-    { score: 1, percent: 1 },
-  ];
+export default function GuideProfile({ company, guide, feedbackStats }) {
+  const stats = feedbackStats || { count: 0, avg: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } };
+  const total = stats.count || 0;
+  const dist = stats.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  const avgScore = Number(stats.avg) || 0;
+  const roundedAvg = Math.max(0, Math.min(5, Math.round(avgScore)));
+  const ratingStats = [5, 4, 3, 2, 1].map((score) => ({
+    score,
+    percent: total > 0 ? Math.round(((dist[score] || 0) / total) * 100) : 0,
+  }));
 
   const displayName = guide?.name || "Без имени";
   const email = guide?.email || "";
@@ -50,15 +52,19 @@ export default function GuideProfile({ company, guide }) {
 
       <div className={s.profileRatingRow}>
         <div className={s.profileRatingSummary}>
-          <p className={s.profileRatingValue}>4.8</p>
+          <p className={s.profileRatingValue}>{avgScore || 0}</p>
           <div className={s.profileStars}>
-            <Star className={s.profileStarFilled} />
-            <Star className={s.profileStarFilled} />
-            <Star className={s.profileStarFilled} />
-            <Star className={s.profileStarFilled} />
-            <Star className={s.profileStarHalf} />
+            {Array.from({ length: 5 }).map((_, idx) => {
+              const filled = idx < roundedAvg;
+              return (
+                <Star
+                  key={idx}
+                  className={filled ? s.profileStarFilled : s.profileStarEmpty}
+                />
+              );
+            })}
           </div>
-          <p className={s.profileRatingCaption}>125 отзывов</p>
+          <p className={s.profileRatingCaption}>{stats.count || 0} отзывов</p>
         </div>
         <div className={s.profileRatingBreakdown}>
           {ratingStats.map((item) => (

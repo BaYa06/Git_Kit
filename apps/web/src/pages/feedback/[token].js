@@ -13,6 +13,7 @@ export default function FeedbackPage() {
 
   return (
     <FeedbackReview
+      token={token || ""}
       tourName={tourName}
       guideName={guideName}
       startDate={startDate}

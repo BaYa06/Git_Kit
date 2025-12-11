@@ -215,6 +215,40 @@ export async function getServerSideProps({ req, params }) {
       languages: Array.isArray(currentGuide?.languages) ? currentGuide.languages : null,
     }
 
+    let guideFeedbackStats = { count: 0, avg: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }
+    if (guideId) {
+      const fbRes = await pool.query(
+        `
+        SELECT f.rating_guide AS rating, COUNT(*) AS cnt
+        FROM tour_feedbacks f
+        JOIN tour_feedback_links l ON l.id = f.feedback_link_id
+        JOIN tours t ON t.id = l.tour_id
+        WHERE f.rating_guide IS NOT NULL
+          AND (
+            l.guide_id = $1
+            OR (l.guide_id IS NULL AND t.main_guide_id = $1)
+          )
+        GROUP BY f.rating_guide
+        `,
+        [guideId]
+      )
+      const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+      let total = 0
+      let sum = 0
+      fbRes.rows.forEach((row) => {
+        const r = parseInt(row.rating, 10)
+        const c = parseInt(row.cnt, 10) || 0
+        if (dist[r] !== undefined) dist[r] += c
+        total += c
+        sum += r * c
+      })
+      guideFeedbackStats = {
+        count: total,
+        avg: total > 0 ? +(sum / total).toFixed(1) : 0,
+        distribution: dist,
+      }
+    }
+
     const hotels = (hotelsRes.rows || []).map((row) => ({
       id: row.id,
       name: row.name,
@@ -237,13 +271,13 @@ export async function getServerSideProps({ req, params }) {
     }))
 
     await pool.end()
-    return { props: { company, tours, guides, hotels, drivers, guideProfile } }
+    return { props: { company, tours, guides, hotels, drivers, guideProfile, guideFeedbackStats } }
   } catch {
     return { redirect: { destination: '/login', permanent: false } }
   }
 }
 
-export default function CompanyGuidePage({ company, tours = [], guides = [], hotels = [], drivers = [], guideProfile = null }) {
+export default function CompanyGuidePage({ company, tours = [], guides = [], hotels = [], drivers = [], guideProfile = null, guideFeedbackStats = null }) {
   const [tab, setTab] = useState('tours')
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTourId, setEditingTourId] = useState(null)
@@ -273,7 +307,7 @@ export default function CompanyGuidePage({ company, tours = [], guides = [], hot
         <div className={s.mainInner}>
           {tab === 'tours' && <GuideTours tours={tours} onOpenTour={handleOpenTour} />}
           {tab === 'schedule' && <GuideTable companyId={company.id} />}
-          {tab === 'profile' && <GuideProfile company={company} guide={guideProfile} />}
+          {tab === 'profile' && <GuideProfile company={company} guide={guideProfile} feedbackStats={guideFeedbackStats} />}
         </div>
       </main>
 

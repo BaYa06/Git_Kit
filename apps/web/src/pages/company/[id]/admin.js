@@ -67,16 +67,31 @@ export async function getServerSideProps({ req, params }) {
       pool.query(
         `
         SELECT
-          id,
-          full_name,
-          phone,
-          email,
-          languages,
-          is_active,
-          notes
-        FROM guides
-        WHERE company_id = $1
-        ORDER BY full_name NULLS LAST
+          g.id,
+          g.full_name,
+          g.phone,
+          g.email,
+          g.languages,
+          g.is_active,
+          g.notes,
+          COALESCE(fs.reviews_count, 0) AS reviews_count,
+          COALESCE(fs.avg_rating, 0) AS avg_rating
+        FROM guides g
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) AS reviews_count,
+            AVG(f.rating_guide)::numeric(10,2) AS avg_rating
+          FROM tour_feedbacks f
+          JOIN tour_feedback_links l ON l.id = f.feedback_link_id
+          JOIN tours t ON t.id = l.tour_id
+          WHERE f.rating_guide IS NOT NULL
+            AND (
+              l.guide_id = g.id
+              OR (l.guide_id IS NULL AND t.main_guide_id = g.id)
+            )
+        ) fs ON TRUE
+        WHERE g.company_id = $1
+        ORDER BY g.full_name NULLS LAST
         `,
         [params.id]
       ),
@@ -195,6 +210,8 @@ export async function getServerSideProps({ req, params }) {
       email: row.email || "",
       languages: Array.isArray(row.languages) ? row.languages : null,
       notes: row.notes || "",
+      avg_rating: Number(row.avg_rating) || 0,
+      reviews_count: Number(row.reviews_count) || 0,
     }));
 
     const hotels = (hotelsRes.rows || []).map((row) => ({

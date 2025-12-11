@@ -22,15 +22,30 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
+    "/cabinet": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/cabinet.js"
+    ],
+    "/company/[id]": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/company/[id].js"
+    ],
+    "/company/[id]/admin": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/company/[id]/admin.js"
+    ],
     "/company/[id]/guide": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/company/[id]/guide.js"
     ],
-    "/feedback/[token]": [
+    "/login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/feedback/[token].js"
+      "static/chunks/pages/login.js"
     ]
   },
   "ampFirstPages": []

@@ -209,7 +209,16 @@ export default function BaseTab({
                 {filteredGuides.map((g) => (
                     <div key={g.id} className={s.guideCard}>
                         <div className={s.guideCardHeader}>
-                        <p className={s.guideName}>{g.full_name}</p>
+                        <div className={s.guideNameRow}>
+                          <p className={s.guideName}>{g.full_name}</p>
+                          <div className={s.guideRating}>
+                            <span className={s.guideRatingValue}>{(g.avg_rating || 0).toFixed(1)}</span>
+                            <span className={s.guideRatingStars}>
+                              {"★".repeat(Math.round(g.avg_rating || 0)).padEnd(5, "☆")}
+                            </span>
+                            <span className={s.guideRatingCount}>({g.reviews_count || 0})</span>
+                          </div>
+                        </div>
                         <button
                             type="button"
                             className={s.guideCardAction}

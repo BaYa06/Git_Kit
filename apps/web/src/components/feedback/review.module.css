@@ -80,6 +80,13 @@
   margin-bottom: 10px;
 }
 
+.meta {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
 .sheetBody {
   flex: 1;
   overflow-y: auto;
@@ -150,6 +157,10 @@
 .starEmpty {
   font-size: 28px;
   color: #324d67;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .textarea {
@@ -182,6 +193,7 @@
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
 .cancelBtn {
@@ -193,4 +205,15 @@
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.status {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 4px;
 }

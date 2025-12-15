@@ -24,6 +24,12 @@
   gap: 10px;
 }
 
+.headerPlaceholder {
+  width: 86px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
 .back {
   display: inline-flex;
   align-items: center;
@@ -1128,4 +1134,138 @@
 .profileLogoutText {
   font-size: 15px;
   font-weight: 700;
+}
+
+/* GUIDE EDIT PAGE */
+.editPage {
+  min-height: 100vh;
+  background-color: #0b1220;
+  color: #e5e7eb;
+}
+
+.editShell {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editHeaderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: transparent;
+  color: #9ca3af;
+}
+
+.editBack:hover {
+  color: #f8fafc;
+  border-color: #2d65e6;
+}
+
+.editTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.editCard {
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.editGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.editLabel {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.editInput {
+  background: #0b1220;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 12px 12px;
+  color: #f8fafc;
+  font-size: 14px;
+  outline: none;
+}
+
+.editInput:focus {
+  border-color: #2d65e6;
+  box-shadow: 0 0 0 3px rgba(45, 101, 230, 0.15);
+}
+
+.editLangList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.editLang {
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 10px;
+  background: #0b1220;
+  color: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.editLangActive {
+  border-color: #2d65e6;
+  background: rgba(45, 101, 230, 0.12);
+  color: #bfdbfe;
+}
+
+.editLangCheck {
+  width: 16px;
+  height: 16px;
+}
+
+.editError {
+  color: #f87171;
+  font-size: 13px;
+}
+
+.editSubmit {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(90deg, #2d65e6, #3b82f6);
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.editSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

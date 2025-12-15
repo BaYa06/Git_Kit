@@ -195,8 +195,8 @@ export default function GuideTable({ companyId }) {
         </div>
 
         <div className={s.calendarGrid}>
-          {weekdayLabels.map((label) => (
-            <div key={label} className={s.weekdayLabel}>
+          {weekdayLabels.map((label, idx) => (
+            <div key={`${label}-${idx}`} className={s.weekdayLabel}>
               {label}
             </div>
           ))}
@@ -250,8 +250,8 @@ export default function GuideTable({ companyId }) {
       <section className={s.weekSection}>
         <h3 className={s.sectionTitle}>Эта неделя</h3>
         <div className={s.weekList}>
-          {weekDays.map((day) => (
-            <div key={day.label} className={s.weekRow}>
+          {weekDays.map((day, idx) => (
+            <div key={`${day.dateKey}-${idx}`} className={s.weekRow}>
               <span className={s.weekdayName}>{day.label}</span>
               <div
                 className={`${s.selectWrap} ${

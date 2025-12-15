@@ -1,13 +1,13 @@
 // pages/company/[id]/guide.js
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Map, CalendarDays, User2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { Map, CalendarDays, User2 } from 'lucide-react'
 import GuideTours from '../../../components/company/guide/Tours'
 import GuideTable from '../../../components/company/guide/Table'
 import GuideProfile from '../../../components/company/guide/Profile'
 import { NewTourFromTemplateScreen } from '../../../components/company/admin/ToursTab'
-import s from '../../../styles/guide.module.css'
+import s from 'styles/guide.module.css'
 
 export async function getServerSideProps({ req, params }) {
   const jwt = require('jsonwebtoken');
@@ -212,6 +212,7 @@ export async function getServerSideProps({ req, params }) {
     const guideProfile = {
       name: currentGuide?.full_name || userFullName,
       email: currentGuide?.email || user.email || "",
+      phone: currentGuide?.phone || user.phone || "",
       languages: Array.isArray(currentGuide?.languages) ? currentGuide.languages : null,
     }
 
@@ -278,10 +279,18 @@ export async function getServerSideProps({ req, params }) {
 }
 
 export default function CompanyGuidePage({ company, tours = [], guides = [], hotels = [], drivers = [], guideProfile = null, guideFeedbackStats = null }) {
+  const router = useRouter()
   const [tab, setTab] = useState('tours')
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTourId, setEditingTourId] = useState(null)
   const [editingTourName, setEditingTourName] = useState('')
+
+  useEffect(() => {
+    const qTab = router.query?.tab
+    if (qTab === 'profile' || qTab === 'schedule' || qTab === 'tours') {
+      setTab(qTab)
+    }
+  }, [router.query?.tab])
 
   const handleOpenTour = (tour) => {
     if (!tour || !tour.id) return
@@ -294,10 +303,7 @@ export default function CompanyGuidePage({ company, tours = [], guides = [], hot
     <div className={s.container}>
       <header className={s.header}>
         <div className={s.headerInner}>
-          <Link href="/cabinet" className={s.back}>
-            <ArrowLeft className="w-4 h-4" />
-            Назад
-          </Link>
+          <span className={s.headerPlaceholder} aria-hidden="true" />
           <div className={s.title}>{company.name}</div>
           <span className={s.badge}>guide</span>
         </div>

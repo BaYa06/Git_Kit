@@ -745,7 +745,36 @@ function SelectFromBase({
   selectedId = "",
   onSelect,
   guideView = false,
+  companyId = null,
+  startDate = null,
 }) {
+  const [availability, setAvailability] = useState({});
+  useEffect(() => {
+    let ignore = false;
+    const load = async () => {
+      if (type !== "guide" || !companyId || !startDate) {
+        setAvailability({});
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/v1/guides/availability/date?company_id=${companyId}&date=${startDate}`
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!ignore && data && data.statuses) {
+          setAvailability(data.statuses);
+        }
+      } catch (e) {
+        if (!ignore) setAvailability({});
+      }
+    };
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [type, companyId, startDate]);
+
   const list = entityListsByType(type, { guides, hotels, drivers }) || [];
   const selected =
     list.find((item) => String(item.id) === String(selectedId)) || null;
@@ -780,17 +809,30 @@ function SelectFromBase({
           onChange={(e) => onSelect && onSelect(e.target.value)}
         >
           <option value="">Не выбрано</option>
-          {list.map((item) => (
-            <option key={item.id} value={item.id}>
-              {type === "guide"
-                ? item.full_name || item.email || "Без имени"
-                : type === "hotel"
-                ? item.name || "Без названия"
-                : [item.car_name, item.plate_number]
-                    .filter(Boolean)
-                    .join(" • ") || "Транспорт"}
-            </option>
-          ))}
+          {list.map((item) => {
+            const status =
+              type === "guide"
+                ? availability[item.id] || "none"
+                : "none";
+            const prefix =
+              status === "free"
+                ? "🟢 "
+                : status === "busy"
+                ? "🔴 "
+                : "⚪ ";
+            return (
+              <option key={item.id} value={item.id}>
+                {prefix}
+                {type === "guide"
+                  ? item.full_name || item.email || "Без имени"
+                  : type === "hotel"
+                  ? item.name || "Без названия"
+                  : [item.car_name, item.plate_number]
+                      .filter(Boolean)
+                      .join(" • ") || "Транспорт"}
+              </option>
+            );
+          })}
         </select>
       ) : (
         <p className={s.templateEditorEmptyText}>
@@ -803,6 +845,16 @@ function SelectFromBase({
           <EntityPreview type={type} entity={selected} />
         </div>
       )}
+      {type === "guide" && startDate ? (
+        <div className={s.templateEditorHint}>
+          <span className={s.templateEditorHintDot} style={{ background: "#22c55e" }} />
+          свободен на дату старта тура
+          <span className={s.templateEditorHintDot} style={{ background: "#f87171", marginLeft: 12 }} />
+          занят
+          <span className={s.templateEditorHintDot} style={{ background: "#9ca3af", marginLeft: 12 }} />
+          нет данных
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1879,6 +1931,8 @@ export function NewTourFromTemplateScreen({
                                 drivers={drivers}
                                 selectedId={item.selectedId || ""}
                                 guideView={guideView}
+                                companyId={companyId}
+                                startDate={startDate}
                                 onSelect={(val) => {
                                   setComponents((prev) =>
                                     prev.map((c) =>

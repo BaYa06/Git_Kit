@@ -6,9 +6,11 @@ import {
   Star,
   User,
 } from "lucide-react";
+import { useRouter } from "next/router";
 import s from "../../../styles/guide.module.css";
 
 export default function GuideProfile({ company, guide, feedbackStats }) {
+  const router = useRouter();
   const stats = feedbackStats || { count: 0, avg: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } };
   const total = stats.count || 0;
   const dist = stats.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -24,7 +26,16 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
   const languages =
     Array.isArray(guide?.languages) && guide.languages.length > 0
       ? guide.languages
-      : ["Русский", "English"];
+      : ["Русский", "Английский"];
+  const phone = guide?.phone || "";
+
+  const handleExit = () => {
+    router.push("/cabinet");
+  };
+
+  const handleEditProfile = () => {
+    router.push(`/company/${company.id}/guide/edit`);
+  };
 
   return (
     <div className={s.profilePage}>
@@ -45,6 +56,7 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
         <div className={s.profileNameBlock}>
           <p className={s.profileName}>{displayName}</p>
           <p className={s.profileEmail}>{email}</p>
+          {phone && <p className={s.profileEmail}>{phone}</p>}
         </div>
       </div>
 
@@ -93,25 +105,11 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
       <div className={s.profileSectionSpacer} />
 
       <div className={s.profileActionList}>
-        <button type="button" className={s.profileAction}>
+        <button type="button" className={s.profileAction} onClick={handleEditProfile}>
           <span className={s.profileActionIcon}>
             <User className="w-5 h-5" />
           </span>
           <span className={s.profileActionText}>Редактировать профиль</span>
-          <span className={s.profileActionChevron}>›</span>
-        </button>
-        <button type="button" className={s.profileAction}>
-          <span className={s.profileActionIcon}>
-            <Settings className="w-5 h-5" />
-          </span>
-          <span className={s.profileActionText}>Настройки</span>
-          <span className={s.profileActionChevron}>›</span>
-        </button>
-        <button type="button" className={s.profileAction}>
-          <span className={s.profileActionIcon}>
-            <HelpCircle className="w-5 h-5" />
-          </span>
-          <span className={s.profileActionText}>Поддержка</span>
           <span className={s.profileActionChevron}>›</span>
         </button>
       </div>
@@ -119,7 +117,7 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
       <div className={s.profileGrow} />
 
       <div className={s.profileLogoutRow}>
-        <button type="button" className={s.profileLogoutButton}>
+        <button type="button" className={s.profileLogoutButton} onClick={handleExit}>
           <span className={s.profileLogoutIcon}>
             <LogOut className="w-5 h-5" />
           </span>

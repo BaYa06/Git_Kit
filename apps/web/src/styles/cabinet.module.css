@@ -154,56 +154,323 @@
   position: fixed;
   inset: 0;
   z-index: 50;
-  background-color: rgba(0, 0, 0, 0.4);
   display: grid;
   place-items: center;
   padding: 0 16px;
+  background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.12), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.12), transparent 34%),
+    rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
 }
 
 .modal {
+  position: relative;
   width: 100%;
   max-width: 390px;
-  border-radius: 18px;
-  background-color: #020617;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #0b1220, #0f172a);
   border: 1px solid #1f2937;
-  padding: 20px;
+  padding: 18px 18px 20px;
   color: #e5e7eb;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 20%, rgba(45, 101, 230, 0.22), transparent 32%),
+    radial-gradient(circle at 90% 10%, rgba(56, 189, 248, 0.12), transparent 40%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.modalHero {
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 12px 12px 14px;
+  background: linear-gradient(135deg, rgba(45, 101, 230, 0.2), rgba(17, 24, 39, 0.6));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
+}
+
+.modalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.modalTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .modalTitle {
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.modalSubtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.modalModeBadge {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(2, 6, 23, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   font-weight: 600;
-  text-align: center;
+  color: #bfdbfe;
+  white-space: nowrap;
+}
+
+.modalHighlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.modalHighlight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.modalHighlightIcon,
+.modalHighlightIconAlt {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modalHighlightIconAlt {
+  background: rgba(45, 101, 230, 0.16);
+  color: #bfdbfe;
+}
+
+.modalHighlightTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.modalHighlightText {
+  font-size: 12px;
+  color: #cbd5e1;
 }
 
 .modalTabs {
-  margin-top: 16px;
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  padding: 4px;
-  border-radius: 9999px;
-  background-color: #020617;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.75);
   border: 1px solid #1f2937;
   font-size: 14px;
 }
 
 .modalTab {
-  padding: 6px 10px;
-  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
   text-align: center;
   color: #9ca3af;
   cursor: pointer;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.15s ease-out;
 }
 
 .modalTabActive {
-  background-color: #2d65e6;
+  background: linear-gradient(135deg, #2d65e6, #1f9cf6);
   color: #f9fafb;
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 /* КНОПКИ В МОДАЛКЕ */
 
+.modalForm {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+
+.uploadField {
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.uploadField:hover {
+  border-color: #3b82f6;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.fileInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.uploadIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(45, 101, 230, 0.16);
+  color: #bfdbfe;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uploadTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.uploadHint {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+
+.inputGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.inputWithIcon {
+  position: relative;
+}
+
+.textInput {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  background: rgba(2, 6, 23, 0.55);
+  color: #f8fafc;
+  padding: 12px 12px 12px 40px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.inputGroup .textInput {
+  padding-left: 12px;
+}
+
+.inputWithIcon .textInput {
+  padding-left: 40px;
+}
+
+.textInput:focus {
+  border-color: #2d65e6;
+  box-shadow: 0 0 0 3px rgba(45, 101, 230, 0.18);
+}
+
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+.fieldHelp {
+  font-size: 12px;
+  color: #94a3af;
+}
+
+.modalNote {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.modalNoteIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 101, 230, 0.16);
+  color: #bfdbfe;
+  flex-shrink: 0;
+}
+
+.modalNoteTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.modalNoteText {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
 .modalActions {
-  margin-top: 16px;
+  margin-top: 4px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -212,36 +479,38 @@
 .btnPrimary {
   height: 48px;
   border-radius: 12px;
-  background-color: #2d65e6;
+  background: linear-gradient(135deg, #2d65e6, #1f9cf6);
   border: none;
   color: #ffffff;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0 16px;
   cursor: pointer;
-  transition: background-color 0.15s ease-out;
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .btnPrimary:hover {
-  background-color: #2552ba;
+  transform: translateY(-1px);
 }
 
 .btnSecondary {
   height: 48px;
   border-radius: 12px;
   border: 1px solid #1f2937;
-  background-color: transparent;
+  background: rgba(2, 6, 23, 0.6);
   color: #e5e7eb;
   font-size: 15px;
   padding: 0 16px;
   cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .btnSecondary:hover {
-  background-color: #020617;
+  background-color: rgba(15, 23, 42, 0.8);
+  transform: translateY(-1px);
 }
 
 /* КНОПКИ-ПИЛЮЛИ В ПРОФИЛЕ */

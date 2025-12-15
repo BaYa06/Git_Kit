@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS companies (
   billing_phone text,
   billing_company_name text,
   billing_tax_id text,
+  logo_url text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

@@ -3,7 +3,17 @@ import jwt from 'jsonwebtoken'
 import { Pool } from 'pg'
 import { useState } from 'react'
 import Link from 'next/link'
-import { Building2, User as UserIcon, Plus, Pencil, LogOut, KeyRound } from 'lucide-react'
+import {
+  Building2,
+  User as UserIcon,
+  Plus,
+  Pencil,
+  LogOut,
+  KeyRound,
+  UploadCloud,
+  Search,
+  Sparkles
+} from 'lucide-react'
 import s from '../styles/cabinet.module.css'
 
 // SSR: берём имя пользователя + его компании из JWT-cookie и БД
@@ -346,74 +356,132 @@ export default function Cabinet({ user, companies = [] }) {
       {open && (
         <div className={s.modalOverlay}>
           <div className={s.modal}>
-            <div className={s.modalTitle}>Добавить компанию</div>
-            {/* Табы: Создать / Найти */}
-              <div className={s.modalTabs}>
+            <div className={s.modalHero}>
+              <div className={s.modalBadge}>Компании</div>
+              <div className={s.modalTitleRow}>
+                <div>
+                  <div className={s.modalTitle}>Добавить компанию</div>
+                  <p className={s.modalSubtitle}>
+                    Создайте новую карточку или подключитесь по логину/паролю, который выдал владелец.
+                  </p>
+                </div>
+              </div>
+              <div className={s.modalHighlights}>
+                <div className={s.modalHighlight}>
+                  <div className={s.modalHighlightIcon}>
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className={s.modalHighlightTitle}>С нуля</p>
+                    <p className={s.modalHighlightText}>Заполните название, при желании — логотип.</p>
+                  </div>
+                </div>
+                <div className={s.modalHighlight}>
+                  <div className={s.modalHighlightIconAlt}>
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className={s.modalHighlightTitle}>По приглашению</p>
+                    <p className={s.modalHighlightText}>Введите логин и пароль доступа от владельца.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={s.modalTabs}>
               <button
                 type="button"
                 onClick={() => setMode('create')}
                 className={`${s.modalTab} ${mode === 'create' ? s.modalTabActive : ''}`}
               >
-                Создать
+                <Plus className="w-4 h-4" />
+                Создать компанию
               </button>
               <button
                 type="button"
                 onClick={() => setMode('find')}
                 className={`${s.modalTab} ${mode === 'find' ? s.modalTabActive : ''}`}
               >
-                Найти
+                <Search className="w-4 h-4" />
+                Найти по логину
               </button>
             </div>
 
-            <form onSubmit={handleModalSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleModalSubmit} className={s.modalForm}>
               {mode === 'create' ? (
                 <>
-                  <div>
-                    <label className="block text-sm text-slate-300 mb-1">Логотип (опционально)</label>
+                  <label className={s.uploadField}>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => setFile(e.target.files?.[0] || null)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                      className={s.fileInput}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-slate-600 mb-1">Название компании</label>
+                    <div className={s.uploadIcon}>
+                      <UploadCloud className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className={s.uploadTitle}>Загрузить логотип</p>
+                      <p className={s.uploadHint}>
+                        {file?.name ? file.name : 'PNG или JPG, до 5 МБ (по желанию)'}
+                      </p>
+                    </div>
+                  </label>
+
+                  <div className={s.inputGroup}>
+                    <label className={s.fieldLabel}>Название компании</label>
                     <input
                       value={name || ""}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-200"
+                      className={s.textInput}
                       placeholder="Avangard Travel"
                       required
                     />
+                    <p className={s.fieldHelp}>Так название увидят сотрудники и партнёры.</p>
                   </div>
                 </>
               ) : (
                 <>
-                  <div>
-                    <label className="block text-sm text-slate-600 mb-1">Логин</label>
-                    <input
-                      value={inviteLogin || ""}
-                      onChange={(e) => setInviteLogin(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                      placeholder="Логин из доступа"
-                      required
-                    />
+                  <div className={s.inputGroup}>
+                    <label className={s.fieldLabel}>Логин доступа</label>
+                    <div className={s.inputWithIcon}>
+                      <Search className={s.inputIcon} />
+                      <input
+                        value={inviteLogin || ""}
+                        onChange={(e) => setInviteLogin(e.target.value)}
+                        className={s.textInput}
+                        placeholder="Логин из приглашения"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm text-slate-600 mb-1">Пароль</label>
-                    <input
-                      type="password"
-                      value={invitePassword || ""}
-                      onChange={(e) => setInvitePassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2"
-                      placeholder="Пароль из доступа"
-                      required
-                    />
+                  <div className={s.inputGroup}>
+                    <label className={s.fieldLabel}>Пароль</label>
+                    <div className={s.inputWithIcon}>
+                      <KeyRound className={s.inputIcon} />
+                      <input
+                        type="password"
+                        value={invitePassword || ""}
+                        onChange={(e) => setInvitePassword(e.target.value)}
+                        className={s.textInput}
+                        placeholder="Пароль из приглашения"
+                        required
+                      />
+                    </div>
+                    <p className={s.fieldHelp}>Данные передаёт владелец компании.</p>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Введите логин и пароль, которые вам выдал владелец компании. Если данные верны, компания добавится в список.
-                  </p>
+
+                  <div className={s.modalNote}>
+                    <div className={s.modalNoteIcon}>
+                      <KeyRound className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className={s.modalNoteTitle}>Есть доступы?</p>
+                      <p className={s.modalNoteText}>
+                        Выберите «Найти по логину» и введите логин/пароль из приглашения. Компания сразу появится в списке.
+                      </p>
+                    </div>
+                  </div>
                 </>
               )}
 

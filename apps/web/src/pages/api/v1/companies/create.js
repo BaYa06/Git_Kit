@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import { put } from '@vercel/blob';
 
 export const config = {
   api: { bodyParser: false }, // обязательно для formidable
@@ -12,6 +13,7 @@ export const config = {
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const isDev = process.env.NODE_ENV !== 'production';
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 
 function getTokenFromCookie(req) {
   const cookie = req.headers.cookie || '';
@@ -73,23 +75,30 @@ export default async function handler(req, res) {
       let file = files.logo;
       if (Array.isArray(file)) file = file[0];
       if (file && (file.size > 0 || file.filepath || file.path)) {
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'companies');
-        await fs.promises.mkdir(uploadsDir, { recursive: true });
-
-        const orig = file.originalFilename || file.newFilename || 'logo.png';
-        const ext = path.extname(orig) || '.png';
-        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-        const dest = path.join(uploadsDir, filename);
-
         // v3: file.filepath; v2: file.path
         const tmpPath = file.filepath || file.path;
         if (!tmpPath) throw new Error('No temp filepath provided by formidable');
+        if (!BLOB_TOKEN) {
+          return res.status(500).json({ message: 'BLOB_READ_WRITE_TOKEN is not configured' });
+        }
 
-        // безопаснее: copyFile + unlink
-        await fs.promises.copyFile(tmpPath, dest);
-        try { await fs.promises.unlink(tmpPath); } catch (_) {}
+        const orig = file.originalFilename || file.newFilename || 'logo.png';
+        const ext = path.extname(orig) || '.png';
+        const filename = `company-logo-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
 
-        logoUrl = `/uploads/companies/${filename}`;
+        const blob = await put(filename, fs.createReadStream(tmpPath), {
+          access: 'public',
+          token: BLOB_TOKEN,
+          contentType: file.mimetype || undefined,
+        });
+
+        logoUrl = blob?.url || null;
+
+        try {
+          await fs.promises.unlink(tmpPath);
+        } catch (_) {
+          /* ignore */
+        }
       }
     } catch (e) {
       if (isDev) console.error('file save error:', e);

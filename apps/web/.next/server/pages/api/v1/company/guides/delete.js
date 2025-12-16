@@ -1,0 +1,12 @@
+"use strict";(()=>{var e={};e.id=1374,e.ids=[1374],e.modules={9344:e=>{e.exports=require("jsonwebtoken")},145:e=>{e.exports=require("next/dist/compiled/next-server/pages-api.runtime.prod.js")},5900:e=>{e.exports=require("pg")},6835:(e,t)=>{Object.defineProperty(t,"l",{enumerable:!0,get:function(){return function e(t,n){return n in t?t[n]:"then"in t&&"function"==typeof t.then?t.then(t=>e(t,n)):"function"==typeof t&&"default"===n?t:void 0}}})},9779:(e,t,n)=>{n.r(t),n.d(t,{config:()=>m,default:()=>f,routeModule:()=>P});var r={};n.r(r),n.d(r,{default:()=>p});var s=n(9150),o=n(1631),u=n(6835),a=n(5900),i=n(9344),l=n.n(i);let d=new a.Pool({connectionString:process.env.DATABASE_URL}),c=process.env.JWT_SECRET||"dev_secret_change_me";async function p(e,t){let n;if("POST"!==e.method)return t.status(405).end();let r=function(e){let t=(e.headers.cookie||"").split("; ").find(e=>e.startsWith("gidkit_token="));return t?decodeURIComponent(t.split("=")[1]):null}(e);if(!r)return t.status(401).json({message:"Unauthenticated"});try{n=l().verify(r,c)}catch(e){return t.status(401).json({message:"Unauthenticated"})}let{company_id:s,user_id:o}=e.body||{};if(!s||!o)return t.status(400).json({message:"company_id и user_id обязательны"});let u=await d.connect();try{let e=await u.query(`
+      SELECT 1
+      FROM user_company_roles
+      WHERE user_id = $1
+        AND company_id = $2
+        AND role IN ('owner','admin')
+    `,[n.sub,s]);if(0===e.rowCount)return t.status(403).json({message:"Нет прав удалять гидов этой компании"});let r=await u.query(`
+      DELETE FROM user_company_roles
+      WHERE user_id = $1
+        AND company_id = $2
+        AND role = 'guide'
+    `,[o,s]);if(0===r.rowCount)return t.status(404).json({message:"Гид не найден"});return t.status(200).json({success:!0,user_id:o})}catch(e){return console.error("delete guide error:",e),t.status(500).json({message:"DB error",code:e.code||null,detail:e.detail||null,table:e.table||null,column:e.column||null})}finally{u.release()}}let f=(0,u.l)(r,"default"),m=(0,u.l)(r,"config"),P=new s.PagesAPIRouteModule({definition:{kind:o.x.PAGES_API,page:"/api/v1/company/guides/delete",pathname:"/api/v1/company/guides/delete",bundlePath:"",filename:""},userland:r})},1631:(e,t)=>{var n;Object.defineProperty(t,"x",{enumerable:!0,get:function(){return n}}),function(e){e.PAGES="PAGES",e.PAGES_API="PAGES_API",e.APP_PAGE="APP_PAGE",e.APP_ROUTE="APP_ROUTE"}(n||(n={}))},9150:(e,t,n)=>{e.exports=n(145)}};var t=require("../../../../../webpack-api-runtime.js");t.C(e);var n=t(t.s=9779);module.exports=n})();

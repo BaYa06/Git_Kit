@@ -1,1 +1,10 @@
-{}
+{
+  "/_app": "pages/_app.js",
+  "/_error": "pages/_error.js",
+  "/_document": "pages/_document.js",
+  "/company/[id]/owner": "pages/company/[id]/owner.js",
+  "/company/[id]/finances": "pages/company/[id]/finances.js",
+  "/company/[id]/settings": "pages/company/[id]/settings.js",
+  "/company/[id]/team": "pages/company/[id]/team.js",
+  "/company/[id]/operations": "pages/company/[id]/operations.js"
+}

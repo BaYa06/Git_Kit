@@ -4,8 +4,10 @@ import Link from "next/link";
 import base from "../../../styles/admin/base.module.css";
 import navigation from "../../../styles/admin/navigation.module.css";
 import cards from "../../../styles/admin/cards.module.css";
+import view from "../../../styles/admin/visibility.module.css";
+import DesktopDashboard from "../../../components/company/admin/DesktopDashboard";
 
-const s = { ...base, ...navigation, ...cards };
+const s = { ...base, ...navigation, ...cards, ...view };
 import {
   Flag,
   Hotel,
@@ -55,7 +57,7 @@ export async function getServerSideProps({ req, params }) {
 
     const [companyRes, roleRes, guidesRes, hotelsRes, driversRes, toursRes] = await Promise.all([
       // компания
-      pool.query("SELECT id, name FROM companies WHERE id = $1", [params.id]),
+      pool.query("SELECT id, name, logo_url FROM companies WHERE id = $1", [params.id]),
 
       // твоя роль
       pool.query(
@@ -74,6 +76,7 @@ export async function getServerSideProps({ req, params }) {
           g.languages,
           g.is_active,
           g.notes,
+          g.logo_url,
           COALESCE(fs.reviews_count, 0) AS reviews_count,
           COALESCE(fs.avg_rating, 0) AS avg_rating
         FROM guides g
@@ -210,6 +213,7 @@ export async function getServerSideProps({ req, params }) {
       email: row.email || "",
       languages: Array.isArray(row.languages) ? row.languages : null,
       notes: row.notes || "",
+      logo_url: row.logo_url || null,
       avg_rating: Number(row.avg_rating) || 0,
       reviews_count: Number(row.reviews_count) || 0,
     }));
@@ -1295,8 +1299,16 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
 
       {/* Меню для гида (только Удалить) */}
       {guideMenuGuide && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center px-4">
-          <div className="w-full max-w-md rounded-t-2xl bg-slate-950 border border-slate-800 p-4 space-y-2">
+        <div
+          className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center px-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setGuideMenuGuide(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-slate-950 border border-slate-800 p-4 space-y-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-sm text-slate-400 text-center mb-2">
               {guideMenuGuide.first_name} {guideMenuGuide.last_name}
             </div>

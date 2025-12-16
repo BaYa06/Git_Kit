@@ -1,3 +1,4 @@
+
 .page {
   min-height: 100vh;
   display: flex;
@@ -697,8 +698,41 @@
 
 .guideNameRow {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guideNameCol {
+  display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+}
+
+.guideAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  border: 2px solid #0b1220;
+  background: linear-gradient(145deg, #111827, #0f172a);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.guideAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.guideAvatarFallback {
+  font-size: 15px;
 }
 
 .guideRating {
@@ -742,12 +776,12 @@
 }
 
 .guideRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   font-size: 13px;
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -755,17 +789,37 @@
   border-bottom: none;
 }
 
+.guideRowIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
 .guideLabel {
   color: #9ca3af;
+  font-size: 12px;
 }
 
 .guideValue {
   color: #e5e7eb;
   text-align: right;
-  max-width: 60%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.guideRowLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.guideRowLink:hover .guideValue {
+  color: #cbd5e1;
 }
 
 /* Legacy hotel list layouts (other screens) */
@@ -2552,3 +2606,4 @@
   font-weight: 800;
   flex-shrink: 0;
 }
+

@@ -1,16 +1,15 @@
-import {
-  Edit3,
-  HelpCircle,
-  LogOut,
-  Settings,
-  Star,
-  User,
-} from "lucide-react";
+import { Edit3, LogOut, Star, Trash2, Upload, User } from "lucide-react";
 import { useRouter } from "next/router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import s from "../../../styles/guide.module.css";
 
 export default function GuideProfile({ company, guide, feedbackStats }) {
   const router = useRouter();
+  const [avatarUrl, setAvatarUrl] = useState(guide?.logo_url || guide?.logoUrl || "");
+  const [avatarModal, setAvatarModal] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const fileInputRef = useRef(null);
   const stats = feedbackStats || { count: 0, avg: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } };
   const total = stats.count || 0;
   const dist = stats.distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
@@ -28,6 +27,12 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
       ? guide.languages
       : ["Русский", "Английский"];
   const phone = guide?.phone || "";
+  const initials = useMemo(() => {
+    if (!displayName) return "G";
+    const parts = displayName.split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] || "").concat(parts[1][0] || "").toUpperCase() || "G";
+  }, [displayName]);
 
   const handleExit = () => {
     router.push("/cabinet");
@@ -37,21 +42,95 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
     router.push(`/company/${company.id}/guide/edit`);
   };
 
+  useEffect(() => {
+    if (guide?.logo_url || guide?.logoUrl) {
+      setAvatarUrl(guide.logo_url || guide.logoUrl || "");
+    }
+  }, [guide?.logo_url, guide?.logoUrl]);
+
+  const triggerFile = () => {
+    setAvatarError("");
+    fileInputRef.current?.click();
+  };
+
+  const uploadAvatar = async (file) => {
+    if (!file) return;
+    setAvatarLoading(true);
+    setAvatarError("");
+    try {
+      const fd = new FormData();
+      fd.append("company_id", company.id);
+      fd.append("photo", file);
+      const res = await fetch("/api/v1/guides/photo", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Не удалось загрузить фото");
+      }
+      setAvatarUrl(data.logo_url || "");
+      setAvatarModal(false);
+    } catch (e) {
+      setAvatarError(e.message || "Не удалось загрузить фото");
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    setAvatarLoading(true);
+    setAvatarError("");
+    try {
+      const fd = new FormData();
+      fd.append("company_id", company.id);
+      fd.append("action", "remove");
+      const res = await fetch("/api/v1/guides/photo", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.message || "Не удалось удалить фото");
+      }
+      setAvatarUrl("");
+      setAvatarModal(false);
+    } catch (e) {
+      setAvatarError(e.message || "Не удалось удалить фото");
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   return (
     <div className={s.profilePage}>
       <div className={s.profileHeader}>
         <div className={s.profileAvatarWrap}>
-          <div
-            className={s.profileAvatar}
-            aria-label="Guide avatar"
-            style={{
-              backgroundImage:
-                "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCoDetySPfuiF9-dZqxMekJiSKWoOHFXCubovvG0G3PXaj--z5E-KmR3U07JBzGTsZheKQqJITxZAMAZM5fGZVk9p5MBGVcxQYKNKpH8F37O-5vamMzn3zi_Ga6TVaerhzz4Rh6oqyORmxHzpIXXp31DjTyhHElyoJqPvEORph1nNXzC_MyC189U5fpSyCXsvLktuHz0Gc92uRnA3_SQdOj9Z6GCha-pT0sw5gRZ-PwF2NmIDyAbJ_DsojmHNSVD7n_QFdQ81NgjA')",
+          <button
+            type="button"
+            className={s.profileAvatarButton}
+            onClick={() => {
+              setAvatarError("");
+              setAvatarModal(true);
             }}
-          />
-          <div className={s.profileAvatarBadge}>
-            <Edit3 className="w-4 h-4" />
-          </div>
+            aria-label="Изменить фото профиля"
+          >
+            <div
+              className={s.profileAvatar}
+              aria-label="Guide avatar"
+              style={avatarUrl ? { backgroundImage: `url('${avatarUrl}')` } : {}}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Фото гида" className={s.profileAvatarImg} />
+              ) : (
+                <span className={s.profileAvatarFallback}>{initials}</span>
+              )}
+            </div>
+            <div className={s.profileAvatarBadge}>
+              <Edit3 className="w-4 h-4" />
+            </div>
+          </button>
         </div>
         <div className={s.profileNameBlock}>
           <p className={s.profileName}>{displayName}</p>
@@ -124,6 +203,76 @@ export default function GuideProfile({ company, guide, feedbackStats }) {
           <span className={s.profileLogoutText}>Выйти</span>
         </button>
       </div>
+
+      {avatarModal ? (
+        <div className={s.modalOverlay} role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className={s.modalBackdrop}
+            aria-label="Закрыть окно смены фото"
+            onClick={() => {
+              if (avatarLoading) return;
+              setAvatarModal(false);
+              setAvatarError("");
+            }}
+          />
+          <div className={`${s.modalSheet} ${s.avatarModalSheet}`}>
+            <div className={s.modalHandle} />
+            <h3 className={s.modalTitle}>Фото профиля</h3>
+            <div className={s.avatarPreview}>
+              <div
+                className={s.avatarPreviewCircle}
+                style={avatarUrl ? { backgroundImage: `url('${avatarUrl}')` } : {}}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Фото гида" className={s.profileAvatarImg} />
+                ) : (
+                  <span className={s.profileAvatarFallback}>{initials}</span>
+                )}
+              </div>
+            </div>
+            {avatarError ? <p className={s.modalError}>{avatarError}</p> : null}
+            <div className={s.avatarActions}>
+              <button
+                type="button"
+                className={s.avatarButton}
+                onClick={triggerFile}
+                disabled={avatarLoading}
+              >
+                {avatarLoading ? <span className={s.avatarButtonSpinner} /> : <Upload className="w-5 h-5" />}
+                <span>Загрузить новое</span>
+              </button>
+              <button
+                type="button"
+                className={s.avatarGhostButton}
+                onClick={handleRemovePhoto}
+                disabled={avatarLoading || !avatarUrl}
+              >
+                <Trash2 className="w-5 h-5" />
+                <span>Удалить фото</span>
+              </button>
+              <button
+                type="button"
+                className={s.avatarGhostButton}
+                onClick={() => {
+                  setAvatarModal(false);
+                  setAvatarError("");
+                }}
+                disabled={avatarLoading}
+              >
+                Отмена
+              </button>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              className={s.fileInput}
+              onChange={(e) => uploadAvatar(e.target.files?.[0])}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

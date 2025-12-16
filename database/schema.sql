@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS guides (
   email text,
   languages text[],
   is_active boolean DEFAULT true,
-  notes text
+  notes text,
+  logo_url text
 );
 
 -- Hotels

@@ -141,12 +141,21 @@ export default async function handler(req, res) {
         const u = userRow[0] || {};
         const fullName = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email || 'Гид';
 
+        const defaultLangs = ["Русский", "Кыргызский"];
+
         await client.query(
           `
-          INSERT INTO guides (company_id, full_name, phone, email, is_active, notes)
-          VALUES ($1, $2, $3, $4, true, $5)
+          INSERT INTO guides (company_id, full_name, phone, email, is_active, notes, languages)
+          VALUES ($1, $2, $3, $4, true, $5, $6)
           `,
-          [invite.company_id, fullName, u.phone || null, u.email || null, 'Добавлен через приглашение'],
+          [
+            invite.company_id,
+            fullName,
+            u.phone || null,
+            u.email || null,
+            "Добавлен через приглашение",
+            defaultLangs,
+          ],
         );
       }
     }

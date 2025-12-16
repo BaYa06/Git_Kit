@@ -1,0 +1,37 @@
+/* Owner Dashboard Global Styles */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Material Icons */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 20px;
+}
+.icon-fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Owner color tokens */
+:root {
+  --owner-primary: #1313ec;
+  --owner-bg-light: #f6f6f8;
+  --owner-bg-dark: #101022;
+  --owner-text: #111118;
+  --owner-text-muted: #616189;
+  --owner-border: #f0f0f4;
+  --owner-border-dark: #e0e0e4;
+}

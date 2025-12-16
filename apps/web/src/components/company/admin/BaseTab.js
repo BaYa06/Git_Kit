@@ -29,6 +29,9 @@ import {
   CarFront,
   Users,
   Clock,
+  Mail,
+  Languages,
+  Notebook,
 } from "lucide-react";
 
 export default function BaseTab({
@@ -116,6 +119,13 @@ export default function BaseTab({
       items.push(<Star key={i} className="w-4 h-4" />);
     }
     return items;
+  };
+
+  const initials = (name) => {
+    if (!name) return "??";
+    const parts = name.split(" ").filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] || "").concat(parts[1][0] || "").toUpperCase();
   };
 
   const formatTime = (t) => {
@@ -210,13 +220,22 @@ export default function BaseTab({
                     <div key={g.id} className={s.guideCard}>
                         <div className={s.guideCardHeader}>
                         <div className={s.guideNameRow}>
-                          <p className={s.guideName}>{g.full_name}</p>
-                          <div className={s.guideRating}>
-                            <span className={s.guideRatingValue}>{(g.avg_rating || 0).toFixed(1)}</span>
-                            <span className={s.guideRatingStars}>
-                              {"★".repeat(Math.round(g.avg_rating || 0)).padEnd(5, "☆")}
-                            </span>
-                            <span className={s.guideRatingCount}>({g.reviews_count || 0})</span>
+                          <div className={s.guideAvatar}>
+                            {g.logo_url ? (
+                              <img src={g.logo_url} alt={g.full_name} className={s.guideAvatarImg} />
+                            ) : (
+                              <span className={s.guideAvatarFallback}>{initials(g.full_name)}</span>
+                            )}
+                          </div>
+                          <div className={s.guideNameCol}>
+                            <p className={s.guideName}>{g.full_name}</p>
+                            <div className={s.guideRating}>
+                              <span className={s.guideRatingValue}>{(g.avg_rating || 0).toFixed(1)}</span>
+                              <span className={s.guideRatingStars}>
+                                {"★".repeat(Math.round(g.avg_rating || 0)).padEnd(5, "☆")}
+                              </span>
+                              <span className={s.guideRatingCount}>({g.reviews_count || 0})</span>
+                            </div>
                           </div>
                         </div>
                         <button
@@ -229,20 +248,23 @@ export default function BaseTab({
                         </div>
 
                         {g.phone && (
-                        <div className={s.guideRow}>
+                          <a className={`${s.guideRow} ${s.guideRowLink}`} href={`tel:${g.phone}`}>
+                            <span className={s.guideRowIcon}><Phone className="w-4 h-4" /></span>
                             <span className={s.guideLabel}>Телефон</span>
                             <span className={s.guideValue}>{g.phone}</span>
-                        </div>
+                          </a>
                         )}
 
                         {g.email && (
-                        <div className={s.guideRow}>
+                          <div className={s.guideRow}>
+                            <span className={s.guideRowIcon}><Mail className="w-4 h-4" /></span>
                             <span className={s.guideLabel}>Email</span>
                             <span className={s.guideValue}>{g.email}</span>
-                        </div>
+                          </div>
                         )}
 
                         <div className={s.guideRow}>
+                          <span className={s.guideRowIcon}><Languages className="w-4 h-4" /></span>
                           <span className={s.guideLabel}>Языки</span>
                           <span className={s.guideValue}>
                             {Array.isArray(g.languages) && g.languages.length > 0
@@ -253,6 +275,7 @@ export default function BaseTab({
 
                         {g.notes && (
                           <div className={s.guideRow}>
+                            <span className={s.guideRowIcon}><Notebook className="w-4 h-4" /></span>
                             <span className={s.guideLabel}>Заметки</span>
                             <span className={s.guideValue}>{g.notes}</span>
                           </div>

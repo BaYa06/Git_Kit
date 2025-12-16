@@ -53,7 +53,7 @@ export async function getServerSideProps({ req, params }) {
 
     const user = userRes.rows[0] || {}
     const guidesRes = await pool.query(
-      `SELECT id
+      `SELECT id, logo_url
        FROM guides
        WHERE company_id = $1
          AND (
@@ -139,7 +139,8 @@ export async function getServerSideProps({ req, params }) {
           phone,
           email,
           languages,
-          notes
+          notes,
+          logo_url
         FROM guides
         WHERE company_id = $1
         ORDER BY full_name NULLS LAST
@@ -206,6 +207,7 @@ export async function getServerSideProps({ req, params }) {
       email: row.email || "",
       languages: Array.isArray(row.languages) ? row.languages : null,
       notes: row.notes || "",
+      logo_url: row.logo_url || null,
     }))
     const currentGuide = guides.find((g) => g.id === guideId) || null
     const userFullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || user.email || "Без имени"
@@ -214,6 +216,7 @@ export async function getServerSideProps({ req, params }) {
       email: currentGuide?.email || user.email || "",
       phone: currentGuide?.phone || user.phone || "",
       languages: Array.isArray(currentGuide?.languages) ? currentGuide.languages : null,
+      logo_url: currentGuide?.logo_url || guidesRes.rows?.[0]?.logo_url || null,
     }
 
     let guideFeedbackStats = { count: 0, avg: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }

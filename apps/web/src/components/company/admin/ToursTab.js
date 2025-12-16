@@ -1000,6 +1000,16 @@ export function NewTourFromTemplateScreen({
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   const [tourists, setTourists] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 720px)");
+    const handle = (e) => setIsMobile(e.matches);
+    handle(mq);
+    mq.addEventListener("change", handle);
+    return () => mq.removeEventListener("change", handle);
+  }, []);
 
   const guideName = useMemo(() => {
     const guideComponent = components.find((c) => c.type === "guide");
@@ -1019,6 +1029,8 @@ export function NewTourFromTemplateScreen({
   const qrMeta = [qrDate, guideName ? `Гид: ${guideName}` : ""]
     .filter(Boolean)
     .join(" • ");
+
+  const guideLikeView = guideView || isMobile;
   const feedbackLink = useMemo(() => {
     if (!feedbackToken) return "";
     const origin =
@@ -1967,12 +1979,157 @@ export function NewTourFromTemplateScreen({
           )}
 
           {activeTab === "tourists" && (
-            guideView ? (
-              <GuideTouristsMock
-                showAddButton={false}
-                touristsData={guideCards}
-                onTogglePaid={(card) => handleTogglePaid(card)}
-              />
+            guideLikeView ? (
+              <div className={s.touristsMobileWrap}>
+                <div className={s.touristsMobileActions}>
+                  <div className={s.touristsSearch}>
+                    <Search className={s.touristsSearchIcon} />
+                    <input
+                      type="search"
+                      placeholder="Поиск по имени или телефону"
+                      className={s.touristsSearchInput}
+                      value={guestSearch}
+                      onChange={(e) => setGuestSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className={s.toursStatusButtons}>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${guestFilter === "all" ? s.toursStatusBtnActive : ""}`}
+                      onClick={() => setGuestFilter("all")}
+                    >
+                      Все
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${guestFilter === "paid" ? s.toursStatusBtnActive : ""}`}
+                      onClick={() => setGuestFilter("paid")}
+                    >
+                      Оплаченные
+                    </button>
+                    <button
+                      type="button"
+                      className={`${s.toursStatusBtn} ${guestFilter === "unpaid" ? s.toursStatusBtnActive : ""}`}
+                      onClick={() => setGuestFilter("unpaid")}
+                    >
+                      Не оплаченные
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={s.touristsPrimaryBtn}
+                    onClick={handleAddTraveler}
+                  >
+                    <span className={s.touristsPrimaryPlus}>+</span>
+                    Добавить
+                  </button>
+                </div>
+
+                <div className={s.touristsMobileList}>
+                  {filteredDisplay.map((t) => (
+                    <div key={t.id} className={s.touristsMobileCard} style={{ backgroundColor: t.rowColor }}>
+                      <div className={s.touristsMobileHeader}>
+                        {!t.isExtra ? (
+                          <span
+                            className={s.touristsBadge}
+                            style={{ backgroundColor: `${t.color}1a`, color: t.color }}
+                          >
+                            {t.group}
+                          </span>
+                        ) : (
+                          <span className={s.touristsBadge}>Доп</span>
+                        )}
+                        <button
+                          type="button"
+                          className={s.touristsMobileDelete}
+                          onClick={() => (t.isExtra ? handleRemoveExtra(t) : handleRemoveGroup(t))}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+
+                      <div className={s.touristsMobileField}>
+                        <label>ФИО</label>
+                        <input
+                          type="text"
+                          className={s.templateEditorInput}
+                          value={t.name}
+                          placeholder="ФИО"
+                          onChange={(e) => updateGuestField(t.id, "name", e.target.value)}
+                        />
+                      </div>
+
+                      <div className={s.touristsMobileField}>
+                        <label>Телефон</label>
+                        <input
+                          type="tel"
+                          className={s.templateEditorInput}
+                          value={t.phone}
+                          placeholder="+996 ..."
+                          onChange={(e) => updateGuestField(t.id, "phone", e.target.value)}
+                        />
+                      </div>
+
+                      {!t.isExtra && (
+                        <div className={s.touristsMobileGrid}>
+                          <label className={s.touristsMobileField}>
+                            <span>Стоимость</span>
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.cost || ""}
+                              placeholder="0"
+                              onChange={(e) => updateGuestField(t.id, "cost", e.target.value)}
+                            />
+                          </label>
+                          <label className={s.touristsMobileField}>
+                            <span>Предоплата</span>
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.prepayment || ""}
+                              placeholder="0"
+                              onChange={(e) => updateGuestField(t.id, "prepayment", e.target.value)}
+                            />
+                          </label>
+                          <label className={s.touristsMobileField}>
+                            <span>Остаток</span>
+                            <input
+                              type="text"
+                              className={`${s.templateEditorInput} ${s.touristsMoneyInput}`}
+                              value={t.balance || ""}
+                              placeholder="0"
+                              onChange={(e) => updateGuestField(t.id, "balance", e.target.value)}
+                            />
+                          </label>
+                        </div>
+                      )}
+
+                      {!t.isExtra && (
+                        <div className={s.touristsMobileFooter}>
+                          <div className={s.touristsCountWrap}>
+                            <span className={s.touristsCountValue}>{t.count}</span>
+                            <button
+                              type="button"
+                              className={s.touristsCountAdd}
+                              onClick={() => handleCountChange(t.id, (t.count || 1) + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            className={`${s.touristsPaidToggle} ${t.paid ? s.touristsPaidToggleActive : ""}`}
+                            onClick={() => handleTogglePaid(t)}
+                          >
+                            {t.paid ? <CheckCircle2 className={s.touristsPaidIcon} /> : <span className={s.touristsPaidDot} />}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className={s.touristsCard}>
                 <div className={s.touristsCardHeader}>

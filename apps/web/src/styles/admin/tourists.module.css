@@ -23,3 +23,73 @@
 .touristsMenuIcon { composes: touristsMenuIcon from "./base.module.css"; }
 .touristsFooter { composes: touristsFooter from "./base.module.css"; }
 .touristsDotDivider { composes: touristsDotDivider from "./base.module.css"; }
+
+.touristsMobileWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.touristsMobileActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.touristsMobileList {
+  display: grid;
+  gap: 10px;
+}
+
+.touristsMobileCard {
+  border-radius: 14px;
+  padding: 12px;
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  color: #e5e7eb;
+}
+
+.touristsMobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.touristsMobileDelete {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.touristsMobileField {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.touristsMobileGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.touristsMobileValue {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #1f2937;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 14px;
+}
+
+.touristsMobileFooter {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}

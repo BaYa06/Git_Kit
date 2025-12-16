@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import OwnerSidebar from '@/components/owner/layout/OwnerSidebar';
 import OwnerHeader from '@/components/owner/layout/OwnerHeader';
@@ -15,7 +16,16 @@ export default function FinancesPage({ company, user }) {
   const { id } = router.query;
 
   return (
-    <div className="bg-[#f6f6f8] text-[#111118] font-display antialiased overflow-hidden h-screen flex">
+    <>
+      <Head>
+        <title>Финансы - {company?.name || 'Компания'}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+      </Head>
+      
+      <div className="bg-[#f6f6f8] text-[#111118] font-display antialiased overflow-hidden h-screen flex">
       {/* Sidebar */}
       <OwnerSidebar companyId={id} activeTab="finances" />
 
@@ -63,6 +73,7 @@ export default function FinancesPage({ company, user }) {
         </main>
       </div>
     </div>
+    </>
   );
 }
 

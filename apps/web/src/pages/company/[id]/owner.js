@@ -111,10 +111,63 @@ export async function getServerSideProps({ req, params }) {
 export default function OwnerDashboardPage({ company, user }) {
   const router = useRouter();
   const { id: companyId } = router.query;
+  
+  // Состояние для статистики
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('today');
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [trips, setTrips] = useState([]);
+  const [tripsLoading, setTripsLoading] = useState(true);
 
-  const handlePeriodChange = (period) => {
-    console.log('Period changed:', period);
-    // TODO: загрузить данные за выбранный период
+  // Загрузка статистики
+  const fetchStats = async (selectedPeriod) => {
+    if (!companyId) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/v1/owner/dashboard-stats?companyId=${companyId}&period=${selectedPeriod}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+        setLastUpdated(new Date());
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Загружаем данные при монтировании и смене периода
+  useEffect(() => {
+    fetchStats(period);
+  }, [companyId, period]);
+
+  useEffect(() => {
+    const loadTrips = async () => {
+      if (!companyId) return;
+      setTripsLoading(true);
+      try {
+        const res = await fetch(`/api/v1/owner/upcoming-tours?companyId=${companyId}`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setTrips(Array.isArray(data.trips) ? data.trips : []);
+        } else {
+          setTrips([]);
+        }
+      } catch (e) {
+        console.error('Failed to load upcoming tours', e);
+        setTrips([]);
+      } finally {
+        setTripsLoading(false);
+      }
+    };
+    loadTrips();
+  }, [companyId]);
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod);
   };
 
   const handleExport = () => {
@@ -135,6 +188,20 @@ export default function OwnerDashboardPage({ company, user }) {
   const handleAddTask = () => {
     console.log('Add task clicked');
     // TODO: модалка добавления задачи
+  };
+
+  const zeroSeriesForPeriod = () => {
+    if (!stats?.period?.start || !stats?.period?.end) return [];
+    const start = new Date(stats.period.start);
+    const end = new Date(stats.period.end);
+    const res = [];
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      const key = cursor.toISOString().slice(0, 10);
+      res.push({ date: key, value: 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return res;
   };
 
   return (
@@ -167,21 +234,31 @@ export default function OwnerDashboardPage({ company, user }) {
               <FilterBar 
                 onPeriodChange={handlePeriodChange}
                 onExport={handleExport}
+                activePeriod={period}
+                lastUpdated={lastUpdated}
               />
               
               {/* KPI Row */}
-              <KPIRow />
+              <KPIRow stats={stats} loading={loading} />
               
               {/* Critical Alerts */}
               <AlertsWidget onAction={handleAlertAction} />
               
               {/* Upcoming Trips Table */}
-              <UpcomingTripsTable />
+              <UpcomingTripsTable trips={trips} loading={tripsLoading} />
               
               {/* Analytics Row */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-8">
-                  <RevenueChart />
+                  <RevenueChart
+                    series={stats?.revenueSeries && stats.revenueSeries.length > 0 ? stats.revenueSeries : zeroSeriesForPeriod()}
+                    loading={loading}
+                    periodLabel={
+                      stats?.period
+                        ? `${stats.period.start} — ${stats.period.end}`
+                        : ''
+                    }
+                  />
                 </div>
                 <div className="lg:col-span-4">
                   <DestinationsChart />

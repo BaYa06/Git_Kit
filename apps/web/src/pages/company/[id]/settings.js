@@ -173,7 +173,11 @@ export default function SettingsPage({ company, user }) {
                     {activeSection === 'profile' && (
                       <>
                         <CompanyProfileCard company={company} onChange={handleChange} />
-                        <BrandingCard onChange={handleChange} />
+                        <BrandingCard 
+                          companyId={company.id} 
+                          logoUrl={company.logoUrl} 
+                          onChange={handleChange} 
+                        />
                         <OperationalParamsCard onChange={handleChange} />
                         <EmergencyContactsCard onChange={handleChange} />
                       </>

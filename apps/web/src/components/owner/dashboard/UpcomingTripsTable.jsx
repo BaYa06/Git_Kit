@@ -1,44 +1,4 @@
-import { useState } from 'react';
-
-const defaultTrips = [
-  {
-    id: 1,
-    date: '17 Dec, Сегодня',
-    time: '07:00 AM',
-    destination: 'Горнолыжный База "Каракол"',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDktTehAVkquEvFeLXznl_C1HTLBcUaja_JK8lzfuLZzNB-hUVVKK7uZ4eUizdGD3rqfxsTb9YVj99KvOU0PPA63zU6b5RIASB1mm3fq98Yz_Uec0pFxxQ-YXcAAZRkN1WcDzYowq53MeiL03r2H1N2GnC7eOu6kwMT0rTOtgxXQfbHf397H5BLUEu0Krf8M2dZqsNCkMhakWe3X4fPP-3jQEufYpH4dBfQizDrubeEPC8LdquE7YJwusMfy7nMh_S1NNyeWE-ZzJE',
-    pax: '18/20',
-    readiness: 100,
-    payment: 'paid',
-    status: 'in_progress',
-    statusLabel: 'В пути',
-  },
-  {
-    id: 2,
-    date: '18 Dec, Завтра',
-    time: '06:30 AM',
-    destination: 'Иссык-Куль: Южный берег',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBH3Mq2QIfj2mkxv6bw5nuBjB5VZcYjlj5HOsCKrF8KMNZpBsnICtNbpsrBVReU3gNV6mU0cBI05ECgIJ4NiNL_4aI8ZOd2Z4ZydOSWOTSR6qs2z6nAwLGGZMM5-tM7LL1mrzhtDPBm_SZQ6k_sLqbQTGQkespTvCVozew7GgrBzjaqkX0H4fjWrmhbbMKkDCwIycYt5Uo7rm7eMJA7S9PQriN8gml7Gkw-W5GoWB_X84riIGVsjTL9CPNvmjWzghcL6VTfZvsJdbE',
-    pax: '42/45',
-    readiness: 60,
-    readinessWarning: '! Нет гида',
-    payment: 'partial',
-    status: 'risk',
-    statusLabel: 'Риск',
-  },
-  {
-    id: 3,
-    date: '19 Dec',
-    time: '08:00 AM',
-    destination: 'Чункурчак: Зима',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD1TJssdzTKHcyFea_c88OwdSG_i9F2DjJIN35yugRsf4axcW1iCSlWb_Urwo28MgW_N5VMszqKcX75VU5DN6z-gkfhO0rABmF_Y9b_qNP7UhHFdf-7xrdO-qEnTryd7fDiRnxMVbeLr6q7KImQip43BxumpdMVHa9laB4w33Xj8b2TfwlImY6UiYKiJV9B81pNTZuyEOTZ16aq_IZb2CISGguuYuDOPdb8hRZeyRrtxZ1M86EuWEZu69tUcekyXC6Wca_zVSVYwkk',
-    pax: '12/15',
-    readiness: 90,
-    payment: 'paid',
-    status: 'planned',
-    statusLabel: 'Планово',
-  },
-];
+import { useMemo, useState } from 'react';
 
 function getReadinessColor(value) {
   if (value >= 90) return 'bg-emerald-500';
@@ -58,6 +18,8 @@ function getStatusStyles(status) {
       return { dot: 'bg-emerald-500', text: 'text-emerald-600' };
     case 'risk':
       return { dot: 'bg-amber-500', text: 'text-amber-600' };
+    case 'ideal':
+      return { dot: 'bg-blue-500', text: 'text-blue-600' };
     case 'planned':
       return { dot: 'bg-slate-400', text: 'text-slate-600' };
     default:
@@ -76,9 +38,46 @@ function getPaymentBadge(payment) {
   }
 }
 
-export default function UpcomingTripsTable({ trips = defaultTrips }) {
+function parseDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(`${dateStr}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const d = parseDate(dateStr);
+  if (!d) return dateStr;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const label = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+  if (diffDays === 0) return `${label}, Сегодня`;
+  if (diffDays === 1) return `${label}, Завтра`;
+  return label;
+}
+
+export default function UpcomingTripsTable({ trips = [], loading = false }) {
   const [activeTab, setActiveTab] = useState('today');
-  
+  const filtered = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    return (trips || []).filter((t) => {
+      const d = parseDate(t.startDate || t.date);
+      if (!d) return false;
+      d.setHours(0, 0, 0, 0);
+
+      if (activeTab === 'today') return d.getTime() === today.getTime();
+      if (activeTab === 'tomorrow') return d.getTime() === tomorrow.getTime();
+      return d.getTime() >= today.getTime() && d.getTime() <= weekEnd.getTime();
+    });
+  }, [trips, activeTab]);
+
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#f0f0f4] overflow-hidden flex flex-col">
       {/* Header */}
@@ -121,21 +120,35 @@ export default function UpcomingTripsTable({ trips = defaultTrips }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#f0f0f4]">
-            {trips.map((trip) => {
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-6 text-center text-sm text-[#616189]">
+                  Загружаем выезды...
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-6 text-center text-sm text-[#616189]">
+                  Нет выездов в выбранный период
+                </td>
+              </tr>
+            ) : (
+              filtered.map((trip) => {
               const statusStyles = getStatusStyles(trip.status);
               const paymentBadge = getPaymentBadge(trip.payment);
-              
+              const dateLabel = formatDateLabel(trip.startDate || trip.date);
+
               return (
                 <tr key={trip.id} className="group hover:bg-[#f8f8fa] transition-colors">
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-[#111118]">{trip.date}</p>
-                    <p className="text-xs text-[#616189]">{trip.time}</p>
+                    <p className="text-sm font-bold text-[#111118]">{dateLabel}</p>
+                    <p className="text-xs text-[#616189]">{trip.time || '—'}</p>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <div 
                         className="size-8 rounded-lg bg-gray-200 bg-cover bg-center"
-                        style={{ backgroundImage: `url('${trip.image}')` }}
+                        style={{ backgroundImage: trip.image ? `url('${trip.image}')` : 'none' }}
                       />
                       <p className="text-sm font-medium text-[#111118]">{trip.destination}</p>
                     </div>
@@ -155,8 +168,16 @@ export default function UpcomingTripsTable({ trips = defaultTrips }) {
                         {trip.readiness}%
                       </span>
                     </div>
-                    {trip.readinessWarning && (
-                      <p className="text-[10px] text-rose-500 mt-1">{trip.readinessWarning}</p>
+                    {trip.readinessWarning ? (
+                      <p className="text-[10px] text-rose-500 mt-1">
+                        {trip.readinessWarning}
+                      </p>
+                    ) : trip.missingComponents && trip.missingComponents.length > 0 ? (
+                      <p className="text-[10px] text-rose-500 mt-1">
+                        Не хватает: {trip.missingComponents.join(', ')}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-emerald-600 mt-1">Все готово</p>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -177,7 +198,8 @@ export default function UpcomingTripsTable({ trips = defaultTrips }) {
                   </td>
                 </tr>
               );
-            })}
+              })
+            )}
           </tbody>
         </table>
       </div>

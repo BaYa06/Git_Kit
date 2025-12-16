@@ -1,19 +1,97 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
-export default function BrandingCard({ branding, onChange }) {
-  const [primaryColor, setPrimaryColor] = useState(branding?.primaryColor || '#1313EC');
-  const [secondaryColor, setSecondaryColor] = useState(branding?.secondaryColor || '#101022');
-  const [showCompanyName, setShowCompanyName] = useState(branding?.showCompanyName || false);
-  const [showUserRole, setShowUserRole] = useState(branding?.showUserRole ?? true);
+export default function BrandingCard({ companyId, logoUrl, onChange }) {
+  const [primaryColor, setPrimaryColor] = useState('#1313EC');
+  const [secondaryColor, setSecondaryColor] = useState('#101022');
+  const [showCompanyName, setShowCompanyName] = useState(false);
+  const [showUserRole, setShowUserRole] = useState(true);
+  
+  const [currentLogo, setCurrentLogo] = useState(logoUrl || null);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  
+  const fileInputRef = useRef(null);
 
   const handlePrimaryColorChange = (value) => {
     setPrimaryColor(value.toUpperCase());
-    onChange?.({ primaryColor: value, secondaryColor, showCompanyName, showUserRole });
+    onChange?.();
   };
 
   const handleSecondaryColorChange = (value) => {
     setSecondaryColor(value.toUpperCase());
-    onChange?.({ primaryColor, secondaryColor: value, showCompanyName, showUserRole });
+    onChange?.();
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (file) => {
+    // Валидация на клиенте
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('Неверный формат. Разрешены: PNG, JPG, WEBP, SVG');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Файл слишком большой. Максимум 2MB');
+      return;
+    }
+
+    setUploadError(null);
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/v1/company/logo/upload?companyId=${companyId}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка загрузки');
+      }
+
+      setCurrentLogo(data.logoUrl);
+      onChange?.();
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadError(error.message || 'Ошибка загрузки логотипа');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -24,11 +102,70 @@ export default function BrandingCard({ branding, onChange }) {
         {/* Logo Upload */}
         <div className="flex-shrink-0 w-full md:w-48">
           <label className="block text-sm font-semibold text-[#111118] mb-2">Логотип</label>
-          <div className="border-2 border-dashed border-[#e0e0e4] rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-[#fafafa] transition-colors cursor-pointer h-32">
-            <span className="material-symbols-outlined text-[#9ca3af] mb-1">cloud_upload</span>
-            <span className="text-xs text-[#616189] font-medium">Drag & Drop</span>
-            <span className="text-[10px] text-[#9ca3af]">PNG, JPG до 2MB</span>
+          
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+            className="hidden"
+          />
+          
+          <div
+            onClick={openFilePicker}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            className={`
+              border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center 
+              transition-all cursor-pointer h-32 relative overflow-hidden
+              ${dragActive 
+                ? 'border-[#1313ec] bg-[#1313ec]/5' 
+                : 'border-[#e0e0e4] hover:border-[#1313ec]/50 hover:bg-[#fafafa]'
+              }
+              ${uploading ? 'pointer-events-none' : ''}
+            `}
+          >
+            {uploading ? (
+              <div className="flex flex-col items-center">
+                <div className="w-6 h-6 border-2 border-[#1313ec] border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs text-[#616189]">Загрузка...</span>
+              </div>
+            ) : currentLogo ? (
+              <div className="relative w-full h-full flex items-center justify-center group">
+                <img
+                  src={currentLogo}
+                  alt="Company Logo"
+                  className="max-w-full max-h-full object-contain"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-xs font-medium">Изменить</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[#9ca3af] mb-1">cloud_upload</span>
+                <span className="text-xs text-[#616189] font-medium">
+                  {dragActive ? 'Отпустите файл' : 'Drag & Drop'}
+                </span>
+                <span className="text-[10px] text-[#9ca3af]">PNG, JPG до 2MB</span>
+              </>
+            )}
           </div>
+          
+          {uploadError && (
+            <p className="text-xs text-red-500 mt-2">{uploadError}</p>
+          )}
+          
+          {currentLogo && !uploading && (
+            <button
+              onClick={openFilePicker}
+              className="mt-2 w-full text-xs text-[#1313ec] hover:underline"
+            >
+              Загрузить другой
+            </button>
+          )}
         </div>
 
         {/* Preview and Colors */}
@@ -39,11 +176,19 @@ export default function BrandingCard({ branding, onChange }) {
               Предпросмотр
             </label>
             <div className="flex gap-4 items-end">
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-[#e0e0e4]">
-                <span className="material-symbols-outlined text-[#9ca3af]">image</span>
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-[#e0e0e4] overflow-hidden">
+                {currentLogo ? (
+                  <img src={currentLogo} alt="Preview" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="material-symbols-outlined text-[#9ca3af]">image</span>
+                )}
               </div>
-              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center border border-[#e0e0e4]">
-                <span className="material-symbols-outlined text-[#9ca3af] text-xs">image</span>
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center border border-[#e0e0e4] overflow-hidden">
+                {currentLogo ? (
+                  <img src={currentLogo} alt="Preview small" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="material-symbols-outlined text-[#9ca3af] text-xs">image</span>
+                )}
               </div>
             </div>
           </div>
@@ -65,7 +210,7 @@ export default function BrandingCard({ branding, onChange }) {
                   type="text"
                   value={primaryColor}
                   onChange={(e) => handlePrimaryColorChange(e.target.value)}
-                  className="w-24 rounded-lg border-[#e0e0e4] bg-[#fcfcfd] text-[#111118] text-sm uppercase shadow-sm"
+                  className="w-24 px-2 py-1.5 rounded-lg border border-[#e0e0e4] bg-[#fcfcfd] text-[#111118] text-sm uppercase shadow-sm"
                 />
               </div>
             </div>
@@ -84,7 +229,7 @@ export default function BrandingCard({ branding, onChange }) {
                   type="text"
                   value={secondaryColor}
                   onChange={(e) => handleSecondaryColorChange(e.target.value)}
-                  className="w-24 rounded-lg border-[#e0e0e4] bg-[#fcfcfd] text-[#111118] text-sm uppercase shadow-sm"
+                  className="w-24 px-2 py-1.5 rounded-lg border border-[#e0e0e4] bg-[#fcfcfd] text-[#111118] text-sm uppercase shadow-sm"
                 />
               </div>
             </div>
@@ -95,40 +240,46 @@ export default function BrandingCard({ branding, onChange }) {
       {/* Toggle Options */}
       <div className="mt-6 space-y-3 pt-5 border-t border-[#f0f0f4]">
         <label className="flex items-center justify-between cursor-pointer group">
-          <span className="text-sm font-medium text-[#111118] group-hover:text-primary transition-colors">
+          <span className="text-sm font-medium text-[#111118] group-hover:text-[#1313ec] transition-colors">
             Показывать название компании в шапке вместо бренда
           </span>
           <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
             <input
               type="checkbox"
               checked={showCompanyName}
-              onChange={(e) => setShowCompanyName(e.target.checked)}
+              onChange={(e) => {
+                setShowCompanyName(e.target.checked);
+                onChange?.();
+              }}
               className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 right-5"
               style={showCompanyName ? { right: 0, borderColor: '#1313ec' } : {}}
             />
             <div
               className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${
-                showCompanyName ? 'bg-primary' : 'bg-gray-300'
+                showCompanyName ? 'bg-[#1313ec]' : 'bg-gray-300'
               }`}
             />
           </div>
         </label>
 
         <label className="flex items-center justify-between cursor-pointer group">
-          <span className="text-sm font-medium text-[#111118] group-hover:text-primary transition-colors">
+          <span className="text-sm font-medium text-[#111118] group-hover:text-[#1313ec] transition-colors">
             Показывать роль пользователя в шапке
           </span>
           <div className="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
             <input
               type="checkbox"
               checked={showUserRole}
-              onChange={(e) => setShowUserRole(e.target.checked)}
+              onChange={(e) => {
+                setShowUserRole(e.target.checked);
+                onChange?.();
+              }}
               className="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 right-5"
               style={showUserRole ? { right: 0, borderColor: '#1313ec' } : {}}
             />
             <div
               className={`toggle-label block overflow-hidden h-5 rounded-full cursor-pointer ${
-                showUserRole ? 'bg-primary' : 'bg-gray-300'
+                showUserRole ? 'bg-[#1313ec]' : 'bg-gray-300'
               }`}
             />
           </div>

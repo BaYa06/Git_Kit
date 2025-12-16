@@ -1,18 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export default function FilterBar({ onPeriodChange, onExport }) {
-  const [activePeriod, setActivePeriod] = useState('today');
+export default function FilterBar({ onPeriodChange, onExport, activePeriod: externalPeriod, lastUpdated }) {
+  const [activePeriod, setActivePeriod] = useState(externalPeriod || 'today');
+  
+  // Синхронизируем с внешним состоянием
+  useEffect(() => {
+    if (externalPeriod && externalPeriod !== activePeriod) {
+      setActivePeriod(externalPeriod);
+    }
+  }, [externalPeriod]);
   
   const periods = [
     { key: 'today', label: 'Сегодня' },
     { key: '7days', label: '7 дней' },
     { key: '30days', label: '30 дней' },
-    { key: 'custom', label: 'Кастом' },
+    { key: '6months', label: '6 месяцев' },
+    { key: 'year', label: 'Год' },
   ];
   
   const handlePeriodClick = (key) => {
     setActivePeriod(key);
     onPeriodChange?.(key);
+  };
+  
+  // Форматирование времени обновления
+  const getLastUpdatedText = () => {
+    if (!lastUpdated) return 'Загрузка...';
+    
+    const now = new Date();
+    const diff = Math.floor((now - lastUpdated) / 1000);
+    
+    if (diff < 60) return 'Только что';
+    if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+    return lastUpdated.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   };
   
   return (
@@ -51,7 +71,7 @@ export default function FilterBar({ onPeriodChange, onExport }) {
       </div>
       
       <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-end">
-        <span className="text-xs text-[#616189] font-medium">Обновлено: 2 мин назад</span>
+        <span className="text-xs text-[#616189] font-medium">Обновлено: {getLastUpdatedText()}</span>
         <button 
           onClick={onExport}
           className="flex items-center gap-2 h-9 px-4 bg-white border border-[#e0e0e4] rounded-lg text-sm text-[#111118] font-semibold shadow-sm hover:bg-[#f8f8fa]"

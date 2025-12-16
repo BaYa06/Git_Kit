@@ -32,7 +32,7 @@ export default function OwnerSidebar({ companyId }) {
         {/* Logo Area */}
         <div className="h-16 flex items-center px-6 border-b border-[#f0f0f4]">
           <div className="flex items-center gap-2 text-[#1313ec]">
-            <span className="material-symbols-outlined icon-fill" style={{ fontSize: '28px' }}>travel_explore</span>
+            <span className="material-symbols-outlined icon-fill" style={{ fontSize: '28px' }}>route</span>
             <span className="text-lg font-bold tracking-tight text-[#111118]">Git-Kit</span>
           </div>
         </div>
@@ -94,3 +94,6 @@ export default function OwnerSidebar({ companyId }) {
     </aside>
   );
 }
+
+
+

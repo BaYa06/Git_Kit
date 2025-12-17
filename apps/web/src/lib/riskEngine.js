@@ -178,8 +178,20 @@ async function checkPreparationRisks(client, tour) {
   const hoursLeft = tour.hours_to_departure;
   const tables = tour._tables || new Set();
   
-  // 1. Нет назначенного гида
-  if (!tour.main_guide_id && hoursLeft < CONFIG.criticalHoursBefore) {
+  // 1. Нет назначенного гида - проверяем main_guide_id И tour_components
+  let hasGuide = !!tour.main_guide_id;
+  
+  // Также проверяем в компонентах тура
+  if (!hasGuide && tables.has('tour_components')) {
+    const guideRes = await client.query(`
+      SELECT 1 FROM tour_components 
+      WHERE tour_id = $1 AND type = 'guide' AND guide_id IS NOT NULL
+      LIMIT 1
+    `, [tour.id]);
+    hasGuide = guideRes.rowCount > 0;
+  }
+  
+  if (!hasGuide && hoursLeft < CONFIG.criticalHoursBefore) {
     risks.push({
       risk_type: 'missing_guide',
       severity: hoursLeft < 12 ? 'critical' : 'warning',

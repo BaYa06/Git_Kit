@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import OwnerLayout from '@/components/owner/dashboard/OwnerLayout';
+import OwnerLayout from '@/components/owner/layout/OwnerLayout';
 import FilterBar from '@/components/owner/dashboard/FilterBar';
 import KPIRow from '@/components/owner/dashboard/KPIRow';
 import AlertsWidget from '@/components/owner/dashboard/AlertsWidget';
@@ -64,11 +64,11 @@ export default function OwnerDashboard() {
         onExport={handleExport}
       />
       
-      {/* KPI Row */companyId={companyId} }
-      <KPIRow />
+      {/* KPI Row */}
+      <KPIRow companyId={companyId} />
       
       {/* Critical Alerts */}
-      <AlertsWidget onAction={handleAlertAction} />
+      <AlertsWidget onAction={handleAlertAction} companyId={companyId} />
       
       {/* Upcoming Trips Table */}
       <UpcomingTripsTable />

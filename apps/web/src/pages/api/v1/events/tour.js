@@ -11,7 +11,7 @@
 
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
-import eventHub from '../../../lib/eventHub';
+import eventHub from '../../../../lib/eventHub';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';

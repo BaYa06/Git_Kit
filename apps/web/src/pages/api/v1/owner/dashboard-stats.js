@@ -85,8 +85,15 @@ export default async function handler(req, res) {
         endDate.setHours(23, 59, 59, 999);
     }
 
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const startDateStr = formatDate(startDate);
+    const endDateStr = formatDate(endDate);
 
     // Предыдущий период для сравнения
     const periodDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
@@ -95,8 +102,8 @@ export default async function handler(req, res) {
     const prevEndDate = new Date(startDate);
     prevEndDate.setDate(prevEndDate.getDate() - 1);
     
-    const prevStartDateStr = prevStartDate.toISOString().split('T')[0];
-    const prevEndDateStr = prevEndDate.toISOString().split('T')[0];
+    const prevStartDateStr = formatDate(prevStartDate);
+    const prevEndDateStr = formatDate(prevEndDate);
 
     // Запросы к базе данных
     const [
@@ -320,7 +327,7 @@ export default async function handler(req, res) {
 
     // Формируем серию данных с группировкой в зависимости от периода
     const totalsByDate = rawRevenueSeries.reduce((acc, row) => {
-      const key = row.day.toISOString ? row.day.toISOString().slice(0, 10) : String(row.day).slice(0, 10);
+      const key = row.day instanceof Date ? formatDate(row.day) : String(row.day).slice(0, 10);
       acc[key] = (row.total_cents || 0) / 100;
       return acc;
     }, {});
@@ -357,8 +364,10 @@ export default async function handler(req, res) {
     } else if (period === '30days') {
       // Группировка по неделям для 30 дней (4-5 недель)
       const weekLabels = ['Неделя 1', 'Неделя 2', 'Неделя 3', 'Неделя 4', 'Неделя 5'];
-      const dateCursor = new Date(startDateStr);
-      const endDateObj = new Date(endDateStr);
+      const dateCursor = new Date(startDate);
+      dateCursor.setHours(0, 0, 0, 0);
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(0, 0, 0, 0);
       
       let weekIndex = 0;
       let weekTotal = 0;
@@ -366,8 +375,8 @@ export default async function handler(req, res) {
       let weekStartDate = new Date(dateCursor);
       
       while (dateCursor <= endDateObj) {
-        const key = dateCursor.toISOString().slice(0, 10);
-        weekTotal += totalsByDate[key] || 0;
+          const key = formatDate(dateCursor);
+          weekTotal += totalsByDate[key] || 0;
         daysInWeek++;
         
         // Каждые 7 дней или в конце периода сохраняем неделю
@@ -379,7 +388,7 @@ export default async function handler(req, res) {
           const endMonth = weekEndDate.toLocaleDateString('ru-RU', { month: 'short' });
           
           series.push({
-            date: weekStartDate.toISOString().slice(0, 10),
+            date: formatDate(weekStartDate),
             label: startMonth === endMonth 
               ? `${startDay}-${endDay} ${startMonth}` 
               : `${startDay} ${startMonth} - ${endDay} ${endMonth}`,
@@ -398,11 +407,13 @@ export default async function handler(req, res) {
       }
     } else {
       // Для today и 7days показываем по дням
-      const dateCursor = new Date(startDateStr);
-      const endDateObj = new Date(endDateStr);
+      const dateCursor = new Date(startDate);
+      dateCursor.setHours(0, 0, 0, 0);
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(0, 0, 0, 0);
       
       while (dateCursor <= endDateObj) {
-        const key = dateCursor.toISOString().slice(0, 10);
+        const key = formatDate(dateCursor);
         series.push({ 
           date: key, 
           value: totalsByDate[key] || 0,

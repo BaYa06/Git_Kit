@@ -157,6 +157,16 @@ export default async function handler(req, res) {
       }
     }
 
+    // ✅ Автоматическая проверка рисков после создания тура
+    try {
+      const { checkTourRisks } = await import("../../../../lib/riskEngine");
+      await checkTourRisks(tour.id, company_id);
+      console.log(`[Risks] Checked new tour ${tour.id}`);
+    } catch (riskError) {
+      console.error("[Risks] Check failed:", riskError);
+      // Не прерываем создание тура, если проверка рисков упала
+    }
+
     return res.status(201).json({
       tour: {
         ...tour,

@@ -119,6 +119,9 @@ export default function OwnerDashboardPage({ company, user }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(true);
+  const [revenuePeriod, setRevenuePeriod] = useState('7days');
+  const [revenueStats, setRevenueStats] = useState(null);
+  const [revenueLoading, setRevenueLoading] = useState(true);
 
   // Загрузка статистики
   const fetchStats = async (selectedPeriod) => {
@@ -139,10 +142,31 @@ export default function OwnerDashboardPage({ company, user }) {
     }
   };
 
+  const fetchRevenueStats = async (selectedPeriod) => {
+    if (!companyId) return;
+
+    setRevenueLoading(true);
+    try {
+      const res = await fetch(`/api/v1/owner/dashboard-stats?companyId=${companyId}&period=${selectedPeriod}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRevenueStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch revenue stats:', error);
+    } finally {
+      setRevenueLoading(false);
+    }
+  };
+
   // Загружаем данные при монтировании и смене периода
   useEffect(() => {
     fetchStats(period);
   }, [companyId, period]);
+
+  useEffect(() => {
+    fetchRevenueStats(revenuePeriod);
+  }, [companyId, revenuePeriod]);
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -190,10 +214,10 @@ export default function OwnerDashboardPage({ company, user }) {
     // TODO: модалка добавления задачи
   };
 
-  const zeroSeriesForPeriod = () => {
-    if (!stats?.period?.start || !stats?.period?.end) return [];
-    const start = new Date(stats.period.start);
-    const end = new Date(stats.period.end);
+  const zeroSeriesForPeriod = (periodInfo) => {
+    if (!periodInfo?.start || !periodInfo?.end) return [];
+    const start = new Date(periodInfo.start);
+    const end = new Date(periodInfo.end);
     const res = [];
     const cursor = new Date(start);
     while (cursor <= end) {
@@ -242,7 +266,7 @@ export default function OwnerDashboardPage({ company, user }) {
               <KPIRow stats={stats} loading={loading} />
               
               {/* Critical Alerts */}
-              <AlertsWidget onAction={handleAlertAction} />
+              <AlertsWidget companyId={companyId} onAction={handleAlertAction} />
               
               {/* Upcoming Trips Table */}
               <UpcomingTripsTable trips={trips} loading={tripsLoading} />
@@ -251,13 +275,17 @@ export default function OwnerDashboardPage({ company, user }) {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-8">
                   <RevenueChart
-                    series={stats?.revenueSeries && stats.revenueSeries.length > 0 ? stats.revenueSeries : zeroSeriesForPeriod()}
-                    loading={loading}
+                    series={revenueStats?.revenueSeries && revenueStats.revenueSeries.length > 0
+                      ? revenueStats.revenueSeries
+                      : zeroSeriesForPeriod(revenueStats?.period)}
+                    loading={revenueLoading}
                     periodLabel={
-                      stats?.period
-                        ? `${stats.period.start} — ${stats.period.end}`
+                      revenueStats?.period
+                        ? `${revenueStats.period.start} — ${revenueStats.period.end}`
                         : ''
                     }
+                    period={revenuePeriod}
+                    onPeriodChange={setRevenuePeriod}
                   />
                 </div>
                 <div className="lg:col-span-4">

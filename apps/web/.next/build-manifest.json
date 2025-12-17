@@ -22,10 +22,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/company/[id]/finances": [
+    "/cabinet": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/finances.js"
+      "static/chunks/pages/cabinet.js"
     ],
     "/company/[id]/operations": [
       "static/chunks/webpack.js",
@@ -36,16 +36,6 @@
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/company/[id]/owner.js"
-    ],
-    "/company/[id]/settings": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/settings.js"
-    ],
-    "/company/[id]/team": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/team.js"
     ]
   },
   "ampFirstPages": []

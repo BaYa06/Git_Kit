@@ -12,7 +12,13 @@ function formatLabel(item) {
   return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
 }
 
-export default function RevenueChart({ series = [], loading = false, periodLabel = '' }) {
+export default function RevenueChart({
+  series = [],
+  loading = false,
+  periodLabel = '',
+  period = '7days',
+  onPeriodChange,
+}) {
   const [activeTab, setActiveTab] = useState('revenue');
 
   const data = Array.isArray(series) ? series : [];
@@ -41,27 +47,54 @@ export default function RevenueChart({ series = [], loading = false, periodLabel
     { key: 'pax', label: 'PAX' },
   ];
 
+  const periods = [
+    { key: '7days', label: '7 дней' },
+    { key: '30days', label: '30 дней' },
+    { key: '6months', label: '6 месяцев' },
+    { key: 'year', label: 'Год' },
+  ];
+
   return (
     <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#f0f0f4] p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h3 className="text-[#111118] text-lg font-bold">Динамика выручки</h3>
           {periodLabel ? <p className="text-xs text-[#616189] mt-1">Период: {periodLabel}</p> : null}
         </div>
-        <div className="flex bg-[#f0f0f4] rounded-lg p-0.5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-white text-[#111118] font-bold shadow-sm'
-                  : 'text-[#616189] hover:text-[#111118] font-medium'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div
+          className="flex flex-wrap items-center gap-3 sm:ml-auto sm:justify-end"
+          style={{ marginBottom: "10px" }}
+        >
+          <div className="flex bg-[#f0f0f4] rounded-lg p-0.5">
+            {periods.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => onPeriodChange?.(item.key)}
+                className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                  period === item.key
+                    ? 'bg-white text-[#111118] font-bold shadow-sm'
+                    : 'text-[#616189] hover:text-[#111118] font-medium'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex bg-[#f0f0f4] rounded-lg p-0.5">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-1 rounded-md text-xs transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-white text-[#111118] font-bold shadow-sm'
+                    : 'text-[#616189] hover:text-[#111118] font-medium'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

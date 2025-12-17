@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import jwt from "jsonwebtoken";
+import { checkTourRisks } from "../../../../lib/riskEngine";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
@@ -217,6 +218,15 @@ export default async function handler(req, res) {
     await client.query("COMMIT");
 
     const tour = updateRes.rows[0];
+
+    // 🔥 АВТОМАТИЧЕСКАЯ ПРОВЕРКА РИСКОВ после сохранения
+    try {
+      await checkTourRisks(tour_id, companyId);
+      console.log(`[Risks] Checked tour ${tour_id}`);
+    } catch (riskError) {
+      // Не прерываем процесс если проверка рисков упала
+      console.error('[Risks] Check failed:', riskError);
+    }
 
     return res.status(200).json({
       tour: {

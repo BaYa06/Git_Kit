@@ -215,6 +215,7 @@ CREATE TABLE IF NOT EXISTS tour_people (
 CREATE TABLE IF NOT EXISTS tour_guests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tour_id uuid NOT NULL REFERENCES tours(id) ON DELETE CASCADE,
+  admin_id uuid REFERENCES users(id) ON DELETE SET NULL,
   primary_id uuid REFERENCES tour_guests(id) ON DELETE CASCADE,
   is_primary boolean NOT NULL DEFAULT true,
   group_label text,
@@ -230,6 +231,7 @@ CREATE TABLE IF NOT EXISTS tour_guests (
 );
 
 CREATE INDEX IF NOT EXISTS tour_guests_tour_id_idx ON tour_guests(tour_id);
+CREATE INDEX IF NOT EXISTS tour_guests_admin_idx ON tour_guests(admin_id);
 CREATE INDEX IF NOT EXISTS tour_guests_primary_idx ON tour_guests(tour_id, primary_id);
 CREATE INDEX IF NOT EXISTS tour_guests_paid_idx ON tour_guests(tour_id, is_paid);
 

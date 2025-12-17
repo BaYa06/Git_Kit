@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import jwt from "jsonwebtoken";
+import eventHub, { EVENT_TYPES } from "../../../../../lib/eventHub";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
@@ -67,6 +68,24 @@ export default async function handler(req, res) {
     }
 
     await client.query("BEGIN");
+
+    // Чтобы один тур мог содержать туристов от разных админов:
+    // - если у главного гостя уже есть admin_id, не перезаписываем его
+    // - если admin_id ещё NULL (старые данные), проставляем текущего пользователя
+    // - сохраняем стабильные id для существующих главных гостей (чтобы повторное сохранение
+    //   в рамках одной формы не "перепривязывало" данные к другому админу)
+    const existingAdminsRes = await client.query(
+      `
+      SELECT id, admin_id
+      FROM tour_guests
+      WHERE tour_id = $1 AND is_primary = true
+    `,
+      [tour_id]
+    );
+    const existingAdminByPrimaryId = new Map(
+      (existingAdminsRes.rows || []).map((row) => [String(row.id), row.admin_id])
+    );
+
     await client.query(`DELETE FROM tour_guests WHERE tour_id = $1`, [tour_id]);
 
     // guests приходит как массив: { temp_id, base_temp_id, is_extra, full_name, phone, cost_cents, prepayment_cents, is_paid }
@@ -80,17 +99,27 @@ export default async function handler(req, res) {
       const cost = normalizeMoney(g.cost_cents);
       const prepay = normalizeMoney(g.prepayment_cents);
       const isPaid = !!g.is_paid;
+      const incomingPrimaryKey = String(g.temp_id || g.id || "");
+      const existingAdminId = incomingPrimaryKey
+        ? existingAdminByPrimaryId.get(incomingPrimaryKey)
+        : undefined;
+      const adminIdToSave = existingAdminId ?? auth.sub;
+      const idToPreserve =
+        incomingPrimaryKey && existingAdminByPrimaryId.has(incomingPrimaryKey)
+          ? incomingPrimaryKey
+          : null;
 
       const mainRes = await client.query(
         `
         INSERT INTO tour_guests (
-          tour_id, primary_id, is_primary, group_label, full_name, phone,
-          cost_cents, prepayment_cents, is_paid, paid_at
+          id, tour_id, primary_id, is_primary, group_label, full_name, phone,
+          cost_cents, prepayment_cents, is_paid, paid_at, admin_id
         )
-        VALUES ($1, NULL, true, $2, $3, $4, $5, $6, $7, $8)
+        VALUES (COALESCE($1, gen_random_uuid()), $2, NULL, true, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING id
       `,
         [
+          idToPreserve,
           tour_id,
           g.group_label || null,
           g.full_name,
@@ -99,6 +128,7 @@ export default async function handler(req, res) {
           prepay,
           isPaid,
           isPaid ? new Date() : null,
+          adminIdToSave,
         ]
       );
 
@@ -138,6 +168,13 @@ export default async function handler(req, res) {
     }
 
     await client.query("COMMIT");
+
+    // Публикуем событие для real-time обновления у других клиентов
+    eventHub.publishToTour(tour_id, EVENT_TYPES.GUESTS_UPDATED, {
+      tour_id,
+      guests_count: mains.length + extras.length,
+      action: 'bulk_save',
+    }, auth.sub); // исключаем автора изменений
 
     return res.status(200).json({ ok: true });
   } catch (e) {

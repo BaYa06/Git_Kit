@@ -1,4 +1,6 @@
-import OwnerLayout from '@/components/owner/layout/OwnerLayout';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import OwnerLayout from '@/components/owner/dashboard/OwnerLayout';
 import FilterBar from '@/components/owner/dashboard/FilterBar';
 import KPIRow from '@/components/owner/dashboard/KPIRow';
 import AlertsWidget from '@/components/owner/dashboard/AlertsWidget';
@@ -10,6 +12,26 @@ import QuickActions from '@/components/owner/dashboard/QuickActions';
 import FocusTasks from '@/components/owner/dashboard/FocusTasks';
 
 export default function OwnerDashboard() {
+  const router = useRouter();
+  const [companyId, setCompanyId] = useState(null);
+
+  // Получаем ID компании из контекста пользователя
+  useEffect(() => {
+    const fetchUserCompany = async () => {
+      try {
+        const res = await fetch('/api/v1/profile/me', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          // Предполагается что API возвращает company_id или берём из первой компании
+          setCompanyId(data.company_id || data.companies?.[0]?.id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user data:', err);
+      }
+    };
+    
+    fetchUserCompany();
+  }, []);
   const handlePeriodChange = (period) => {
     console.log('Period changed:', period);
   };
@@ -18,8 +40,12 @@ export default function OwnerDashboard() {
     console.log('Export clicked');
   };
   
-  const handleAlertAction = (alert) => {
-    console.log('Alert action:', alert);
+  const handleAlertAction = (risk) => {
+    console.log('Risk action:', risk);
+    // Переход к туру для исправления риска
+    if (risk.tour_id) {
+      router.push(`/company/${companyId}/tours/${risk.tour_id}`);
+    }
   };
   
   const handleQuickAction = (action) => {
@@ -38,7 +64,7 @@ export default function OwnerDashboard() {
         onExport={handleExport}
       />
       
-      {/* KPI Row */}
+      {/* KPI Row */companyId={companyId} }
       <KPIRow />
       
       {/* Critical Alerts */}

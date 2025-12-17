@@ -176,6 +176,15 @@ export default async function handler(req, res) {
       action: 'bulk_save',
     }, auth.sub); // исключаем автора изменений
 
+    // Проверяем риски после изменения туристов (финансовые, неполные данные и т.д.)
+    try {
+      const { checkTourRisks } = await import("../../../../../lib/riskEngine");
+      await checkTourRisks(tour_id);
+    } catch (riskErr) {
+      console.error("Risk check after guests save failed:", riskErr);
+      // Не блокируем ответ - риски проверятся позже
+    }
+
     return res.status(200).json({ ok: true });
   } catch (e) {
     await client.query("ROLLBACK");

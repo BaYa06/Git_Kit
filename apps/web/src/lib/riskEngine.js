@@ -11,7 +11,14 @@
 
 import { Pool } from 'pg';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Ленивая инициализация Pool (чтобы не падало при билде)
+let pool = null;
+function getPool() {
+  if (!pool) {
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+  return pool;
+}
 
 // Конфигурация пороговых значений
 const CONFIG = {
@@ -52,7 +59,7 @@ async function getExistingTables(client) {
  * Проверить все риски для тура
  */
 export async function checkTourRisks(tourId, companyId = null) {
-  const client = await pool.connect();
+  const client = await getPool().connect();
   try {
     await client.query('BEGIN');
 
@@ -141,7 +148,7 @@ export async function getCompanyRisks(companyId, filters = {}) {
   query += ` LIMIT $${params.length + 1}`;
   params.push(limit);
   
-  const result = await pool.query(query, params);
+  const result = await getPool().query(query, params);
   return result.rows;
 }
 

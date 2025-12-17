@@ -4,7 +4,7 @@
  */
 
 import jwt from 'jsonwebtoken';
-import { checkTourRisks } from '../../../../../lib/riskEngine';
+// checkTourRisks импортируется динамически ниже
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const isDev = process.env.NODE_ENV !== 'production';
@@ -42,6 +42,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { checkTourRisks } = await import('../../../../../lib/riskEngine');
     const risks = await checkTourRisks(tourId, companyId);
     
     return res.status(200).json({

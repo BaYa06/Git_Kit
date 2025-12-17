@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import jwt from "jsonwebtoken";
-import { checkTourRisks } from "../../../../lib/riskEngine";
+// checkTourRisks импортируется динамически ниже
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
@@ -221,6 +221,7 @@ export default async function handler(req, res) {
 
     // 🔥 АВТОМАТИЧЕСКАЯ ПРОВЕРКА РИСКОВ после сохранения
     try {
+      const { checkTourRisks } = await import("../../../../lib/riskEngine");
       await checkTourRisks(tour_id, companyId);
       console.log(`[Risks] Checked tour ${tour_id}`);
     } catch (riskError) {

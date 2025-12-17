@@ -7,14 +7,16 @@
  * C. Туристы и документы
  * D. Финансовые риски
  * E. Качество сервиса и репутация
+ * 
+ * @note Этот модуль только для серверного использования (API routes)
  */
-
-import { Pool } from 'pg';
 
 // Ленивая инициализация Pool (чтобы не падало при билде)
 let pool = null;
 function getPool() {
   if (!pool) {
+    // Динамический require для избежания проблем с билдом
+    const { Pool } = require('pg');
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
   }
   return pool;

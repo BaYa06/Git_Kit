@@ -102,20 +102,32 @@ export async function checkTourRisks(tourId, companyId = null) {
       }
     }
 
-    // A. Подготовка тура
-    risks.push(...await safeCheck('prep', () => checkPreparationRisks(client, tourData)));
+    // Проверяем, завершился ли тур (по дате окончания или статусу)
+    const isTourCompleted = tourData.status === 'completed' || 
+                            tourData.status === 'canceled' ||
+                            tourData.status === 'cancelled' ||
+                            (tourData.end_date && new Date(tourData.end_date) < new Date());
 
-    // B. Конфликты ресурсов
-    risks.push(...await safeCheck('conflicts', () => checkResourceConflicts(client, tourData)));
+    // Для завершённых туров проверяем только финансовые риски (задолженность)
+    if (isTourCompleted) {
+      // D. Только финансовые риски для завершённых туров
+      risks.push(...await safeCheck('finance', () => checkFinancialRisksCompleted(client, tourData)));
+    } else {
+      // A. Подготовка тура
+      risks.push(...await safeCheck('prep', () => checkPreparationRisks(client, tourData)));
 
-    // C. Туристы и документы
-    risks.push(...await safeCheck('tourists', () => checkTouristRisks(client, tourData)));
+      // B. Конфликты ресурсов
+      risks.push(...await safeCheck('conflicts', () => checkResourceConflicts(client, tourData)));
 
-    // D. Финансовые риски
-    risks.push(...await safeCheck('finance', () => checkFinancialRisks(client, tourData)));
+      // C. Туристы и документы
+      risks.push(...await safeCheck('tourists', () => checkTouristRisks(client, tourData)));
 
-    // E. Качество и репутация
-    risks.push(...await safeCheck('quality', () => checkQualityRisks(client, tourData)));
+      // D. Финансовые риски
+      risks.push(...await safeCheck('finance', () => checkFinancialRisks(client, tourData)));
+
+      // E. Качество и репутация
+      risks.push(...await safeCheck('quality', () => checkQualityRisks(client, tourData)));
+    };
 
     // Сохраняем риски в БД (закрываем старые, создаём новые)
     await saveRisks(client, tourId, risks);
@@ -462,6 +474,50 @@ async function checkFinancialRisks(client, tour) {
 }
 
 // ============================================
+// D2. ФИНАНСОВЫЕ РИСКИ ДЛЯ ЗАВЕРШЁННЫХ ТУРОВ
+// ============================================
+
+async function checkFinancialRisksCompleted(client, tour) {
+  const risks = [];
+
+  // Получаем финансовые данные тура
+  const financeRes = await client.query(`
+    SELECT 
+      COALESCE(SUM(cost_cents), 0) as total_price_cents,
+      COALESCE(SUM(prepayment_cents), 0) as deposit_cents,
+      COALESCE(SUM(CASE WHEN is_paid THEN 0 ELSE (cost_cents - prepayment_cents) END), 0) as debt_cents
+    FROM tour_guests
+    WHERE tour_id = $1
+  `, [tour.id]);
+
+  const finance = financeRes.rows[0];
+  const totalPrice = finance.total_price_cents / 100;
+  const debt = finance.debt_cents / 100;
+
+  if (totalPrice === 0) return risks;
+
+  // Для завершённых туров показываем любую задолженность
+  if (debt > 0) {
+    const debtPercent = (debt / totalPrice) * 100;
+    risks.push({
+      risk_type: 'outstanding_debt',
+      severity: debtPercent > 50 ? 'critical' : 'warning',
+      title: `Непогашенная задолженность после тура`,
+      description: `Долг ${debt.toLocaleString()}₽ (${Math.round(debtPercent)}% от стоимости тура)`,
+      due_at: tour.end_date || tour.start_date,
+      metadata: {
+        due_amount: debt,
+        total_price: totalPrice,
+        debt_percent: Math.round(debtPercent),
+        tour_ended: tour.end_date,
+      },
+    });
+  }
+
+  return risks;
+}
+
+// ============================================
 // E. КАЧЕСТВО СЕРВИСА И РЕПУТАЦИЯ
 // ============================================
 
@@ -507,21 +563,20 @@ async function checkQualityRisks(client, tour) {
 // ============================================
 
 async function saveRisks(client, tourId, newRisks) {
-  // Закрываем все старые риски этого тура
+  // Удаляем все старые риски этого тура (не засоряем базу resolved записями)
   await client.query(`
-    UPDATE tour_risks
-    SET status = 'resolved', resolved_at = NOW()
-    WHERE tour_id = $1 AND status = 'open'
+    DELETE FROM tour_risks
+    WHERE tour_id = $1
   `, [tourId]);
 
-  // Создаём новые риски
+  // Создаём только актуальные (открытые) риски
   for (const risk of newRisks) {
     await client.query(`
       INSERT INTO tour_risks (
         tour_id, risk_type, severity, title, description,
-        related_entity_type, related_entity_id, due_at, metadata
+        related_entity_type, related_entity_id, due_at, metadata, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'open')
     `, [
       tourId,
       risk.risk_type,

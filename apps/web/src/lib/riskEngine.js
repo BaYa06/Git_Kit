@@ -25,8 +25,10 @@ function getPool() {
 // Конфигурация пороговых значений
 const CONFIG = {
   // Временные пороги (часы до выезда)
-  criticalHoursBefore: 24,
+  criticalHoursBefore: 20,      // Для гида, транспорта, отеля
   warningHoursBefore: 48,
+  touristDataHours: 16,         // Для неполных данных туристов
+  debtHoursBefore: 8,           // Для финансовых рисков (долг)
   
   // Финансовые пороги (%)
   maxDebtPercent: 20,
@@ -194,7 +196,7 @@ async function checkPreparationRisks(client, tour) {
   if (!hasGuide && hoursLeft < CONFIG.criticalHoursBefore) {
     risks.push({
       risk_type: 'missing_guide',
-      severity: hoursLeft < 12 ? 'critical' : 'warning',
+      severity: 'critical',
       title: 'Не назначен гид',
       description: `Тур начинается через ${Math.round(hoursLeft)} часов, но гид не назначен`,
       due_at: tour.start_date,
@@ -205,16 +207,17 @@ async function checkPreparationRisks(client, tour) {
     });
   }
 
-  // 2. Нет транспорта (проверяем только если таблица существует)
-  if (tables.has('tour_vehicles') && hoursLeft < CONFIG.criticalHoursBefore) {
+  // 2. Нет транспорта (проверяем в tour_components)
+  if (tables.has('tour_components') && hoursLeft < CONFIG.criticalHoursBefore) {
     const vehicleRes = await client.query(`
-      SELECT COUNT(*) as count FROM tour_vehicles WHERE tour_id = $1
+      SELECT COUNT(*) as count FROM tour_components 
+      WHERE tour_id = $1 AND type = 'transport'
     `, [tour.id]);
     
     if (parseInt(vehicleRes.rows[0].count) === 0) {
       risks.push({
         risk_type: 'missing_vehicle',
-        severity: hoursLeft < 12 ? 'critical' : 'warning',
+        severity: 'critical',
         title: 'Не назначен транспорт',
         description: `Выезд через ${Math.round(hoursLeft)} часов, транспорт не указан`,
         due_at: tour.start_date,
@@ -223,16 +226,39 @@ async function checkPreparationRisks(client, tour) {
     }
   }
 
-  // 4. Отель не указан (для overnight туров)
-  if (tour.tour_type === 'overnight' && !tour.hotel_id && hoursLeft < CONFIG.warningHoursBefore) {
-    risks.push({
-      risk_type: 'missing_hotel',
-      severity: 'critical',
-      title: 'Не указан отель для тура с проживанием',
-      description: 'Тур типа overnight, но отель не назначен',
-      due_at: tour.start_date,
-      metadata: { tour_type: tour.tour_type },
-    });
+  // 3. Отель не указан (для многодневных туров)
+  // Определяем многодневность по разнице start_date и end_date
+  const startDate = new Date(tour.start_date);
+  const endDate = tour.end_date ? new Date(tour.end_date) : startDate;
+  const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  const isOvernightTour = durationDays > 1;
+  
+  if (isOvernightTour && hoursLeft < CONFIG.criticalHoursBefore) {
+    let hasHotel = false;
+    
+    // Проверяем в компонентах тура
+    if (tables.has('tour_components')) {
+      const hotelRes = await client.query(`
+        SELECT 1 FROM tour_components 
+        WHERE tour_id = $1 AND type = 'hotel' AND hotel_id IS NOT NULL
+        LIMIT 1
+      `, [tour.id]);
+      hasHotel = hotelRes.rowCount > 0;
+    }
+    
+    if (!hasHotel) {
+      risks.push({
+        risk_type: 'missing_hotel',
+        severity: 'critical',
+        title: 'Не указан отель для тура с проживанием',
+        description: `Многодневный тур (${durationDays} дней), выезд через ${Math.round(hoursLeft)} часов, но отель не назначен`,
+        due_at: tour.start_date,
+        metadata: { 
+          duration_days: durationDays,
+          hours_to_departure: Math.round(hoursLeft),
+        },
+      });
+    }
   }
 
   return risks;
@@ -244,65 +270,80 @@ async function checkPreparationRisks(client, tour) {
 
 async function checkResourceConflicts(client, tour) {
   const risks = [];
+  const tables = tour._tables || new Set();
 
-  // 10. Гид назначен на два тура в одно время
+  // Собираем все guide_id для текущего тура
+  let guideIds = [];
   if (tour.main_guide_id) {
-    const conflictRes = await client.query(`
+    guideIds.push(tour.main_guide_id);
+  }
+  
+  // Также проверяем гидов в компонентах тура
+  if (tables.has('tour_components')) {
+    const guideRes = await client.query(`
+      SELECT guide_id FROM tour_components 
+      WHERE tour_id = $1 AND type = 'guide' AND guide_id IS NOT NULL
+    `, [tour.id]);
+    guideIds.push(...guideRes.rows.map(r => r.guide_id));
+  }
+  
+  // Убираем дубликаты
+  guideIds = [...new Set(guideIds)];
+
+  // 4. Гид назначен на два тура в одно время
+  for (const guideId of guideIds) {
+    // Проверяем конфликты по main_guide_id
+    const conflictMainRes = await client.query(`
       SELECT t.id, t.name
       FROM tours t
       WHERE t.main_guide_id = $1
         AND t.id != $2
-        AND t.status NOT IN ('cancelled', 'completed')
+        AND t.status NOT IN ('cancelled', 'completed', 'canceled')
         AND (
           (t.start_date, t.end_date) OVERLAPS ($3, $4)
         )
       LIMIT 1
-    `, [tour.main_guide_id, tour.id, tour.start_date, tour.end_date]);
+    `, [guideId, tour.id, tour.start_date, tour.end_date]);
 
-    if (conflictRes.rows.length > 0) {
-      const conflict = conflictRes.rows[0];
+    // Также проверяем конфликты по tour_components
+    let conflictComponentRes = { rows: [] };
+    if (tables.has('tour_components')) {
+      conflictComponentRes = await client.query(`
+        SELECT t.id, t.name
+        FROM tour_components tc
+        JOIN tours t ON t.id = tc.tour_id
+        WHERE tc.guide_id = $1
+          AND tc.type = 'guide'
+          AND t.id != $2
+          AND t.status NOT IN ('cancelled', 'completed', 'canceled')
+          AND (
+            (t.start_date, t.end_date) OVERLAPS ($3, $4)
+          )
+        LIMIT 1
+      `, [guideId, tour.id, tour.start_date, tour.end_date]);
+    }
+
+    const conflict = conflictMainRes.rows[0] || conflictComponentRes.rows[0];
+    if (conflict) {
       risks.push({
         risk_type: 'guide_conflict',
         severity: 'critical',
         title: 'Гид занят в другом туре',
         description: `Гид уже назначен на тур "${conflict.name}" в это же время`,
         related_entity_type: 'guide',
-        related_entity_id: tour.main_guide_id,
+        // related_entity_id храним в metadata (т.к. это UUID, а поле integer)
         due_at: tour.start_date,
         metadata: {
+          guide_id: guideId,
           conflicting_tour_id: conflict.id,
           conflicting_tour_name: conflict.name,
         },
       });
+      break; // Одного конфликта достаточно
     }
   }
 
-  // 13. Перегруз гида по нагрузке
-  if (tour.main_guide_id) {
-    const loadRes = await client.query(`
-      SELECT COUNT(*) as count
-      FROM tours
-      WHERE main_guide_id = $1
-        AND start_date >= NOW() - INTERVAL '7 days'
-        AND status NOT IN ('cancelled')
-    `, [tour.main_guide_id]);
-
-    const toursCount = parseInt(loadRes.rows[0].count);
-    if (toursCount > CONFIG.maxGuideTours7Days) {
-      risks.push({
-        risk_type: 'guide_overload',
-        severity: 'attention',
-        title: 'Высокая нагрузка на гида',
-        description: `Гид ведёт ${toursCount} туров за последние 7 дней`,
-        related_entity_type: 'guide',
-        related_entity_id: tour.main_guide_id,
-        metadata: {
-          tours_last_7_days: toursCount,
-          max_recommended: CONFIG.maxGuideTours7Days,
-        },
-      });
-    }
-  }
+  // guide_overload удалён по запросу
 
   return risks;
 }
@@ -344,7 +385,7 @@ async function checkTouristRisks(client, tour) {
     }
   }
 
-  // 16. Туристы без телефона/ФИО
+  // 7. Туристы без телефона/ФИО - только за 16 часов
   const invalidRes = await client.query(`
     SELECT COUNT(*) as count
     FROM tour_guests
@@ -353,14 +394,17 @@ async function checkTouristRisks(client, tour) {
   `, [tour.id]);
 
   const invalidCount = parseInt(invalidRes.rows[0].count);
-  if (invalidCount > 0 && tour.hours_to_departure < CONFIG.criticalHoursBefore) {
+  if (invalidCount > 0 && tour.hours_to_departure < CONFIG.touristDataHours) {
     risks.push({
       risk_type: 'tourists_missing_data',
-      severity: 'warning',
+      severity: 'critical',
       title: `У ${invalidCount} туристов не хватает данных`,
       description: 'Пустые обязательные поля: ФИО или телефон',
       due_at: tour.start_date,
-      metadata: { total_invalid: invalidCount },
+      metadata: { 
+        total_invalid: invalidCount,
+        hours_to_departure: Math.round(tour.hours_to_departure),
+      },
     });
   }
 
@@ -394,8 +438,8 @@ async function checkFinancialRisks(client, tour) {
   const depositPercent = (deposit / totalPrice) * 100;
   const debtPercent = (debt / totalPrice) * 100;
 
-  // 22. Большая дебиторка перед выездом
-  if (debt > 0 && debtPercent > CONFIG.maxDebtPercent && tour.hours_to_departure < CONFIG.criticalHoursBefore) {
+  // 8. Большая дебиторка перед выездом - за 8 часов
+  if (debt > 0 && debtPercent > CONFIG.maxDebtPercent && tour.hours_to_departure < CONFIG.debtHoursBefore) {
     risks.push({
       risk_type: 'high_debt_before_tour',
       severity: 'critical',
@@ -412,22 +456,7 @@ async function checkFinancialRisks(client, tour) {
     });
   }
 
-  // 23. Низкая доля предоплат
-  if (depositPercent < CONFIG.minDepositPercent && tour.hours_to_departure < CONFIG.warningHoursBefore) {
-    risks.push({
-      risk_type: 'low_deposit',
-      severity: 'warning',
-      title: 'Низкая предоплата',
-      description: `Получено ${Math.round(depositPercent)}% вместо минимум ${CONFIG.minDepositPercent}%`,
-      due_at: tour.start_date,
-      metadata: {
-        deposit_received: deposit,
-        total_price: totalPrice,
-        deposit_percent: Math.round(depositPercent),
-        min_required_percent: CONFIG.minDepositPercent,
-      },
-    });
-  }
+  // low_deposit удалён по запросу
 
   return risks;
 }

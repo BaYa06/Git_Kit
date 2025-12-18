@@ -86,7 +86,7 @@ export default function OwnerDashboard() {
       {/* Team & Actions Row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-6">
-          <TeamTable />
+          <TeamTable companyId={companyId} />
         </div>
         <div className="lg:col-span-3">
           <QuickActions onAction={handleQuickAction} />

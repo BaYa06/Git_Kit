@@ -1,13 +1,12 @@
-export default function CriticalWarningsBanner({ warnings = [], onOpenList }) {
-  const defaultWarnings = [
-    { type: 'no_guide', label: 'Нет гида', count: 2 },
-    { type: 'transport', label: 'Транспорт не подтвержден', count: 1 },
-    { type: 'documents', label: 'Документы', count: 2 },
-  ];
-
-  const warningsList = warnings.length > 0 ? warnings : defaultWarnings;
+export default function CriticalWarningsBanner({
+  warnings = [],
+  tours = [],
+  isOpen = false,
+  onToggleList,
+}) {
+  const warningsList = Array.isArray(warnings) ? warnings : [];
   const totalCount = warningsList.reduce((sum, w) => sum + w.count, 0);
-  const tourIds = ['#4021', '#4025'];
+  const tourItems = Array.isArray(tours) ? tours : [];
 
   if (totalCount === 0) return null;
 
@@ -35,25 +34,29 @@ export default function CriticalWarningsBanner({ warnings = [], onOpenList }) {
       </div>
       
       <div className="flex items-center gap-3 self-end md:self-auto">
-        <div className="flex -space-x-2">
-          {tourIds.map((id) => (
-            <div
-              key={id}
-              className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-600"
-              title={`Тур ${id}`}
-            >
-              {id}
-            </div>
-          ))}
-          <div className="w-8 h-8 rounded-full border-2 border-white bg-rose-100 text-[10px] flex items-center justify-center font-bold text-rose-600 z-10">
-            +{Math.max(0, totalCount - tourIds.length)}
+        {tourItems.length > 0 && (
+          <div className="flex -space-x-2">
+            {tourItems.slice(0, 3).map((t) => (
+              <div
+                key={t.id}
+                className="w-8 h-8 rounded-full border-2 border-white bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-600"
+                title={t.name ? `${t.name}` : 'Тур'}
+              >
+                {String(t.id).slice(0, 4)}
+              </div>
+            ))}
+            {tourItems.length > 3 && (
+              <div className="w-8 h-8 rounded-full border-2 border-white bg-rose-100 text-[10px] flex items-center justify-center font-bold text-rose-600 z-10">
+                +{tourItems.length - 3}
+              </div>
+            )}
           </div>
-        </div>
+        )}
         <button
-          onClick={onOpenList}
+          onClick={onToggleList}
           className="text-xs font-bold text-rose-600 hover:text-rose-800 bg-white border border-rose-200 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
         >
-          Открыть список
+          {isOpen ? 'Скрыть' : 'Показать'}
         </button>
       </div>
     </div>

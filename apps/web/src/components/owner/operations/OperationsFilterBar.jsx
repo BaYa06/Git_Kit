@@ -1,14 +1,16 @@
 import { useState } from 'react';
 
 export default function OperationsFilterBar({ onFilterChange, onExport, onCreate }) {
-  const [activePeriod, setActivePeriod] = useState('today');
   const [filters, setFilters] = useState({
+    period: 'today',
     status: 'all',
     destination: 'all',
     responsible: 'all',
     risk: 'all',
     search: '',
   });
+
+  const activePeriod = filters.period;
 
   const periods = [
     { key: 'today', label: 'Сегодня' },
@@ -19,8 +21,9 @@ export default function OperationsFilterBar({ onFilterChange, onExport, onCreate
   ];
 
   const handlePeriodClick = (key) => {
-    setActivePeriod(key);
-    onFilterChange?.({ ...filters, period: key });
+    const newFilters = { ...filters, period: key };
+    setFilters(newFilters);
+    onFilterChange?.(newFilters);
   };
 
   const handleFilterChange = (key, value) => {
@@ -58,11 +61,11 @@ export default function OperationsFilterBar({ onFilterChange, onExport, onCreate
             onChange={(e) => handleFilterChange('status', e.target.value)}
             className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] outline-none cursor-pointer"
           >
-            <option value="all">Статус: All</option>
-            <option value="preparing">Preparing</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
+            <option value="all">Статус: Все</option>
+            <option value="preparing">Подготовка</option>
+            <option value="confirmed">Подтверждён</option>
+            <option value="active">В пути</option>
+            <option value="draft">Черновик</option>
           </select>
           <span className="material-symbols-outlined absolute right-2 top-1.5 text-slate-400 pointer-events-none" style={{ fontSize: '18px' }}>
             keyboard_arrow_down
@@ -76,7 +79,7 @@ export default function OperationsFilterBar({ onFilterChange, onExport, onCreate
             onChange={(e) => handleFilterChange('destination', e.target.value)}
             className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] outline-none cursor-pointer"
           >
-            <option value="all">Направление: All</option>
+            <option value="all">Направление: Все</option>
             <option value="issyk-kul">Иссык-Куль</option>
             <option value="almaty">Алматы</option>
             <option value="karakol">Каракол</option>
@@ -93,7 +96,7 @@ export default function OperationsFilterBar({ onFilterChange, onExport, onCreate
             onChange={(e) => handleFilterChange('responsible', e.target.value)}
             className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] outline-none cursor-pointer"
           >
-            <option value="all">Ответственный: All</option>
+            <option value="all">Ответственный: Все</option>
             <option value="elena">Елена А.</option>
             <option value="dmitry">Дмитрий К.</option>
             <option value="anna">Анна С.</option>
@@ -110,10 +113,10 @@ export default function OperationsFilterBar({ onFilterChange, onExport, onCreate
             onChange={(e) => handleFilterChange('risk', e.target.value)}
             className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:border-slate-300 focus:ring-2 focus:ring-[#4f46e5]/20 focus:border-[#4f46e5] outline-none cursor-pointer"
           >
-            <option value="all">Риск: All</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="all">Риск: Все</option>
+            <option value="high">Критический</option>
+            <option value="medium">Средний</option>
+            <option value="low">Низкий</option>
           </select>
           <span className="material-symbols-outlined absolute right-2 top-1.5 text-slate-400 pointer-events-none" style={{ fontSize: '18px' }}>
             keyboard_arrow_down

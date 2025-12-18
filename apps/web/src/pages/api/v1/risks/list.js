@@ -10,6 +10,10 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 const isDev = process.env.NODE_ENV !== 'production';
 
+// Кэш последней проверки рисков (по компании)
+const lastAutoCheck = new Map();
+const AUTO_CHECK_INTERVAL_MS = 60 * 1000; // Не чаще чем раз в минуту
+
 function tokenFromCookie(req) {
   const cookie = req.headers.cookie || '';
   const pair = cookie.split('; ').find((c) => c.startsWith('gidkit_token='));
@@ -58,6 +62,46 @@ export default async function handler(req, res) {
     if (permRes.rowCount === 0) {
       return res.status(403).json({ message: 'Access denied' });
     }
+
+    // === АВТОМАТИЧЕСКАЯ ПРОВЕРКА РИСКОВ ===
+    // Проверяем все туры на сегодня и завтра, чтобы риски были актуальными
+    // Но не чаще чем раз в минуту на компанию
+    const lastCheck = lastAutoCheck.get(company_id) || 0;
+    const now = Date.now();
+    
+    if (now - lastCheck > AUTO_CHECK_INTERVAL_MS) {
+      lastAutoCheck.set(company_id, now);
+      
+      try {
+        const upcomingToursRes = await client.query(`
+          SELECT id FROM tours
+          WHERE company_id = $1
+            AND status NOT IN ('completed', 'canceled', 'cancelled')
+            AND start_date >= CURRENT_DATE
+            AND start_date <= CURRENT_DATE + INTERVAL '2 days'
+        `, [company_id]);
+
+        if (upcomingToursRes.rows.length > 0) {
+          // Динамический импорт checkTourRisks
+          const { checkTourRisks } = await import('../../../../lib/riskEngine');
+          
+          // Проверяем каждый тур (параллельно для скорости)
+          await Promise.all(
+            upcomingToursRes.rows.map(tour => 
+              checkTourRisks(tour.id).catch(err => {
+                console.warn(`[Risks] Auto-check failed for tour ${tour.id}:`, err.message);
+              })
+            )
+          );
+          
+          if (isDev) console.log(`[Risks] Auto-checked ${upcomingToursRes.rows.length} upcoming tours`);
+        }
+      } catch (autoCheckErr) {
+        // Не блокируем выдачу рисков если автопроверка упала
+        console.warn('[Risks] Auto-check error:', autoCheckErr.message);
+      }
+    }
+    // === КОНЕЦ АВТОПРОВЕРКИ ===
 
     // Получаем риски
     let query = `

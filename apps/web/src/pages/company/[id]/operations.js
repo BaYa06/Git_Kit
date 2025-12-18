@@ -1,5 +1,5 @@
 // pages/company/[id]/operations.js — Operations Page for Owner
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import jwt from 'jsonwebtoken';
@@ -14,6 +14,7 @@ import OperationsFilterBar from '../../../components/owner/operations/Operations
 import OperationsStats from '../../../components/owner/operations/OperationsStats';
 import CriticalWarningsBanner from '../../../components/owner/operations/CriticalWarningsBanner';
 import ToursTable from '../../../components/owner/operations/ToursTable';
+import AlertsWidget from '../../../components/owner/dashboard/AlertsWidget';
 
 export async function getServerSideProps({ req, params }) {
   const cookie = req.headers.cookie || '';
@@ -97,9 +98,29 @@ export async function getServerSideProps({ req, params }) {
 export default function OperationsPage({ company, user }) {
   const router = useRouter();
   const { id: companyId } = router.query;
+  const resolvedCompanyId = Array.isArray(companyId)
+    ? companyId[0]
+    : companyId || company?.id || null;
+
+  const [filters, setFilters] = useState({
+    period: 'today',
+    status: 'all',
+    destination: 'all',
+    responsible: 'all',
+    risk: 'all',
+    search: '',
+  });
+
+  const [stats, setStats] = useState([]);
+  const [warnings, setWarnings] = useState([]);
+  const [warningTours, setWarningTours] = useState([]);
+  const [tours, setTours] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [criticalListOpen, setCriticalListOpen] = useState(false);
 
   const handleFilterChange = (filters) => {
-    console.log('Filters changed:', filters);
+    setFilters(filters);
   };
 
   const handleExport = () => {
@@ -111,17 +132,70 @@ export default function OperationsPage({ company, user }) {
   };
 
   const handleOpenWarningsList = () => {
-    console.log('Open warnings list');
+    setCriticalListOpen((v) => !v);
   };
 
   const handleTourClick = (tour) => {
     console.log('Tour clicked:', tour);
   };
 
+  const handleRiskAction = (risk) => {
+    console.log('Risk action:', risk);
+  };
+
+  useEffect(() => {
+    if (!resolvedCompanyId) return;
+
+    let ignore = false;
+    setLoading(true);
+    setError(null);
+
+    const qs = new URLSearchParams();
+    qs.set('companyId', resolvedCompanyId);
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      qs.set(key, String(value));
+    });
+
+    fetch(`/api/v1/owner/operations?${qs.toString()}`, {
+      credentials: 'include',
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          throw new Error(text || `Request failed: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (ignore) return;
+        setStats(Array.isArray(data?.stats) ? data.stats : []);
+        setWarnings(Array.isArray(data?.warnings) ? data.warnings : []);
+        setWarningTours(Array.isArray(data?.warningTours) ? data.warningTours : []);
+        setTours(Array.isArray(data?.tours) ? data.tours : []);
+      })
+      .catch((e) => {
+        if (ignore) return;
+        setStats([]);
+        setWarnings([]);
+        setWarningTours([]);
+        setTours([]);
+        setError(e?.message || 'Failed to load operations data');
+      })
+      .finally(() => {
+        if (ignore) return;
+        setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [resolvedCompanyId, filters]);
+
   return (
     <>
       <Head>
-        <title>Операции - {company.name}</title>
+        <title>Все туры - {company.name}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -130,7 +204,7 @@ export default function OperationsPage({ company, user }) {
 
       <div className="bg-[#f8fafc] text-slate-900 font-['Inter',sans-serif] antialiased overflow-hidden h-screen flex">
         {/* Sidebar */}
-        <OwnerSidebar companyId={companyId} />
+        <OwnerSidebar companyId={resolvedCompanyId} />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col h-full min-w-0 relative bg-[#f8fafc]">
@@ -146,8 +220,8 @@ export default function OperationsPage({ company, user }) {
             <div className="max-w-[1440px] mx-auto p-6 flex flex-col gap-6">
               {/* Page Title */}
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-slate-900">Операции</h2>
-                <p className="text-slate-500 text-sm">Выезды, готовность, риски и контроль исполнения</p>
+                <h2 className="text-2xl font-bold text-slate-900">Все туры</h2>
+                <p className="text-slate-500 text-sm">Список туров компании, календарь и контроль рисков</p>
               </div>
 
               {/* Filter Bar */}
@@ -158,13 +232,28 @@ export default function OperationsPage({ company, user }) {
               />
 
               {/* Stats Cards */}
-              <OperationsStats />
+              <OperationsStats stats={stats} />
+
+              {error && (
+                <div className="bg-white border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">
+                  Не удалось загрузить данные: {error}
+                </div>
+              )}
 
               {/* Critical Warnings Banner */}
-              <CriticalWarningsBanner onOpenList={handleOpenWarningsList} />
+              <CriticalWarningsBanner
+                warnings={warnings}
+                tours={warningTours}
+                isOpen={criticalListOpen}
+                onToggleList={handleOpenWarningsList}
+              />
+
+              {criticalListOpen && (
+                <AlertsWidget companyId={resolvedCompanyId} onAction={handleRiskAction} />
+              )}
 
               {/* Tours Table */}
-              <ToursTable onTourClick={handleTourClick} />
+              <ToursTable companyId={resolvedCompanyId} tours={tours} onTourClick={handleTourClick} />
 
               {/* Bottom Spacer */}
               <div className="h-8"></div>

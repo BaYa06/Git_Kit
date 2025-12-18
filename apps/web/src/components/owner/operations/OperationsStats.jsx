@@ -1,37 +1,36 @@
-const defaultStats = [
+const placeholderStats = [
   {
-    label: 'Туры сегодня',
-    value: 14,
+    label: 'Туры',
+    value: '—',
     icon: 'today',
-    change: '+2',
-    trend: 'up',
-    subtitle: '5 выехали, 9 готовятся',
+    change: '—',
+    trend: 'neutral',
+    subtitle: 'Загрузка...',
   },
   {
     label: 'В подготовке',
-    value: 28,
+    value: '—',
     icon: 'pending_actions',
-    change: 'vs 24 вчера',
+    change: '—',
     trend: 'neutral',
-    subtitle: 'Ближайшие 3 дня',
+    subtitle: 'Загрузка...',
   },
   {
     label: 'Критические риски',
-    value: 3,
+    value: '—',
     icon: 'report_problem',
-    change: 'High',
+    change: '—',
     trend: 'critical',
-    subtitle: 'Требуют внимания!',
+    subtitle: 'Загрузка...',
     variant: 'danger',
   },
   {
     label: 'Проблемные оплаты',
-    value: 7,
+    value: '—',
     icon: 'account_balance_wallet',
-    change: '42k KGS',
-    trend: 'warning',
-    subtitle: 'Просрочено > 24ч',
-    variant: 'warning',
+    change: '—',
+    trend: 'neutral',
+    subtitle: 'Загрузка...',
   },
 ];
 
@@ -97,10 +96,22 @@ function StatCard({ label, value, icon, change, trend, subtitle, variant }) {
   );
 }
 
-export default function OperationsStats({ stats = defaultStats }) {
+export default function OperationsStats({ stats }) {
+  const safeStats = Array.isArray(stats) ? stats : [];
+
+  if (safeStats.length === 0) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {placeholderStats.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((stat, index) => (
+      {safeStats.map((stat, index) => (
         <StatCard key={index} {...stat} />
       ))}
     </div>

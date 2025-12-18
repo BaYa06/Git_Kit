@@ -21,17 +21,6 @@ export default function TeamStats({ stats }) {
       iconColor: 'text-emerald-600',
     },
     {
-      id: 'conversion',
-      label: 'Конверсия',
-      value: '12.4%',
-      change: '-0.8%',
-      changeType: 'negative',
-      subtext: 'недели',
-      icon: 'percent',
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-    {
       id: 'rating',
       label: 'Оценка сервиса',
       value: '4.7',
@@ -54,7 +43,7 @@ export default function TeamStats({ stats }) {
   const data = stats || defaultStats;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {data.map((stat) => (
         <div
           key={stat.id}

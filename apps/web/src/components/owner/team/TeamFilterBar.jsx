@@ -1,8 +1,13 @@
 import { useState } from 'react';
 
-export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
+export default function TeamFilterBar({
+  onFilterChange,
+  onExport,
+  onInvite,
+  activeRole = 'all',
+  onRoleChange,
+}) {
   const [activePeriod, setActivePeriod] = useState('30days');
-  const [activeRole, setActiveRole] = useState('managers');
   const [searchQuery, setSearchQuery] = useState('');
 
   const periods = [
@@ -20,12 +25,30 @@ export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
     { id: 'drivers', label: 'Водители' },
   ];
 
+  const handleRoleClick = (roleId) => {
+    onRoleChange?.(roleId);
+    onFilterChange?.({
+      role: roleId,
+      period: activePeriod,
+      search: searchQuery,
+    });
+  };
+
+  const handlePeriodClick = (periodId) => {
+    setActivePeriod(periodId);
+    onFilterChange?.({
+      role: activeRole,
+      period: periodId,
+      search: searchQuery,
+    });
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-2xl font-bold text-[#111118]">Команда</h2>
         <p className="text-[#616189] text-sm mt-1">
-          Эффективность менеджеров, гидов и качества сервиса
+          Управление сотрудниками и эффективность
         </p>
       </div>
 
@@ -36,7 +59,7 @@ export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
             {periods.map((period) => (
               <button
                 key={period.id}
-                onClick={() => setActivePeriod(period.id)}
+                onClick={() => handlePeriodClick(period.id)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activePeriod === period.id
                     ? 'bg-white text-[#111118] font-semibold shadow-sm'
@@ -71,7 +94,7 @@ export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
             {roles.map((role) => (
               <button
                 key={role.id}
-                onClick={() => setActiveRole(role.id)}
+                onClick={() => handleRoleClick(role.id)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeRole === role.id
                     ? 'bg-white text-[#111118] font-semibold shadow-sm'
@@ -91,9 +114,17 @@ export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Поиск сотрудника..."
-              className="h-9 pl-9 pr-3 text-sm bg-white border border-[#e0e0e4] rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none w-[180px] transition-all"
+              onChange={(e) => {
+                const next = e.target.value;
+                setSearchQuery(next);
+                onFilterChange?.({
+                  role: activeRole,
+                  period: activePeriod,
+                  search: next,
+                });
+              }}
+              placeholder="Поиск по имени, телефону, email"
+              className="h-9 pl-9 pr-3 text-sm bg-white border border-[#e0e0e4] rounded-lg focus:border-primary focus:ring-1 focus:ring-primary outline-none w-[260px] transition-all"
             />
           </div>
         </div>
@@ -111,7 +142,7 @@ export default function TeamFilterBar({ onFilterChange, onExport, onInvite }) {
             onClick={onInvite}
             className="flex items-center gap-2 h-9 px-4 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 shadow-sm shadow-primary/30 transition-all"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
             Пригласить
           </button>
         </div>

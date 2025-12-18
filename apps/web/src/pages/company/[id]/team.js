@@ -1,6 +1,7 @@
 // pages/company/[id]/team.js — Team Page for Owner
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { useEffect, useMemo, useState } from 'react';
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
 
@@ -10,13 +11,15 @@ import OwnerHeader from '../../../components/owner/layout/OwnerHeader';
 
 // Team components
 import TeamFilterBar from '../../../components/owner/team/TeamFilterBar';
+import TeamManagersContent from '../../../components/owner/team/TeamManagersContent';
+import TeamGuidesContent from '../../../components/owner/team/TeamGuidesContent';
 import TeamStats from '../../../components/owner/team/TeamStats';
 import PerformanceChart from '../../../components/owner/team/PerformanceChart';
 import ServiceQualityWidget from '../../../components/owner/team/ServiceQualityWidget';
 import EfficiencyTable from '../../../components/owner/team/EfficiencyTable';
 import AttentionZones from '../../../components/owner/team/AttentionZones';
 import TeamComposition from '../../../components/owner/team/TeamComposition';
-import WorkloadWidget from '../../../components/owner/team/WorkloadWidget';
+import InviteUserModal from '../../../components/owner/team/InviteUserModal';
 
 export async function getServerSideProps({ req, params }) {
   const cookie = req.headers.cookie || '';
@@ -93,14 +96,119 @@ export async function getServerSideProps({ req, params }) {
 export default function TeamPage({ company, user }) {
   const router = useRouter();
   const { id: companyId } = router.query;
+  const [activeRole, setActiveRole] = useState('all');
+  const [period, setPeriod] = useState('30days');
+  const [search, setSearch] = useState('');
+  const [isCreateManagerOpen, setIsCreateManagerOpen] = useState(false);
+  const [isCreateGuideOpen, setIsCreateGuideOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [overview, setOverview] = useState(null);
+  const [overviewVersion, setOverviewVersion] = useState(0);
 
   const handleExport = () => {
     console.log('Export clicked');
   };
 
   const handleInvite = () => {
-    console.log('Invite clicked');
+    setIsInviteModalOpen(true);
   };
+
+  useEffect(() => {
+    const loadOverview = async () => {
+      if (!companyId) return;
+      if (activeRole !== 'all') return;
+
+      try {
+        const url = `/api/v1/owner/team-overview?companyId=${companyId}&period=${period}`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        setOverview(data);
+      } catch (e) {
+        console.error('Failed to load team overview', e);
+      }
+    };
+
+    loadOverview();
+  }, [companyId, period, activeRole, overviewVersion]);
+
+  const formatNumber = (value) => {
+    try {
+      return new Intl.NumberFormat('ru-RU').format(value);
+    } catch {
+      return String(value);
+    }
+  };
+
+  const periodLabel = useMemo(() => {
+    switch (period) {
+      case '7days':
+        return 'за 7 дней';
+      case '30days':
+        return 'за 30 дней';
+      case 'quarter':
+        return 'за 90 дней';
+      case 'custom':
+        return 'за период';
+      default:
+        return 'за 30 дней';
+    }
+  }, [period]);
+
+  const teamStats = useMemo(() => {
+    if (!overview) return null;
+
+    const employees = overview.employees || {};
+    const sales = overview.sales || {};
+    const service = overview.service || {};
+    const avgRating =
+      typeof service.avgRating === 'number' ? service.avgRating.toFixed(1) : '—';
+
+    const employeesSub = [
+      `Админы: ${formatNumber(Number(employees.admins || 0))}`,
+      `Менеджеры: ${formatNumber(Number(employees.managers || 0))}`,
+      `Гиды: ${formatNumber(Number(employees.guides || 0))}`,
+    ].join(' • ');
+
+    return [
+      {
+        id: 'employees',
+        label: 'Активные сотрудники',
+        value: formatNumber(Number(employees.total || 0)),
+        subtext: employeesSub,
+        icon: 'badge',
+        iconBg: 'bg-indigo-50',
+        iconColor: 'text-indigo-600',
+      },
+      {
+        id: 'sales',
+        label: 'Продажи',
+        value: formatNumber(Number(sales.people || 0)),
+        subtext: periodLabel,
+        icon: 'shopping_cart',
+        iconBg: 'bg-emerald-50',
+        iconColor: 'text-emerald-600',
+      },
+      {
+        id: 'rating',
+        label: 'Оценка сервиса',
+        value: avgRating,
+        subtext: `На основе ${formatNumber(Number(service.ratingsCount || 0))} отзывов`,
+        icon: 'star',
+        iconBg: 'bg-amber-50',
+        iconColor: 'text-amber-600',
+      },
+      {
+        id: 'complaints',
+        label: 'Жалобы',
+        value: formatNumber(Number(service.complaints || 0)),
+        subtext: `${formatNumber(Number(service.unresolved || 0))} не решены`,
+        icon: 'report_problem',
+        iconBg: 'bg-rose-50',
+        iconColor: 'text-rose-600',
+      },
+    ];
+  }, [overview, periodLabel]);
 
   return (
     <>
@@ -129,32 +237,88 @@ export default function TeamPage({ company, user }) {
           <main className="flex-1 overflow-y-auto scroll-smooth">
             <div className="max-w-[1440px] mx-auto p-6 md:p-8 flex flex-col gap-6">
               {/* Filter Bar */}
-              <TeamFilterBar onExport={handleExport} onInvite={handleInvite} />
+              <TeamFilterBar
+                onExport={handleExport}
+                onInvite={handleInvite}
+                activeRole={activeRole}
+                onFilterChange={(filter) => {
+                  if (filter?.period) setPeriod(filter.period);
+                  if (typeof filter?.search === 'string') setSearch(filter.search);
+                }}
+                onRoleChange={(role) => {
+                  if (role === activeRole) return;
+                  setActiveRole(role);
+                  setIsCreateManagerOpen(false);
+                  setIsCreateGuideOpen(false);
+                }}
+              />
 
-              {/* KPI Stats */}
-              <TeamStats />
+              {activeRole === 'managers' ? (
+                <TeamManagersContent
+                  companyId={companyId}
+                  period={period}
+                  search={search}
+                  isCreateManagerOpen={isCreateManagerOpen}
+                  onCloseCreateManager={() => setIsCreateManagerOpen(false)}
+                />
+              ) : activeRole === 'guides' ? (
+                <TeamGuidesContent
+                  companyId={companyId}
+                  period={period}
+                  search={search}
+                  isCreateGuideOpen={isCreateGuideOpen}
+                  onCloseCreateGuide={() => setIsCreateGuideOpen(false)}
+                />
+              ) : (
+                <>
+                  {/* KPI Stats */}
+                  <TeamStats stats={teamStats || undefined} />
 
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <PerformanceChart />
-                <ServiceQualityWidget />
-              </div>
+                  {/* Charts Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <PerformanceChart
+                      series={overview?.sales?.series}
+                      prevSeries={overview?.sales?.prevSeries}
+                    />
+                    <ServiceQualityWidget
+                      avgRating={overview?.service?.avgRating}
+                      ratingsCount={overview?.service?.ratingsCount}
+                      breakdown={overview?.service?.breakdown}
+                      complaints={overview?.service?.complaints}
+                      unresolved={overview?.service?.unresolved}
+                    />
+                  </div>
 
-              {/* Efficiency Table */}
-              <EfficiencyTable />
+                  {/* Efficiency Table */}
+                  <EfficiencyTable
+                    managers={overview?.topEfficiency?.managers}
+                    guides={overview?.topEfficiency?.guides}
+                  />
 
-              {/* Bottom Row */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
-                <AttentionZones />
-                <div className="flex flex-col gap-6">
-                  <TeamComposition />
-                  <WorkloadWidget />
-                </div>
-              </div>
+                  {/* Bottom Row */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
+                    <AttentionZones />
+                    <div className="flex flex-col gap-6">
+                      <TeamComposition
+                        admins={overview?.employees?.admins}
+                        managers={overview?.employees?.managers}
+                        guides={overview?.employees?.guides}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </main>
         </div>
       </div>
+
+      <InviteUserModal
+        open={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        companyId={companyId}
+        onCreated={() => setOverviewVersion((v) => v + 1)}
+      />
     </>
   );
 }

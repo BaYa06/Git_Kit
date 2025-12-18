@@ -2,11 +2,12 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/company/[id]/owner": "pages/company/[id]/owner.js",
+  "/company/[id]/team": "pages/company/[id]/team.js",
+  "/api/v1/owner/team-overview": "pages/api/v1/owner/team-overview.js",
   "/company/[id]/operations": "pages/company/[id]/operations.js",
   "/api/v1/risks/list": "pages/api/v1/risks/list.js",
   "/api/v1/owner/team": "pages/api/v1/owner/team.js",
-  "/company/[id]/owner": "pages/company/[id]/owner.js",
   "/api/v1/owner/dashboard-stats": "pages/api/v1/owner/dashboard-stats.js",
-  "/api/v1/owner/upcoming-tours": "pages/api/v1/owner/upcoming-tours.js",
-  "/api/v1/owner/operations": "pages/api/v1/owner/operations.js"
+  "/api/v1/owner/upcoming-tours": "pages/api/v1/owner/upcoming-tours.js"
 }

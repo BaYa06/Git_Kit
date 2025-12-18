@@ -26,8 +26,14 @@ label { @apply block text-sm font-medium; }
   align-items: center;
   justify-content: center;
 }
+.material-symbols-outlined.icon-fill {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
 
 body {
   background-color: rgb(17 22 33 / var(--tw-bg-opacity, 1));
 }
-

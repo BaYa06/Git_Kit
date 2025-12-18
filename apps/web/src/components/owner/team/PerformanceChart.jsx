@@ -1,13 +1,171 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-export default function PerformanceChart() {
+const formatCompact = (value) => {
+  if (!Number.isFinite(value)) return '0';
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+  return String(Math.round(value));
+};
+
+const toChartPath = ({
+  values,
+  width,
+  height,
+  paddingTop,
+  paddingBottom,
+  maxValue,
+}) => {
+  const n = values.length;
+  if (n === 0) return '';
+
+  const max = Math.max(1, Number(maxValue || 0));
+  const usableHeight = height - paddingTop - paddingBottom;
+
+  const points = values.map((value, index) => {
+    const x = n === 1 ? 0 : (index / (n - 1)) * width;
+    const y = paddingTop + (1 - value / max) * usableHeight;
+    return { x, y };
+  });
+
+  return points
+    .map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+    .join(' ');
+};
+
+const toAreaPath = ({
+  values,
+  width,
+  height,
+  paddingTop,
+  paddingBottom,
+  maxValue,
+}) => {
+  const n = values.length;
+  if (n === 0) return '';
+
+  const max = Math.max(1, Number(maxValue || 0));
+  const usableHeight = height - paddingTop - paddingBottom;
+  const bottom = height;
+
+  const points = values.map((value, index) => {
+    const x = n === 1 ? 0 : (index / (n - 1)) * width;
+    const y = paddingTop + (1 - value / max) * usableHeight;
+    return { x, y };
+  });
+
+  const start = `M0,${bottom} L0,${points[0].y.toFixed(2)}`;
+  const line = points
+    .slice(1)
+    .map((p) => `L${p.x.toFixed(2)},${p.y.toFixed(2)}`)
+    .join(' ');
+  const end = ` L${width},${bottom} Z`;
+  return `${start} ${line}${end}`;
+};
+
+const pickAxisLabels = (series) => {
+  const n = series.length;
+  if (n === 0) return ['—', '—', '—', '—'];
+
+  const idx = [
+    0,
+    Math.floor((n - 1) / 3),
+    Math.floor(((n - 1) * 2) / 3),
+    n - 1,
+  ];
+
+  const format = (dateStr) => {
+    const date = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+  };
+
+  return idx.map((i) => format(series[i]?.date));
+};
+
+export default function PerformanceChart({ series, prevSeries }) {
   const [activeMetric, setActiveMetric] = useState('sales');
 
-  const metrics = [
-    { id: 'sales', label: 'Продажи' },
-    { id: 'revenue', label: 'Выручка' },
-    { id: 'conversion', label: 'Конверсия' },
-  ];
+  const metrics = useMemo(
+    () => [
+      { id: 'sales', label: 'Продажи' },
+      { id: 'revenue', label: 'Выручка' },
+    ],
+    []
+  );
+
+  const safeSeries = Array.isArray(series) ? series : [];
+  const safePrevSeries = Array.isArray(prevSeries) ? prevSeries : [];
+
+  const currentValues = useMemo(() => {
+    if (safeSeries.length === 0) return [];
+    if (activeMetric === 'revenue') {
+      return safeSeries.map((p) => Number(p.revenue || 0));
+    }
+    return safeSeries.map((p) => Number(p.people || 0));
+  }, [activeMetric, safeSeries]);
+
+  const prevValues = useMemo(() => {
+    if (safePrevSeries.length === 0) return [];
+    if (activeMetric === 'revenue') {
+      return safePrevSeries.map((p) => Number(p.revenue || 0));
+    }
+    return safePrevSeries.map((p) => Number(p.people || 0));
+  }, [activeMetric, safePrevSeries]);
+
+  const axisLabels = useMemo(() => pickAxisLabels(safeSeries), [safeSeries]);
+
+  const yMax = useMemo(() => {
+    const max = Math.max(0, ...currentValues, ...prevValues);
+    return max > 0 ? max : 1;
+  }, [currentValues, prevValues]);
+
+  const yTicks = useMemo(() => {
+    const steps = [1, 0.75, 0.5, 0.25, 0];
+    return steps.map((k) => yMax * k);
+  }, [yMax]);
+
+  const width = 800;
+  const height = 240;
+  const paddingTop = 20;
+  const paddingBottom = 20;
+
+  const currentPath = useMemo(
+    () =>
+      toChartPath({
+        values: currentValues.length ? currentValues : [0],
+        width,
+        height,
+        paddingTop,
+        paddingBottom,
+        maxValue: yMax,
+      }),
+    [currentValues, yMax]
+  );
+  const currentArea = useMemo(
+    () =>
+      toAreaPath({
+        values: currentValues.length ? currentValues : [0],
+        width,
+        height,
+        paddingTop,
+        paddingBottom,
+        maxValue: yMax,
+      }),
+    [currentValues, yMax]
+  );
+  const prevPath = useMemo(
+    () =>
+      toChartPath({
+        values: prevValues.length ? prevValues : [0],
+        width,
+        height,
+        paddingTop,
+        paddingBottom,
+        maxValue: yMax,
+      }),
+    [prevValues, yMax]
+  );
 
   return (
     <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-[#e0e0e4] shadow-sm flex flex-col">
@@ -45,11 +203,11 @@ export default function PerformanceChart() {
 
         {/* Y-axis labels */}
         <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[10px] text-[#9ca3af] -translate-x-full pr-2">
-          <span>200</span>
-          <span>150</span>
-          <span>100</span>
-          <span>50</span>
-          <span>0</span>
+          {yTicks.map((value, idx) => (
+            <span key={idx}>
+              {activeMetric === 'revenue' ? formatCompact(value) : formatCompact(value)}
+            </span>
+          ))}
         </div>
 
         {/* Chart SVG */}
@@ -68,7 +226,7 @@ export default function PerformanceChart() {
 
           {/* Current period line */}
           <path
-            d="M0,200 L100,180 L200,140 L300,150 L400,100 L500,80 L600,40 L700,60 L800,30"
+            d={currentPath}
             fill="none"
             stroke="#1313ec"
             strokeLinecap="round"
@@ -77,15 +235,11 @@ export default function PerformanceChart() {
           />
 
           {/* Area fill */}
-          <path
-            d="M0,240 L0,200 L100,180 L200,140 L300,150 L400,100 L500,80 L600,40 L700,60 L800,30 L800,240 Z"
-            fill="url(#gradientPrimary)"
-            opacity="0.1"
-          />
+          <path d={currentArea} fill="url(#gradientPrimary)" opacity="0.1" />
 
           {/* Previous period line (dashed) */}
           <path
-            d="M0,220 L100,210 L200,190 L300,180 L400,160 L500,170 L600,150 L700,140 L800,120"
+            d={prevPath}
             fill="none"
             stroke="#cbd5e1"
             strokeDasharray="4,4"
@@ -96,10 +250,9 @@ export default function PerformanceChart() {
 
         {/* X-axis labels */}
         <div className="absolute -bottom-6 inset-x-0 flex justify-between text-[10px] text-[#9ca3af]">
-          <span>Week 1</span>
-          <span>Week 2</span>
-          <span>Week 3</span>
-          <span>Week 4</span>
+          {axisLabels.map((label, idx) => (
+            <span key={idx}>{label}</span>
+          ))}
         </div>
       </div>
     </div>

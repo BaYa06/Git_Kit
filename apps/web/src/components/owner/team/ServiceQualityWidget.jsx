@@ -1,8 +1,36 @@
-export default function ServiceQualityWidget() {
+export default function ServiceQualityWidget({
+  avgRating,
+  ratingsCount,
+  breakdown,
+  complaints,
+  unresolved,
+}) {
+  const totalRatings =
+    typeof ratingsCount === 'number'
+      ? ratingsCount
+      : Number(breakdown?.rating5 || 0) +
+        Number(breakdown?.rating4 || 0) +
+        Number(breakdown?.rating13 || 0);
+
+  const rating5 = Number(breakdown?.rating5 || 0);
+  const rating4 = Number(breakdown?.rating4 || 0);
+  const rating13 = Number(breakdown?.rating13 || 0);
+
+  const percent5 = totalRatings > 0 ? Math.round((rating5 / totalRatings) * 100) : 0;
+  const percent4 = totalRatings > 0 ? Math.round((rating4 / totalRatings) * 100) : 0;
+  const percent13 = totalRatings > 0 ? Math.max(0, 100 - percent5 - percent4) : 0;
+
+  const safeAvg = typeof avgRating === 'number' && totalRatings > 0 ? avgRating : null;
+  const ratingText = safeAvg ? safeAvg.toFixed(1) : '—';
+
+  const gradient = totalRatings > 0
+    ? `conic-gradient(#10b981 0% ${percent5}%, #fbbf24 ${percent5}% ${percent5 + percent4}%, #f43f5e ${percent5 + percent4}% 100%)`
+    : 'conic-gradient(#e2e8f0 0% 100%)';
+
   const ratings = [
-    { label: '5 Звезд', percent: 75, color: 'bg-emerald-500' },
-    { label: '4 Звезды', percent: 15, color: 'bg-amber-400' },
-    { label: '1-3 Звезды', percent: 10, color: 'bg-rose-500' },
+    { label: '5 Звезд', percent: percent5, color: 'bg-emerald-500' },
+    { label: '4 Звезды', percent: percent4, color: 'bg-amber-400' },
+    { label: '1-3 Звезды', percent: percent13, color: 'bg-rose-500' },
   ];
 
   return (
@@ -15,11 +43,11 @@ export default function ServiceQualityWidget() {
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: 'conic-gradient(#10b981 0% 75%, #fbbf24 75% 90%, #f43f5e 90% 100%)',
+              background: gradient,
             }}
           />
           <div className="absolute inset-3 bg-white rounded-full flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-[#111118]">4.7</span>
+            <span className="text-2xl font-bold text-[#111118]">{ratingText}</span>
             <div className="flex">
               <span className="material-symbols-outlined text-amber-400" style={{ fontSize: '14px' }}>
                 star
@@ -47,13 +75,14 @@ export default function ServiceQualityWidget() {
         <div className="bg-red-50 rounded-lg p-3 border border-red-100">
           <p className="text-[10px] text-red-600 font-bold uppercase">Жалобы</p>
           <p className="text-lg font-bold text-red-700 leading-none mt-1">
-            6 <span className="text-xs font-normal text-red-500">всего</span>
+            {Number(complaints || 0)} <span className="text-xs font-normal text-red-500">всего</span>
           </p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
           <p className="text-[10px] text-gray-500 font-bold uppercase">Нерешено</p>
           <p className="text-lg font-bold text-[#111118] leading-none mt-1">
-            2 <span className="text-xs font-normal text-gray-400">active</span>
+            {Number(unresolved || 0)}{' '}
+            <span className="text-xs font-normal text-gray-400">не решены</span>
           </p>
         </div>
       </div>

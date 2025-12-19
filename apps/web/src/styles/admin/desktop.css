@@ -1,0 +1,52 @@
+/* Desktop Admin Styles */
+.glass-card {
+  background-color: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.bg-surface-dark {
+  background-color: #1F2937;
+}
+
+.bg-primary {
+  background-color: #2D65E6 !important;
+}
+
+.text-primary {
+  color: #2D65E6 !important;
+}
+
+.border-primary {
+  border-color: #2D65E6 !important;
+}
+
+.ring-primary {
+  --tw-ring-color: #2D65E6 !important;
+}
+
+.shadow-primary\/20 {
+  box-shadow: 0 10px 15px -3px rgba(45, 101, 230, 0.2);
+}
+
+.shadow-primary\/25 {
+  box-shadow: 0 10px 15px -3px rgba(45, 101, 230, 0.25);
+}
+
+.shadow-primary\/40 {
+  box-shadow: 0 20px 25px -5px rgba(45, 101, 230, 0.4);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Material Symbols Icon Settings */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}

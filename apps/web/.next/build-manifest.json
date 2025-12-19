@@ -22,25 +22,10 @@
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/company/[id]/operations": [
+    "/company/[id]/admin": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/operations.js"
-    ],
-    "/company/[id]/owner": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/owner.js"
-    ],
-    "/company/[id]/quality": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/quality.js"
-    ],
-    "/company/[id]/team": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/company/[id]/team.js"
+      "static/chunks/pages/company/[id]/admin.js"
     ]
   },
   "ampFirstPages": []

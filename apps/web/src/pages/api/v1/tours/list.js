@@ -69,6 +69,12 @@ export default async function handler(req, res) {
         t.created_at,
         g.full_name AS main_guide_name,
         gc.guide_names,
+        COALESCE(tp.transport_required, false) AS transport_required,
+        tp.transport_label,
+        COALESCE(ht.hotel_required, false) AS hotel_required,
+        ht.hotel_label,
+        pay.total_cost_cents,
+        pay.paid_cents,
         COALESCE(tc_meta.total_components, 0) AS total_components,
         COALESCE(tc_meta.filled_components, 0) AS filled_components,
         CASE
@@ -87,6 +93,42 @@ export default async function handler(req, res) {
           AND tc.type = 'guide'
           AND tc.guide_id IS NOT NULL
       ) gc ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          TRUE AS transport_required,
+          CASE
+            WHEN tc.driver_id IS NOT NULL THEN d.full_name
+            WHEN tc.custom IS NOT NULL THEN 'Указано вручную'
+            ELSE NULL
+          END AS transport_label
+        FROM tour_components tc
+        LEFT JOIN drivers d ON d.id = tc.driver_id
+        WHERE tc.tour_id = t.id
+          AND tc.type = 'transport'
+        LIMIT 1
+      ) tp ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          TRUE AS hotel_required,
+          h.name AS hotel_label
+        FROM tour_components tc
+        LEFT JOIN hotels h ON h.id = tc.hotel_id
+        WHERE tc.tour_id = t.id
+          AND tc.type = 'hotel'
+        LIMIT 1
+      ) ht ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          SUM(COALESCE(tg.cost_cents, 0)) AS total_cost_cents,
+          SUM(
+            CASE
+              WHEN tg.is_paid = true THEN GREATEST(tg.cost_cents, tg.prepayment_cents)
+              ELSE COALESCE(tg.prepayment_cents, 0)
+            END
+          ) AS paid_cents
+        FROM tour_guests tg
+        WHERE tg.tour_id = t.id
+      ) pay ON TRUE
       LEFT JOIN LATERAL (
         SELECT COUNT(*) AS total_guests
         FROM tour_guests tg
@@ -118,6 +160,14 @@ export default async function handler(req, res) {
         tourists_count: row.tourists_count,
         tourists_signed: Number(row.tourists_signed) || 0,
         guide_names: Array.isArray(row.guide_names) ? row.guide_names : [],
+        transport_required: row.transport_required === true,
+        transport_label: row.transport_label || null,
+        hotel_required: row.hotel_required === true,
+        hotel_label: row.hotel_label || null,
+        payment: {
+          total: Number(row.total_cost_cents || 0) / 100,
+          paid: Number(row.paid_cents || 0) / 100,
+        },
         status:
           row.computed_status ||
           (row.status === "confirmed" || row.status === "active"

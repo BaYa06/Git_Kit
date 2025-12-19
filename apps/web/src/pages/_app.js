@@ -1,7 +1,7 @@
-import '@/styles/globals.css'
 // apps/web/src/pages/_app.js
 import { useEffect } from "react";
 import "@/styles/globals.css";
+import "@/styles/admin/desktop.css";
 
 function MyApp({ Component, pageProps }) {
   useEffect(() => {

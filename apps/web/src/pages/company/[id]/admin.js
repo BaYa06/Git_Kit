@@ -5,7 +5,9 @@ import base from "../../../styles/admin/base.module.css";
 import navigation from "../../../styles/admin/navigation.module.css";
 import cards from "../../../styles/admin/cards.module.css";
 import view from "../../../styles/admin/visibility.module.css";
-import DesktopDashboard from "../../../components/company/admin/DesktopDashboard";
+import DesktopDashboard from "../../../components/company/admin/mobile/DesktopDashboard";
+import DesktopAdminLayout from "../../../components/company/admin/desktop/layout/DesktopAdminLayout";
+import { useIsDesktop } from "../../../hooks/useMediaQuery";
 
 const s = { ...base, ...navigation, ...cards, ...view };
 import {
@@ -23,14 +25,14 @@ import {
   Search,
   MoreVertical,
 } from "lucide-react";
-import DashboardTab from "../../../components/company/admin/DashboardTab";
+import DashboardTab from "../../../components/company/admin/mobile/DashboardTab";
 import ToursTab, {
   TemplatePickerModal,
   NewTourFromTemplateScreen,
-} from "../../../components/company/admin/ToursTab";
-import BaseTab from "../../../components/company/admin/BaseTab";
-import TemplatesTab from "../../../components/company/admin/TemplatesTab";
-import TemplateEditor from "../../../components/company/admin/TemplateEditor";
+} from "../../../components/company/admin/mobile/ToursTab";
+import BaseTab from "../../../components/company/admin/mobile/BaseTab";
+import TemplatesTab from "../../../components/company/admin/mobile/TemplatesTab";
+import TemplateEditor from "../../../components/company/admin/mobile/TemplateEditor";
 
 
 
@@ -216,6 +218,7 @@ export async function getServerSideProps({ req, params }) {
       logo_url: row.logo_url || null,
       avg_rating: Number(row.avg_rating) || 0,
       reviews_count: Number(row.reviews_count) || 0,
+      is_active: row.is_active !== false,
     }));
 
     const hotels = (hotelsRes.rows || []).map((row) => ({
@@ -299,6 +302,9 @@ const roleLabel = (r) => {
 
 
 export default function CompanyAdminPage({ company, role, guides, hotels, drivers, tours }) {
+  // All hooks must be called before any conditional returns
+  const isDesktop = useIsDesktop();
+  
   const [tab, setTab] = useState("dashboard");
   const [baseSubTab, setBaseSubTab] = useState("guides"); // guides | transport | hotels | info
   const [templateEditorOpen, setTemplateEditorOpen] = useState(false);
@@ -844,7 +850,23 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     }
   };
 
+  // Desktop version
+  if (isDesktop) {
+    return (
+      <DesktopAdminLayout
+        company={company}
+        user={{ name: company?.name }}
+        role={role}
+        guides={guides}
+        hotels={hotels}
+        drivers={drivers}
+        tours={tours}
+        companyId={company?.id}
+      />
+    );
+  }
 
+  // Mobile version
   return (
     <div className={s.page}>
       {/* Хедер с названием компании */}

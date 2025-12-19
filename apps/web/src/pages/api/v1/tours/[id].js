@@ -21,8 +21,6 @@ function tokenFromCookie(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).end();
-
   const token = tokenFromCookie(req);
   if (!token) return res.status(401).json({ message: "Unauthenticated" });
 
@@ -37,6 +35,18 @@ export default async function handler(req, res) {
   const tourId = req.query.id;
   if (!tourId) return res.status(400).json({ message: "id обязателен" });
 
+  if (req.method === "GET") {
+    return handleGet(req, res, auth, tourId);
+  } else if (req.method === "PUT") {
+    return handlePut(req, res, auth, tourId);
+  } else if (req.method === "DELETE") {
+    return handleDelete(req, res, auth, tourId);
+  } else {
+    return res.status(405).end();
+  }
+}
+
+async function handleGet(req, res, auth, tourId) {
   const client = await pool.connect();
 
   try {
@@ -121,6 +131,50 @@ export default async function handler(req, res) {
     return res.status(200).json({ tour });
   } catch (e) {
     if (isDev) console.error("get tour error:", e);
+    return res.status(500).json({ message: "DB error" });
+  } finally {
+    client.release();
+  }
+}
+
+async function handleDelete(req, res, auth, tourId) {
+  const client = await pool.connect();
+
+  try {
+    // Получаем информацию о туре
+    const tourRes = await client.query(
+      `SELECT company_id FROM tours WHERE id = $1 LIMIT 1`,
+      [tourId]
+    );
+
+    if (tourRes.rowCount === 0) {
+      return res.status(404).json({ message: "Тур не найден" });
+    }
+
+    const tourRow = tourRes.rows[0];
+
+    // Проверяем права доступа
+    const perm = await client.query(
+      `SELECT role FROM user_company_roles WHERE user_id = $1 AND company_id = $2 LIMIT 1`,
+      [auth.sub, tourRow.company_id]
+    );
+
+    if (perm.rowCount === 0) {
+      return res.status(403).json({ message: "Нет доступа к этому туру" });
+    }
+
+    // Проверяем, что пользователь - админ или владелец
+    const userRole = perm.rows[0].role;
+    if (userRole !== 'admin' && userRole !== 'owner') {
+      return res.status(403).json({ message: "Недостаточно прав для удаления тура" });
+    }
+
+    // Удаляем тур (каскадное удаление настроено в БД для связанных записей)
+    await client.query(`DELETE FROM tours WHERE id = $1`, [tourId]);
+
+    return res.status(200).json({ message: "Тур успешно удалён" });
+  } catch (e) {
+    if (isDev) console.error("delete tour error:", e);
     return res.status(500).json({ message: "DB error" });
   } finally {
     client.release();

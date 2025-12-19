@@ -9,6 +9,7 @@ export default function OwnerSidebar({ companyId }) {
     const path = router.pathname;
     if (path.includes('/operations')) return 'operations';
     if (path.includes('/finances')) return 'finances';
+    if (path.includes('/quality')) return 'quality';
     if (path.includes('/team')) return 'team';
     if (path.includes('/settings')) return 'settings';
     return 'dashboard'; // owner.js = dashboard
@@ -21,9 +22,10 @@ export default function OwnerSidebar({ companyId }) {
   
   const navItems = [
     { href: companyId ? `${basePath}/owner` : `${basePath}/dashboard`, key: 'dashboard', label: 'Главная', icon: 'dashboard' },
-    { href: `${basePath}/operations`, key: 'operations', label: 'Операции', icon: 'bar_chart' },
+    { href: `${basePath}/operations`, key: 'operations', label: 'Все туры', icon: 'bar_chart' },
     { href: `${basePath}/finances`, key: 'finances', label: 'Финансы', icon: 'payments' },
     { href: `${basePath}/team`, key: 'team', label: 'Команда', icon: 'groups' },
+    { href: `${basePath}/quality`, key: 'quality', label: 'Контроль качества', icon: 'reviews' },
   ];
   
   return (
@@ -94,6 +96,5 @@ export default function OwnerSidebar({ companyId }) {
     </aside>
   );
 }
-
 
 

@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-export default function FinancesFilterBar() {
-  const [activePeriod, setActivePeriod] = useState('today');
+export default function FinancesFilterBar({ period = 'today', onPeriodChange, updatedAt }) {
   const [currency, setCurrency] = useState('KGS');
 
   const periods = [
@@ -10,6 +9,16 @@ export default function FinancesFilterBar() {
     { id: '30days', label: '30 дней' },
     { id: 'custom', label: 'Кастом' },
   ];
+
+  const formattedUpdatedAt = useMemo(() => {
+    if (!updatedAt) return '—';
+    const date = typeof updatedAt === 'string' ? new Date(updatedAt) : updatedAt;
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [updatedAt]);
 
   return (
     <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4">
@@ -24,17 +33,17 @@ export default function FinancesFilterBar() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Period Selector */}
           <div className="flex bg-white rounded-lg p-1 border border-[#e0e0e4] shadow-sm">
-            {periods.map((period) => (
+            {periods.map((opt) => (
               <button
-                key={period.id}
-                onClick={() => setActivePeriod(period.id)}
+                key={opt.id}
+                onClick={() => onPeriodChange?.(opt.id)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  activePeriod === period.id
+                  period === opt.id
                     ? 'bg-[#f0f0f4] text-[#111118] font-semibold shadow-sm'
                     : 'text-[#616189] hover:bg-[#f8f8fa]'
                 }`}
               >
-                {period.label}
+                {opt.label}
               </button>
             ))}
           </div>
@@ -64,7 +73,9 @@ export default function FinancesFilterBar() {
           </button>
         </div>
         
-        <span className="text-xs text-[#616189] font-medium mt-1">Обновлено: 2 мин назад</span>
+        <span className="text-xs text-[#616189] font-medium mt-1">
+          Обновлено: {formattedUpdatedAt}
+        </span>
       </div>
     </div>
   );

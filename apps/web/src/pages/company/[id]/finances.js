@@ -1,11 +1,11 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
 import OwnerSidebar from '@/components/owner/layout/OwnerSidebar';
 import OwnerHeader from '@/components/owner/layout/OwnerHeader';
 import FinancesFilterBar from '@/components/owner/finances/FinancesFilterBar';
 import FinancesStats from '@/components/owner/finances/FinancesStats';
 import RevenueChart from '@/components/owner/finances/RevenueChart';
-import ExpectedPayments from '@/components/owner/finances/ExpectedPayments';
 import DebtStructure from '@/components/owner/finances/DebtStructure';
 import RevenueByDestinations from '@/components/owner/finances/RevenueByDestinations';
 import TopToursTable from '@/components/owner/finances/TopToursTable';
@@ -14,6 +14,33 @@ import FinancialRisksSummary from '@/components/owner/finances/FinancialRisksSum
 export default function FinancesPage({ company, user }) {
   const router = useRouter();
   const { id } = router.query;
+  const [period, setPeriod] = useState('7days');
+  const [finances, setFinances] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState(null);
+
+  useEffect(() => {
+    const loadFinances = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/v1/owner/finances?companyId=${id}&period=${period}`);
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setFinances(data);
+          setUpdatedAt(new Date());
+        } else {
+          setFinances(null);
+        }
+      } catch (e) {
+        console.error('Failed to load finances', e);
+        setFinances(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFinances();
+  }, [id, period]);
 
   return (
     <>
@@ -41,19 +68,23 @@ export default function FinancesPage({ company, user }) {
         <main className="flex-1 overflow-y-auto scroll-smooth">
           <div className="max-w-[1440px] mx-auto p-6 md:p-8 flex flex-col gap-8">
             {/* Filter Bar */}
-            <FinancesFilterBar />
+            <FinancesFilterBar period={period} onPeriodChange={setPeriod} updatedAt={updatedAt} />
 
             {/* KPI Stats */}
-            <FinancesStats />
+            <FinancesStats stats={finances?.kpis} loading={loading} />
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Revenue Chart (8 cols) */}
-              <RevenueChart />
+              <RevenueChart
+                series={finances?.chart?.series}
+                prevSeries={finances?.chart?.prevSeries}
+                summary={finances?.chart?.summary}
+                loading={loading}
+              />
 
               {/* Right Column (4 cols) */}
               <div className="lg:col-span-4 flex flex-col gap-6">
-                <ExpectedPayments />
                 <DebtStructure />
               </div>
             </div>

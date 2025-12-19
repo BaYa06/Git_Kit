@@ -461,24 +461,24 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                         tour.isHighRisk ? 'bg-rose-50/30' : ''
                       }`}
                     >
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <p className="text-sm font-bold text-slate-900">
                           {formatTourDateRuShort(tour.date)}
                         </p>
                         <p className="text-xs text-slate-500">{tour.time || '—'}</p>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <p className="text-sm font-medium text-[#4f46e5] hover:underline">{tour.name}</p>
                       </td>
-                      <td className="px-4 py-3 align-top text-sm font-medium text-slate-900">{tour.pax}</td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center text-sm font-medium text-slate-900">{tour.pax}</td>
+                      <td className="px-4 py-3 align-center">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${statusBadge.bg} ${statusBadge.text} text-xs font-medium border ${statusBadge.border}`}
                         >
                           {statusBadge.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <div className="flex items-center gap-2">
                           <div className="size-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-600">
                             {tour.responsible.initials}
@@ -486,7 +486,7 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           <span className="text-xs text-slate-700">{tour.responsible.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         {tour.guide ? (
                           <span className="text-xs text-slate-700">{tour.guide}</span>
                         ) : (
@@ -495,7 +495,7 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         {tour.transport?.name ? (
                           tour.transport.warning ? (
                             <div className="flex items-center gap-1 text-amber-600" title="Проверьте транспорт">
@@ -514,7 +514,7 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           <span className="text-xs text-slate-400 italic">Нет транспорта</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <div className="flex flex-col gap-1 w-full max-w-[140px]">
                           <div className="flex justify-between text-[10px] font-medium text-slate-500">
                             <span>
@@ -536,14 +536,14 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <span
                           className={`text-xs font-bold ${paymentBadge.text} ${paymentBadge.bg} px-2 py-0.5 rounded border ${paymentBadge.border}`}
                         >
                           {paymentBadge.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <div className={`flex items-center gap-1 ${riskBadge.color}`}>
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
                             {riskBadge.icon}
@@ -551,7 +551,7 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           <span className={`text-xs ${riskBadge.bold ? 'font-bold' : ''}`}>{riskBadge.label}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="px-4 py-3 align-center">
                         <p
                           className={`text-xs truncate max-w-[150px] ${
                             tour.isHighRisk ? 'text-rose-500 font-medium' : 'text-slate-400'
@@ -560,7 +560,7 @@ export default function ToursTable({ companyId, tours = [], onTourClick }) {
                           {tour.notes}
                         </p>
                       </td>
-                      <td className="px-4 py-3 align-top text-right">
+                      <td className="px-4 py-3 align-center text-right">
                         <button className="text-slate-400 hover:text-slate-700">
                           <span className="material-symbols-outlined">more_horiz</span>
                         </button>

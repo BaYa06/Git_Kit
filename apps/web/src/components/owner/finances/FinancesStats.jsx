@@ -1,65 +1,16 @@
 export default function FinancesStats({ stats }) {
-  const defaultStats = [
-    {
-      id: 'revenue',
-      label: 'Выручка',
-      value: '18.45 M',
-      change: '+12%',
-      changeType: 'positive',
-      subtext: 'vs прошлый период',
-      icon: 'payments',
-      iconBg: 'bg-indigo-50',
-      iconColor: 'text-indigo-600',
-    },
-    {
-      id: 'income',
-      label: 'Поступления',
-      value: '16.9 M',
-      change: '+9%',
-      changeType: 'positive',
-      subtext: 'vs прошлый период',
-      icon: 'account_balance_wallet',
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-    },
-    {
-      id: 'receivables',
-      label: 'Дебиторка',
-      value: '1.55 M',
-      change: '−4%',
-      changeType: 'positive',
-      subtext: 'хорошая динамика',
-      icon: 'money_off',
-      iconBg: 'bg-rose-50',
-      iconColor: 'text-rose-600',
-    },
-    {
-      id: 'prepayments',
-      label: 'Предоплаты',
-      value: '6.2 M',
-      change: '+6%',
-      changeType: 'positive',
-      subtext: 'рост резервов',
-      icon: 'savings',
-      iconBg: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-    },
-    {
-      id: 'avgCheck',
-      label: 'Средний чек',
-      value: '64.5 K',
-      progress: 75,
-      subtext: 'стабильно',
-      icon: 'receipt_long',
-      iconBg: 'bg-amber-50',
-      iconColor: 'text-amber-600',
-    },
+  const fallback = [
+    { id: 'revenue', label: 'Выручка', value: '—', subtext: 'нет данных', icon: 'payments', iconBg: 'bg-indigo-50', iconColor: 'text-indigo-600' },
+    { id: 'income', label: 'Поступления', value: '—', subtext: 'нет данных', icon: 'account_balance_wallet', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+    { id: 'receivables', label: 'Дебиторка', value: '—', subtext: 'нет данных', icon: 'money_off', iconBg: 'bg-rose-50', iconColor: 'text-rose-600' },
+    { id: 'avgCheck', label: 'Средний чек', value: '—', subtext: 'нет данных', icon: 'receipt_long', iconBg: 'bg-amber-50', iconColor: 'text-amber-600' },
   ];
 
-  const data = stats || defaultStats;
+  const raw = Array.isArray(stats) && stats.length > 0 ? stats : fallback;
+  const data = raw.filter((s) => s.id !== 'expected').slice(0, 4);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {data.map((stat) => (
         <div
           key={stat.id}

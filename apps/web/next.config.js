@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
-  // Важно для Vercel деплоя
-  output: 'standalone',
   // Транспилируем локальные пакеты из монорепо
   transpilePackages: ['@repo/api-client', '@repo/config', '@repo/lib'],
   // Разрешаем загрузку изображений

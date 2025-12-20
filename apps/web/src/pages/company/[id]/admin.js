@@ -838,31 +838,6 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     }
   };
 
-  const reloadTemplates = async () => {
-    if (!company?.id) return;
-    setTemplatesLoading(true);
-    setTemplatesError(null);
-    try {
-      const res = await fetch(
-        `/api/v1/company/templates/list?company_id=${company.id}`
-      );
-      if (!res.ok) {
-        let data = {};
-        try {
-          data = await res.json();
-        } catch (_) {}
-        throw new Error(data.message || "Не удалось загрузить шаблоны");
-      }
-      const data = await res.json();
-      setTemplates(data.templates || []);
-    } catch (e) {
-      console.error(e);
-      setTemplatesError(e.message);
-    } finally {
-      setTemplatesLoading(false);
-    }
-  };
-
   const handleTemplateSaved = () => {
     reloadTemplates();
     setTemplateEditorOpen(false);

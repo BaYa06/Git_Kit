@@ -323,6 +323,9 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
 
   const [guideMenuGuide, setGuideMenuGuide] = useState(null);      // меню по трём точкам
   const [guideDeleteGuide, setGuideDeleteGuide] = useState(null); 
+  const [guideInviteOpen, setGuideInviteOpen] = useState(false);
+  const [guideInviteIssued, setGuideInviteIssued] = useState(null);
+  const [guideInviteSaving, setGuideInviteSaving] = useState(false);
 
   const [hotelMenuHotel, setHotelMenuHotel] = useState(null);      // для меню «ред/удалить»
   const [hotelDeleteHotel, setHotelDeleteHotel] = useState(null);  // для подтверждения удаления
@@ -693,11 +696,6 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
 
 
 
-    // модалка приглашения гида (как у owner, но роль фиксирована)
-  const [guideInviteOpen, setGuideInviteOpen] = useState(false)
-  const [guideInviteSaving, setGuideInviteSaving] = useState(false)
-  const [guideInviteIssued, setGuideInviteIssued] = useState(null) // { username, tempPassword } | null
-
   async function createGuideInvite(e) {
     e.preventDefault()
     setGuideInviteSaving(true)
@@ -737,48 +735,71 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     }
   }
 
+  function handleGuideMenu(guide) {
+    setGuideMenuGuide(guide);
+  }
+
+  async function handleGuideDeleteConfirm() {
+    if (!guideDeleteGuide) return;
+    const id = guideDeleteGuide.id;
+
+    try {
+      const res = await fetch("/api/v1/company/guides/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: company.id,
+          guide_id: id,
+        }),
+      });
+
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось удалить гида");
+      }
+
+      // убираем из списка
+      setGuideList((prev) => prev.filter((g) => g.id !== id));
+      setGuideDeleteGuide(null);
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  }
+
   const reloadTemplates = async () => {
     if (!company?.id) return;
+    setTemplatesLoading(true);
+    setTemplatesError(null);
     try {
       const res = await fetch(
         `/api/v1/company/templates/list?company_id=${company.id}`
       );
-      if (!res.ok) return;
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось загрузить шаблоны");
+      }
       const data = await res.json();
       setTemplates(data.templates || []);
     } catch (e) {
       console.error(e);
+      setTemplatesError(e.message);
+    } finally {
+      setTemplatesLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!company?.id) return;
-
-    const loadTemplates = async () => {
-      setTemplatesLoading(true);
-      setTemplatesError(null);
-      try {
-        const res = await fetch(
-          `/api/v1/company/templates/list?company_id=${company.id}`
-        );
-        if (!res.ok) {
-          let data = {};
-          try {
-            data = await res.json();
-          } catch (_) {}
-          throw new Error(data.message || "Не удалось загрузить шаблоны");
-        }
-        const data = await res.json();
-        setTemplates(data.templates || []);
-      } catch (e) {
-        console.error(e);
-        setTemplatesError(e.message);
-      } finally {
-        setTemplatesLoading(false);
-      }
-    };
-
-    loadTemplates();
+    if (company?.id) {
+      reloadTemplates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.id]);
 
   const handleOpenTemplate = (templateId) => {
@@ -817,6 +838,31 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     }
   };
 
+  const reloadTemplates = async () => {
+    if (!company?.id) return;
+    setTemplatesLoading(true);
+    setTemplatesError(null);
+    try {
+      const res = await fetch(
+        `/api/v1/company/templates/list?company_id=${company.id}`
+      );
+      if (!res.ok) {
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+        throw new Error(data.message || "Не удалось загрузить шаблоны");
+      }
+      const data = await res.json();
+      setTemplates(data.templates || []);
+    } catch (e) {
+      console.error(e);
+      setTemplatesError(e.message);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
   const handleTemplateSaved = () => {
     reloadTemplates();
     setTemplateEditorOpen(false);
@@ -830,11 +876,6 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     setEditingTourId(null);
     setTemplatePickerOpen(false);
     setNewTourOpen(true);
-  };
-
-    // ВРЕМЕННО: заглушка для создания тура
-  const handleCreateTourClick = () => {
-    alert("Создание тура пока в разработке. Здесь будет форма создания тура 🙂");
   };
 
   const reloadTours = async () => {

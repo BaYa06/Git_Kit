@@ -6,7 +6,7 @@ import { Map, CalendarDays, User2 } from 'lucide-react'
 import GuideTours from '../../../components/company/guide/Tours'
 import GuideTable from '../../../components/company/guide/Table'
 import GuideProfile from '../../../components/company/guide/Profile'
-import { NewTourFromTemplateScreen } from '../../../components/company/admin/ToursTab'
+import { NewTourFromTemplateScreen } from '../../../components/company/admin/mobile/ToursTab'
 import s from 'styles/guide.module.css'
 
 export async function getServerSideProps({ req, params }) {

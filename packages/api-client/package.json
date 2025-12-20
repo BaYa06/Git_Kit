@@ -2,5 +2,8 @@
   "name": "@repo/api-client",
   "version": "0.1.0",
   "private": true,
-  "main": "index.js"
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'No build needed'"
+  }
 }

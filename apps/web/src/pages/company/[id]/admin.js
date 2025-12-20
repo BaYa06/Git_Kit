@@ -79,8 +79,11 @@ export async function getServerSideProps({ req, params }) {
           g.is_active,
           g.notes,
           g.logo_url,
+          g.started_at,
+          g.ended_at,
           COALESCE(fs.reviews_count, 0) AS reviews_count,
-          COALESCE(fs.avg_rating, 0) AS avg_rating
+          COALESCE(fs.avg_rating, 0) AS avg_rating,
+          COALESCE(tours_meta.tours_count, 0) AS tours_count
         FROM guides g
         LEFT JOIN LATERAL (
           SELECT
@@ -95,6 +98,22 @@ export async function getServerSideProps({ req, params }) {
               OR (l.guide_id IS NULL AND t.main_guide_id = g.id)
             )
         ) fs ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS tours_count
+          FROM (
+            SELECT t.id
+            FROM tours t
+            WHERE t.company_id = g.company_id
+              AND t.main_guide_id = g.id
+            UNION
+            SELECT t2.id
+            FROM tour_components tc
+            JOIN tours t2 ON t2.id = tc.tour_id
+            WHERE tc.type = 'guide'
+              AND tc.guide_id = g.id
+              AND t2.company_id = g.company_id
+          ) uniq_tours
+        ) tours_meta ON TRUE
         WHERE g.company_id = $1
         ORDER BY g.full_name NULLS LAST
         `,
@@ -207,6 +226,15 @@ export async function getServerSideProps({ req, params }) {
     const company = companyRes.rows[0];
     const role = roleRes.rows[0]?.role || null;
 
+    const formatDate = (value) => {
+      if (!value) return null;
+      const d = value instanceof Date ? value : new Date(value);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
     // мапим строки из guides
     const guides = (guidesRes.rows || []).map((row) => ({
       id: row.id,
@@ -219,6 +247,9 @@ export async function getServerSideProps({ req, params }) {
       avg_rating: Number(row.avg_rating) || 0,
       reviews_count: Number(row.reviews_count) || 0,
       is_active: row.is_active !== false,
+      tours_count: Number(row.tours_count) || 0,
+      started_at: formatDate(row.started_at),
+      ended_at: formatDate(row.ended_at),
     }));
 
     const hotels = (hotelsRes.rows || []).map((row) => ({
@@ -241,15 +272,6 @@ export async function getServerSideProps({ req, params }) {
       seats: row.seats,
       notes: row.notes || "",
     }));
-
-    const formatDate = (value) => {
-      if (!value) return null;
-      const d = value instanceof Date ? value : new Date(value);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    };
 
     const tours = (toursRes.rows || []).map((row) => ({
       id: row.id,

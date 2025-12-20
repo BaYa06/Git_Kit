@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import InviteUserModal from '../../../../owner/team/InviteUserModal';
 import GuidesTab from './GuidesTab';
 import HotelsTab from './HotelsTab';
 import TransportTab from './TransportTab';
 
 export default function BasePage({ guides, hotels, drivers, companyId }) {
   const [activeTab, setActiveTab] = useState('guides');
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+  const handleAddClick = () => {
+    if (activeTab === 'guides') {
+      setInviteOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'guides' && inviteOpen) {
+      setInviteOpen(false);
+    }
+  }, [activeTab, inviteOpen]);
 
   return (
     <main className="flex-1 overflow-y-auto p-6 lg:p-8">
@@ -21,7 +35,10 @@ export default function BasePage({ guides, hotels, drivers, companyId }) {
               {activeTab === 'transport' ? 'Экспорт CSV' : 'Экспорт'}
             </button>
             <div className="relative flex">
-              <button className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all">
+              <button
+                onClick={handleAddClick}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
+              >
                 <span className="material-symbols-outlined text-[20px]">add</span>
                 {activeTab === 'transport' ? 'Добавить транспорт' : activeTab === 'hotels' ? 'Добавить отель' : 'Добавить'}
               </button>
@@ -82,6 +99,14 @@ export default function BasePage({ guides, hotels, drivers, companyId }) {
         {activeTab === 'hotels' && <HotelsTab hotels={hotels} />}
         {activeTab === 'transport' && <TransportTab drivers={drivers} />}
       </div>
+
+      <InviteUserModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        companyId={companyId}
+        allowedRoles={['guide']}
+        variant="dark"
+      />
     </main>
   );
 }

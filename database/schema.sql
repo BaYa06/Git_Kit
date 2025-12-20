@@ -61,7 +61,9 @@ CREATE TABLE IF NOT EXISTS guides (
   languages text[],
   is_active boolean DEFAULT true,
   notes text,
-  logo_url text
+  logo_url text,
+  started_at timestamptz DEFAULT now(),
+  ended_at timestamptz
 );
 
 -- Hotels

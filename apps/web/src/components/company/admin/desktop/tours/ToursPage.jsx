@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { NewTourFromTemplateScreen } from '../../mobile/ToursTab';
+import { NewTourFromTemplateScreen, TemplatePickerModal } from '../../mobile/ToursTab';
 
 export default function ToursPage({ companyId, guides = [], hotels = [], drivers = [] }) {
   const router = useRouter();
@@ -11,6 +11,14 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
   const [tourToDelete, setTourToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [editingTourId, setEditingTourId] = useState(null);
+  
+  // Template picker states
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [newTourOpen, setNewTourOpen] = useState(false);
+  const [newTourTemplateId, setNewTourTemplateId] = useState(null);
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState(null);
   
   // Filters
   const [mainFilter, setMainFilter] = useState('upcoming'); // upcoming | past | canceled
@@ -52,6 +60,32 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
       setEditingTourId(tourId);
     }
   }, [tourId]);
+
+  // Load templates
+  useEffect(() => {
+    if (!companyId) return;
+    
+    const fetchTemplates = async () => {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+      try {
+        const response = await fetch(`/api/v1/company/templates/list?company_id=${companyId}`);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Не удалось загрузить шаблоны');
+        }
+        const data = await response.json();
+        setTemplates(data.templates || []);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        setTemplatesError(error.message);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [companyId]);
 
   // Filter tours
   const getFilteredTours = () => {
@@ -183,6 +217,26 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
     if (!tourToDelete) return;
     
     setDeleting(true);
+  const handleTemplatePicked = (template) => {
+    if (!template) return;
+    setNewTourTemplateId(template.id);
+    setEditingTourId(null);
+    setTemplatePickerOpen(false);
+    setNewTourOpen(true);
+  };
+
+  const reloadTours = async () => {
+    try {
+      const response = await fetch(`/api/v1/tours/list?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTours(data.tours || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    }
+  };
+
     try {
       const response = await fetch(`/api/v1/tours/${tourToDelete.id}`, {
         method: 'DELETE',
@@ -209,6 +263,26 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
     }
   };
 
+  const handleTemplatePicked = (template) => {
+    if (!template) return;
+    setNewTourTemplateId(template.id);
+    setEditingTourId(null);
+    setTemplatePickerOpen(false);
+    setNewTourOpen(true);
+  };
+
+  const reloadTours = async () => {
+    try {
+      const response = await fetch(`/api/v1/tours/list?company_id=${companyId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTours(data.tours || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    }
+  };
+
   return (
     <main className="flex-1 flex flex-col h-full overflow-hidden relative">
       {/* Page Header */}
@@ -224,7 +298,7 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
               Экспорт
             </button>
             <button 
-              onClick={() => router.push(`/company/${companyId}/tours/create`)}
+              onClick={() => setTemplatePickerOpen(true)}
               className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
@@ -789,6 +863,37 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
         </div>
       )}
 
+      {/* Template Picker Modal */}
+      <TemplatePickerModal
+        open={templatePickerOpen}
+        templates={templates}
+        loading={templatesLoading}
+        error={templatesError}
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelectTemplate={handleTemplatePicked}
+      />
+
+      {/* New Tour Modal */}
+      <NewTourFromTemplateScreen
+        open={newTourOpen}
+        templateId={newTourTemplateId}
+        companyId={companyId}
+        guides={guides}
+        hotels={hotels}
+        drivers={drivers}
+        mode="create"
+        tourId={null}
+        onCreated={() => {
+          reloadTours();
+          setNewTourOpen(false);
+          setNewTourTemplateId(null);
+        }}
+        onClose={() => {
+          setNewTourOpen(false);
+          setNewTourTemplateId(null);
+        }}
+      />
+
       {/* Tour Editor */}
       <NewTourFromTemplateScreen
         open={!!editingTourId}
@@ -800,19 +905,7 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
         mode="edit"
         tourId={editingTourId}
         onCreated={() => {
-          // Reload tours list
-          const fetchTours = async () => {
-            try {
-              const response = await fetch(`/api/v1/tours/list?company_id=${companyId}`);
-              if (response.ok) {
-                const data = await response.json();
-                setTours(data.tours || []);
-              }
-            } catch (error) {
-              console.error('Error fetching tours:', error);
-            }
-          };
-          fetchTours();
+          reloadTours();
         }}
         onClose={() => {
           setEditingTourId(null);

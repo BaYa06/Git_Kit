@@ -1,146 +1,294 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
+import TemplateHeader from './TemplateHeader';
+import TemplateFilters from './TemplateFilters';
+import TemplatesList from './TemplatesList';
+import TemplateDetails from './TemplateDetails';
+import {
+  SAMPLE_TEMPLATES,
+  TEMPLATE_CATEGORIES,
+  TEMPLATE_DIRECTIONS,
+  TEMPLATE_TYPES,
+} from './templateData';
+
+const formatUpdatedLabel = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return `Сегодня, ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+
+  if (diffDays === 1) {
+    return 'Вчера';
+  }
+
+  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+};
+
+const computeDuration = (start, end, fallbackDays, fallbackNights) => {
+  const result = { days: fallbackDays || 0, nights: fallbackNights || 0 };
+  if (!start || !end) return result;
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (Number.isNaN(startDate) || Number.isNaN(endDate)) return result;
+
+  const diffMs = endDate.getTime() - startDate.getTime();
+  if (diffMs < 0) return result;
+
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  result.days = diffDays + 1;
+  result.nights = diffDays;
+
+  return result;
+};
+
+const mapTemplateFromApi = (item) => {
+  if (!item) return null;
+  const { days, nights } = computeDuration(item.start_date, item.end_date, item.days ?? item.durationDays, item.nights);
+  const updatedAt = item.updated_at || item.updatedAt || item.created_at || item.createdAt;
+  const segments = item.segments ?? item.components?.length ?? 0;
+  const category =
+    item.category ||
+    (item.status === 'archived'
+      ? 'archived'
+      : days <= 1
+      ? 'day'
+      : 'multi');
+
+  return {
+    ...item,
+    durationDays: days,
+    nights,
+    segments,
+    updatedAt,
+    updatedLabel: item.updatedLabel || formatUpdatedLabel(updatedAt),
+    category,
+    type: item.type || 'all',
+    direction: item.direction || 'all',
+    location: item.location || '—',
+    components: item.components,
+  };
+};
+
+const defaultFilters = {
+  type: 'all',
+  direction: 'all',
+  sort: 'newest',
+  highlight: null,
+};
 
 export default function TemplatesPage({ templates = [], companyId }) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [category, setCategory] = useState('all');
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState(() => ({ ...defaultFilters }));
+  const [data, setData] = useState(SAMPLE_TEMPLATES);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(SAMPLE_TEMPLATES[0]?.id || null);
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(null);
 
-  const handleTemplateClick = (templateId) => {
-    // Navigate to template editor
-    router.push(`/company/${companyId}/templates/${templateId}`);
-  };
+  useEffect(() => {
+    const source = templates?.length ? templates.map(mapTemplateFromApi).filter(Boolean) : SAMPLE_TEMPLATES;
+    setData(source);
+    setSelectedTemplateId(source[0]?.id || null);
+  }, [templates]);
+
+  useEffect(() => {
+    if (!companyId) return;
+    const controller = new AbortController();
+
+    const load = async () => {
+      setListLoading(true);
+      setListError(null);
+      try {
+        const response = await fetch(`/api/v1/company/templates/list?company_id=${companyId}`, {
+          signal: controller.signal,
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.message || 'Не удалось загрузить шаблоны');
+        }
+        const payload = await response.json();
+        const mapped = (payload.templates || []).map(mapTemplateFromApi).filter(Boolean);
+        setData(mapped);
+        if (mapped.length > 0 && !mapped.find((t) => t.id === selectedTemplateId)) {
+          setSelectedTemplateId(mapped[0].id);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        setListError(error.message);
+      } finally {
+        setListLoading(false);
+      }
+    };
+
+    load();
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId]);
+
+  useEffect(() => {
+    if (!selectedTemplateId || !companyId) {
+      setDetail(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadDetail = async () => {
+      setDetailLoading(true);
+      setDetailError(null);
+      try {
+        const response = await fetch(`/api/v1/company/templates/${selectedTemplateId}`, {
+          signal: controller.signal,
+          credentials: 'same-origin',
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          throw new Error(payload.message || 'Не удалось загрузить шаблон');
+        }
+        const payload = await response.json();
+        const mapped = mapTemplateFromApi(payload.template);
+        setDetail(mapped);
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        setDetail(null);
+        setDetailError(error.message);
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+
+    loadDetail();
+
+    return () => controller.abort();
+  }, [selectedTemplateId, companyId]);
+
+  const filteredTemplates = useMemo(() => {
+    let result = [...data];
+
+    if (category !== 'all') {
+      result = result.filter((item) => item.category === category);
+    }
+
+    if (filters.type !== 'all') {
+      result = result.filter((item) => item.type === filters.type);
+    }
+
+    if (filters.direction !== 'all') {
+      result = result.filter((item) => item.direction === filters.direction);
+    }
+
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.location?.toLowerCase().includes(q)
+      );
+    }
+
+    if (filters.highlight === 'popular') {
+      result.sort((a, b) => (b.segments || 0) - (a.segments || 0));
+    } else if (filters.highlight === 'recent') {
+      result.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    } else {
+      switch (filters.sort) {
+        case 'name':
+          result.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'segments':
+          result.sort((a, b) => (b.segments || 0) - (a.segments || 0));
+          break;
+        case 'newest':
+        default:
+          result.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+          break;
+      }
+    }
+
+    return result;
+  }, [data, category, filters, query]);
+
+  useEffect(() => {
+    if (filteredTemplates.length === 0) {
+      setSelectedTemplateId(null);
+      return;
+    }
+
+    const exists = filteredTemplates.some((item) => item.id === selectedTemplateId);
+    if (!exists) {
+      setSelectedTemplateId(filteredTemplates[0].id);
+    }
+  }, [filteredTemplates, selectedTemplateId]);
+
+  const selectedTemplate =
+    detail ||
+    filteredTemplates.find((item) => item.id === selectedTemplateId) ||
+    data.find((item) => item.id === selectedTemplateId);
 
   const handleCreateTemplate = () => {
-    router.push(`/company/${companyId}/templates/create`);
+    if (companyId) {
+      router.push(`/company/${companyId}/templates/create`);
+      return;
+    }
+    // fallback: keep UI only
+    setSelectedTemplateId(null);
   };
 
-  const handleUseTemplate = (templateId) => {
-    // Create tour from template
-    router.push(`/company/${companyId}/tours/create?template=${templateId}`);
+  const handleExport = () => {
+    // UI stub, API wiring can be added later
+    console.log('Export templates clicked');
   };
 
-  // Mock data
-  const mockTemplates = [
-    {
-      id: 1,
-      name: 'Городской тур (стандарт)',
-      description: 'Базовый шаблон для городских экскурсий',
-      duration_days: 1,
-      components_count: 5,
-    },
-    {
-      id: 2,
-      name: 'Многодневный тур',
-      description: 'Шаблон для туров на несколько дней с проживанием',
-      duration_days: 3,
-      components_count: 12,
-    },
-  ];
-
-  const displayTemplates = templates.length > 0 ? templates : mockTemplates;
+  const handleReset = () => {
+    setCategory('all');
+    setQuery('');
+    setFilters({ ...defaultFilters });
+  };
 
   return (
-    <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-      <div className="mx-auto max-w-[1400px] flex flex-col gap-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Шаблоны туров</h1>
-            <p className="text-sm text-gray-400 mt-1">Создавайте туры быстрее с помощью шаблонов</p>
-          </div>
-          <button
-            onClick={handleCreateTemplate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/25"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            Создать шаблон
-          </button>
+    <main className="flex-1 overflow-y-auto p-6 lg:p-8 scrollbar-hide">
+      <div className="mx-auto max-w-[1400px] flex flex-col gap-8 h-full">
+        <TemplateHeader onCreate={handleCreateTemplate} onExport={handleExport} />
+
+        <TemplateFilters
+          categories={TEMPLATE_CATEGORIES}
+          category={category}
+          onCategoryChange={setCategory}
+          query={query}
+          onQueryChange={setQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+          typeOptions={TEMPLATE_TYPES}
+          directionOptions={TEMPLATE_DIRECTIONS}
+          onReset={handleReset}
+        />
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+          <TemplatesList
+            templates={filteredTemplates}
+            selectedId={selectedTemplateId}
+            onSelect={setSelectedTemplateId}
+            loading={listLoading}
+            error={listError}
+          />
+
+          <TemplateDetails template={selectedTemplate} loading={detailLoading} error={detailError} />
         </div>
-
-        {/* Search */}
-        <div className="glass-card rounded-xl p-4">
-          <div className="relative max-w-md">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Поиск шаблонов..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface-dark/50 border border-white/10 text-white text-sm placeholder-gray-500 focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Templates Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayTemplates.map((template) => (
-            <div
-              key={template.id}
-              className="glass-card rounded-xl p-6 hover:bg-surface-dark/80 transition-all cursor-pointer group"
-              onClick={() => handleTemplateClick(template.id)}
-            >
-              {/* Icon */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="size-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  <span className="material-symbols-outlined text-[24px]">content_copy</span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUseTemplate(template.id);
-                  }}
-                  className="px-3 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-all"
-                >
-                  Использовать
-                </button>
-              </div>
-
-              {/* Content */}
-              <h3 className="text-base font-bold text-white mb-2 group-hover:text-primary transition-colors">
-                {template.name}
-              </h3>
-              
-              {template.description && (
-                <p className="text-sm text-gray-400 mb-4 line-clamp-2">
-                  {template.description}
-                </p>
-              )}
-
-              {/* Meta */}
-              <div className="flex items-center gap-4 text-xs text-gray-500">
-                {template.duration_days && (
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-                    <span>{template.duration_days} {template.duration_days === 1 ? 'день' : 'дня'}</span>
-                  </div>
-                )}
-                {template.components_count && (
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px]">widgets</span>
-                    <span>{template.components_count} компонентов</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {displayTemplates.length === 0 && (
-          <div className="glass-card rounded-xl py-16 text-center">
-            <span className="material-symbols-outlined text-6xl text-gray-600 mb-4">content_copy</span>
-            <p className="text-gray-400 text-sm mb-4">Шаблоны не найдены</p>
-            <button
-              onClick={handleCreateTemplate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              Создать первый шаблон
-            </button>
-          </div>
-        )}
       </div>
     </main>
   );

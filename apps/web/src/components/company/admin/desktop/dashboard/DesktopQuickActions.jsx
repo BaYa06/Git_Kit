@@ -1,10 +1,14 @@
 import { useRouter } from 'next/router';
 
-export default function DesktopQuickActions({ companyId }) {
+export default function DesktopQuickActions({ companyId, onCreateTour }) {
   const router = useRouter();
 
   const handleCreateTour = () => {
-    router.push(`/company/${companyId}/tours/create`);
+    if (onCreateTour) {
+      onCreateTour();
+    } else {
+      router.push(`/company/${companyId}/tours/create`);
+    }
   };
 
   const handleAddGuide = () => {

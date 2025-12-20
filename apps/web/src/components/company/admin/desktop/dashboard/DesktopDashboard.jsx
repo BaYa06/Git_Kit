@@ -4,7 +4,7 @@ import DesktopUpcomingTours from './DesktopUpcomingTours';
 import DesktopQuickActions from './DesktopQuickActions';
 import DesktopAlerts from './DesktopAlerts';
 
-export default function DesktopDashboard({ companyId, stats, tours, alerts, risks, onTourClick, onShowAllTours }) {
+export default function DesktopDashboard({ companyId, stats, tours, alerts, risks, onTourClick, onShowAllTours, onCreateTour }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
@@ -48,7 +48,7 @@ export default function DesktopDashboard({ companyId, stats, tours, alerts, risk
 
           {/* Right Column: Widgets (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-6">
-            <DesktopQuickActions companyId={companyId} />
+            <DesktopQuickActions companyId={companyId} onCreateTour={onCreateTour} />
             <DesktopAlerts alerts={alerts} risks={risks} />
           </div>
         </div>

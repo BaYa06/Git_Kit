@@ -9,6 +9,7 @@ export default function DesktopSidebar({ companyId, activeTab, onTabChange }) {
     { id: 'tours', label: 'Все туры', icon: 'map' },
     { id: 'base', label: 'База', icon: 'database' },
     { id: 'templates', label: 'Шаблоны', icon: 'content_copy' },
+    { id: 'profile', label: 'Профиль', icon: 'person' },
   ];
 
   const handleLogout = () => {
@@ -41,7 +42,14 @@ export default function DesktopSidebar({ companyId, activeTab, onTabChange }) {
       </nav>
 
       <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
-        <button className="group flex items-center gap-3 rounded-full px-4 py-3 text-gray-400 hover:bg-white/5 hover:text-white transition-all">
+        <button
+          className={`group flex items-center gap-3 rounded-full px-4 py-3 transition-all ${
+            activeTab === 'help'
+              ? 'bg-primary text-white shadow-lg shadow-primary/20'
+              : 'text-gray-400 hover:bg-white/5 hover:text-white'
+          }`}
+          onClick={() => onTabChange?.('help')}
+        >
           <span className="material-symbols-outlined">help</span>
           <span className="text-sm font-medium">Помощь</span>
         </button>

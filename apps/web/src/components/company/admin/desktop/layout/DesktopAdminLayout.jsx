@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DesktopHeader from './DesktopHeader';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopDashboard from '../dashboard/DesktopDashboard';
 import ToursPage from '../tours/ToursPage';
 import BasePage from '../base/BasePage';
 import TemplatesPage from '../templates/TemplatesPage';
-import { NewTourFromTemplateScreen } from '../../mobile/ToursTab';
+import { HelpPage } from '../help';
+import { ProfilePage } from '../profile';
+import { NewTourFromTemplateScreen, TemplatePickerModal } from '../../mobile/ToursTab';
 
 export default function DesktopAdminLayout({ company, user, role, guides, hotels, drivers, tours, companyId }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [editingTourId, setEditingTourId] = useState(null);
+  
+  // Template picker states
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  const [newTourOpen, setNewTourOpen] = useState(false);
+  const [newTourTemplateId, setNewTourTemplateId] = useState(null);
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState(null);
 
   // Mock stats data - replace with real data from API
   const stats = {
@@ -41,6 +51,44 @@ export default function DesktopAdminLayout({ company, user, role, guides, hotels
 
   const handleShowAllTours = () => {
     setActiveTab('tours');
+  };
+
+  // Load templates
+  useEffect(() => {
+    if (!companyId) return;
+    
+    const fetchTemplates = async () => {
+      setTemplatesLoading(true);
+      setTemplatesError(null);
+      try {
+        const response = await fetch(`/api/v1/company/templates/list?company_id=${companyId}`);
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Не удалось загрузить шаблоны');
+        }
+        const data = await response.json();
+        setTemplates(data.templates || []);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        setTemplatesError(error.message);
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [companyId]);
+
+  const handleTemplatePicked = (template) => {
+    if (!template) return;
+    setNewTourTemplateId(template.id);
+    setEditingTourId(null);
+    setTemplatePickerOpen(false);
+    setNewTourOpen(true);
+  };
+
+  const handleCreateTour = () => {
+    setTemplatePickerOpen(true);
   };
 
   const renderContent = () => {
@@ -79,10 +127,14 @@ export default function DesktopAdminLayout({ company, user, role, guides, hotels
       case 'templates':
         return (
           <TemplatesPage
-            templates={[]} // TODO: load templates from API
+            templates={templates}
             companyId={companyId}
           />
         );
+      case 'help':
+        return <HelpPage />;
+      case 'profile':
+        return <ProfilePage view="work" />;
       default:
         return null;
     }
@@ -101,6 +153,36 @@ export default function DesktopAdminLayout({ company, user, role, guides, hotels
         
         {renderContent()}
       </div>
+
+      {/* Template Picker Modal */}
+      <TemplatePickerModal
+        open={templatePickerOpen}
+        templates={templates}
+        loading={templatesLoading}
+        error={templatesError}
+        onClose={() => setTemplatePickerOpen(false)}
+        onSelectTemplate={handleTemplatePicked}
+      />
+
+      {/* New Tour Modal */}
+      <NewTourFromTemplateScreen
+        open={newTourOpen}
+        templateId={newTourTemplateId}
+        companyId={companyId}
+        guides={guides}
+        hotels={hotels}
+        drivers={drivers}
+        mode="create"
+        tourId={null}
+        onCreated={() => {
+          // Reload page to refresh tours list
+          window.location.reload();
+        }}
+        onClose={() => {
+          setNewTourOpen(false);
+          setNewTourTemplateId(null);
+        }}
+      />
 
       {/* Tour Editor */}
       <NewTourFromTemplateScreen

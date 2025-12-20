@@ -1,5 +1,26 @@
 import { useMemo, useState } from 'react';
 
+const formatDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const experienceLabel = (start) => {
+  const date = start ? new Date(start) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 0) return '—';
+  const totalMonths = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.4375));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  if (years <= 0) return `${months || 0} мес`;
+  if (months === 0) return `${years} г`;
+  return `${years} г ${months} мес`;
+};
+
 const statusBadge = (status) => {
   if (status === 'Active')
     return (
@@ -34,6 +55,8 @@ export default function GuidesTab({ guides }) {
         rating: Number(g.avg_rating || 0),
         reviews: Number(g.reviews_count || 0),
         notes: g.notes || '',
+        toursCount: g.tours_count ?? g.completed_tours ?? 0,
+        startedAt: g.started_at || g.created_at || null,
       }));
     }
     return [];
@@ -217,6 +240,27 @@ export default function GuidesTab({ guides }) {
                     {(lang || '').toUpperCase()}
                   </span>
                 ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Статистика</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-[11px] text-gray-400 uppercase tracking-wide">Туры</div>
+                  <div className="mt-1 text-xl font-bold text-white">{selectedGuide?.toursCount ?? 0}</div>
+                  <div className="text-[11px] text-gray-500">проведено</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-[11px] text-gray-400 uppercase tracking-wide">Начал работать</div>
+                  <div className="mt-1 text-sm font-semibold text-white">{formatDate(selectedGuide?.startedAt)}</div>
+                  <div className="text-[11px] text-gray-500">дата</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-[11px] text-gray-400 uppercase tracking-wide">Опыт</div>
+                  <div className="mt-1 text-xl font-bold text-white">{experienceLabel(selectedGuide?.startedAt)}</div>
+                  <div className="text-[11px] text-gray-500">общий стаж</div>
+                </div>
               </div>
             </div>
 

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import TemplateHeader from './TemplateHeader';
 import TemplateFilters from './TemplateFilters';
 import TemplatesList from './TemplatesList';
 import TemplateDetails from './TemplateDetails';
+import TemplateEditor from '../../mobile/TemplateEditor';
 import {
   SAMPLE_TEMPLATES,
   TEMPLATE_CATEGORIES,
@@ -52,7 +53,28 @@ const computeDuration = (start, end, fallbackDays, fallbackNights) => {
 
 const mapTemplateFromApi = (item) => {
   if (!item) return null;
-  const { days, nights } = computeDuration(item.start_date, item.end_date, item.days ?? item.durationDays, item.nights);
+  
+  // Парсим timing если это строка JSON
+  let timing = item.timing || [];
+  if (typeof timing === 'string') {
+    try {
+      timing = JSON.parse(timing);
+    } catch (e) {
+      timing = [];
+    }
+  }
+  
+  // Приоритет: сначала из timing.length, потом из API (days/nights), потом из дат
+  let days = timing?.length || item.days || 0;
+  let nights = days > 0 ? days - 1 : (item.nights || 0);
+  
+  // Если данных нет, вычисляем из дат
+  if (days === 0) {
+    const computed = computeDuration(item.start_date, item.end_date, item.durationDays, item.nights);
+    days = computed.days;
+    nights = computed.nights;
+  }
+  
   const updatedAt = item.updated_at || item.updatedAt || item.created_at || item.createdAt;
   const segments = item.segments ?? item.components?.length ?? 0;
   const category =
@@ -75,6 +97,7 @@ const mapTemplateFromApi = (item) => {
     direction: item.direction || 'all',
     location: item.location || '—',
     components: item.components,
+    timing: timing,
   };
 };
 
@@ -91,29 +114,29 @@ export default function TemplatesPage({ templates = [], companyId }) {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(() => ({ ...defaultFilters }));
   const [data, setData] = useState(SAMPLE_TEMPLATES);
-  const [selectedTemplateId, setSelectedTemplateId] = useState(SAMPLE_TEMPLATES[0]?.id || null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
 
   useEffect(() => {
     const source = templates?.length ? templates.map(mapTemplateFromApi).filter(Boolean) : SAMPLE_TEMPLATES;
     setData(source);
-    setSelectedTemplateId(source[0]?.id || null);
+    setSelectedTemplateId((prev) => (prev && source.some((item) => item.id === prev) ? prev : null));
   }, [templates]);
 
-  useEffect(() => {
-    if (!companyId) return;
-    const controller = new AbortController();
-
-    const load = async () => {
+  const reloadTemplates = useCallback(
+    async (signal) => {
+      if (!companyId) return;
       setListLoading(true);
       setListError(null);
       try {
         const response = await fetch(`/api/v1/company/templates/list?company_id=${companyId}`, {
-          signal: controller.signal,
+          signal,
           credentials: 'same-origin',
         });
         if (!response.ok) {
@@ -123,22 +146,23 @@ export default function TemplatesPage({ templates = [], companyId }) {
         const payload = await response.json();
         const mapped = (payload.templates || []).map(mapTemplateFromApi).filter(Boolean);
         setData(mapped);
-        if (mapped.length > 0 && !mapped.find((t) => t.id === selectedTemplateId)) {
-          setSelectedTemplateId(mapped[0].id);
-        }
+        setSelectedTemplateId((prev) => (prev && mapped.some((item) => item.id === prev) ? prev : null));
       } catch (error) {
         if (error.name === 'AbortError') return;
         setListError(error.message);
       } finally {
+        if (signal?.aborted) return;
         setListLoading(false);
       }
-    };
+    },
+    [companyId]
+  );
 
-    load();
-
+  useEffect(() => {
+    const controller = new AbortController();
+    reloadTemplates(controller.signal);
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId]);
+  }, [companyId, reloadTemplates]);
 
   useEffect(() => {
     if (!selectedTemplateId || !companyId) {
@@ -229,9 +253,11 @@ export default function TemplatesPage({ templates = [], companyId }) {
       return;
     }
 
+    if (!selectedTemplateId) return;
+
     const exists = filteredTemplates.some((item) => item.id === selectedTemplateId);
     if (!exists) {
-      setSelectedTemplateId(filteredTemplates[0].id);
+      setSelectedTemplateId(null);
     }
   }, [filteredTemplates, selectedTemplateId]);
 
@@ -241,12 +267,10 @@ export default function TemplatesPage({ templates = [], companyId }) {
     data.find((item) => item.id === selectedTemplateId);
 
   const handleCreateTemplate = () => {
-    if (companyId) {
-      router.push(`/company/${companyId}/templates/create`);
-      return;
-    }
-    // fallback: keep UI only
-    setSelectedTemplateId(null);
+    if (!companyId) return;
+    // Открываем редактор в режиме создания (без templateId)
+    setEditingTemplateId(null);
+    setEditorOpen(true);
   };
 
   const handleExport = () => {
@@ -258,6 +282,17 @@ export default function TemplatesPage({ templates = [], companyId }) {
     setCategory('all');
     setQuery('');
     setFilters({ ...defaultFilters });
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedTemplateId(null);
+    setDetail(null);
+  };
+
+  const handleOpenEditor = () => {
+    if (!selectedTemplateId || !companyId) return;
+    setEditingTemplateId(selectedTemplateId);
+    setEditorOpen(true);
   };
 
   return (
@@ -287,9 +322,34 @@ export default function TemplatesPage({ templates = [], companyId }) {
             error={listError}
           />
 
-          <TemplateDetails template={selectedTemplate} loading={detailLoading} error={detailError} />
+          <TemplateDetails
+            template={selectedTemplate}
+            loading={detailLoading}
+            error={detailError}
+            onClose={handleCloseDetails}
+            onOpenEditor={handleOpenEditor}
+          />
         </div>
       </div>
+
+      {editorOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950 text-slate-100 overflow-y-auto">
+          <TemplateEditor
+            companyId={companyId}
+            templateId={editingTemplateId}
+            onClose={() => {
+              setEditorOpen(false);
+              setEditingTemplateId(null);
+            }}
+            onSaved={async () => {
+              await reloadTemplates();
+              setEditorOpen(false);
+              setEditingTemplateId(null);
+              window.location.reload();
+            }}
+          />
+        </div>
+      )}
     </main>
   );
 }

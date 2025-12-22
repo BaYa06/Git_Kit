@@ -57,7 +57,7 @@ export async function getServerSideProps({ req, params }) {
       connectionString: process.env.DATABASE_URL,
     });
 
-    const [companyRes, roleRes, guidesRes, hotelsRes, driversRes, toursRes] = await Promise.all([
+    const [companyRes, roleRes, guidesRes, hotelsRes, driversRes, toursRes, userRes] = await Promise.all([
       // компания
       pool.query("SELECT id, name, logo_url FROM companies WHERE id = $1", [params.id]),
 
@@ -215,6 +215,17 @@ export async function getServerSideProps({ req, params }) {
         `,
         [params.id]
       ),
+
+      // текущий пользователь (для профиля)
+      pool.query(
+        `
+        SELECT id, email, phone, first_name, last_name
+        FROM users
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [payload.sub]
+      ),
     ]);
 
     await pool.end();
@@ -289,6 +300,21 @@ export async function getServerSideProps({ req, params }) {
           : "planned"),
     }));
 
+    const userRow = userRes.rows?.[0] || null;
+    const user = userRow
+      ? {
+          id: userRow.id,
+          first_name: userRow.first_name || "",
+          last_name: userRow.last_name || "",
+          email: userRow.email || "",
+          phone: userRow.phone || "",
+          name:
+            [userRow.first_name, userRow.last_name].filter(Boolean).join(" ").trim() ||
+            userRow.email ||
+            "Пользователь",
+        }
+      : null;
+
     // доступ к этой странице только owner/admin
     if (!(role === "owner" || role === "admin")) {
       return {
@@ -307,6 +333,7 @@ export async function getServerSideProps({ req, params }) {
         hotels,
         drivers,
         tours,
+        user,
       },
     };
   } catch (e) {
@@ -323,7 +350,7 @@ const roleLabel = (r) => {
 };
 
 
-export default function CompanyAdminPage({ company, role, guides, hotels, drivers, tours }) {
+export default function CompanyAdminPage({ company, role, guides, hotels, drivers, tours, user }) {
   // All hooks must be called before any conditional returns
   const isDesktop = useIsDesktop();
   
@@ -893,7 +920,7 @@ export default function CompanyAdminPage({ company, role, guides, hotels, driver
     return (
       <DesktopAdminLayout
         company={company}
-        user={{ name: company?.name }}
+        user={user}
         role={role}
         guides={guides}
         hotels={hotels}

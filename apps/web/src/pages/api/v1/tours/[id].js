@@ -64,8 +64,10 @@ async function handleGet(req, res, auth, tourId) {
         COALESCE(tg.total_guests, 0) AS tourists_signed,
         t.coordinator_id,
         t.main_guide_id,
-        t.created_at
+        t.created_at,
+        tt.timing AS timing
       FROM tours t
+      LEFT JOIN tour_templates tt ON tt.id = t.template_id
       LEFT JOIN LATERAL (
         SELECT COUNT(*) AS total_guests
         FROM tour_guests tg
@@ -112,6 +114,7 @@ async function handleGet(req, res, auth, tourId) {
       ...tourRow,
       start_date: formatDate(tourRow.start_date),
       end_date: formatDate(tourRow.end_date),
+      timing: tourRow.timing || [],
       components: (componentsRes.rows || []).map((c) => ({
         id: c.id,
         type: c.type,

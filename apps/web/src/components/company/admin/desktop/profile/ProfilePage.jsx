@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ProfileCard from './ProfileCard';
 import ProfileHero from './ProfileHero';
 import ProfileTabs from './ProfileTabs';
@@ -16,16 +16,34 @@ import SalaryDetails from './salary/SalaryDetails';
 import SalaryHistory from './salary/SalaryHistory';
 import { profileData } from './data';
 
-export default function ProfilePage({ view = 'work' }) {
+export default function ProfilePage({ view = 'work', user }) {
   const [activeTab, setActiveTab] = useState(view === 'work' ? 'work' : 'main');
   const showWork = activeTab === 'work';
   const showSalary = activeTab === 'salary';
+  const resolvedProfile = useMemo(() => {
+    const fullName =
+      [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim() ||
+      user?.name ||
+      user?.email ||
+      profileData.fullName;
+
+    return {
+      ...profileData,
+      name: fullName,
+      fullName,
+      contacts: {
+        ...profileData.contacts,
+        email: user?.email || profileData.contacts.email,
+        phone: user?.phone || profileData.contacts.phone,
+      },
+    };
+  }, [user]);
 
   return (
     <main className="flex-1 overflow-y-auto p-6 lg:p-8 scrollbar-hide">
       <div className="mx-auto max-w-[1200px] flex flex-col gap-6">
         {/* Общая карточка профиля для всех вкладок */}
-        <ProfileCard data={profileData} />
+        <ProfileCard data={resolvedProfile} />
         
         {/* Единая навигация по табам */}
         <WorkTabs active={activeTab} onChange={setActiveTab} />
@@ -56,15 +74,15 @@ export default function ProfilePage({ view = 'work' }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <PersonalCard
                 data={{
-                  fullName: profileData.fullName,
-                  birthDate: profileData.personal.birthDate,
-                  city: profileData.personal.city,
-                  languages: profileData.personal.languages,
+                  fullName: resolvedProfile.fullName,
+                  birthDate: resolvedProfile.personal.birthDate,
+                  city: resolvedProfile.personal.city,
+                  languages: resolvedProfile.personal.languages,
                 }}
               />
-              <ContactsCard data={profileData.contacts} />
+              <ContactsCard data={resolvedProfile.contacts} />
             </div>
-            <SecurityCard data={profileData.security} />
+            <SecurityCard data={resolvedProfile.security} />
           </>
         )}
       </div>

@@ -35,6 +35,7 @@ export default async function handler(req, res) {
     start_date,
     end_date,
     components,
+    timing,
   } = req.body || {};
 
   if (!company_id || !name) {
@@ -68,9 +69,9 @@ export default async function handler(req, res) {
     // 2) создаём запись в tour_templates — ПОД ТВОЮ СХЕМУ
     const tmplRes = await client.query(
       `
-      INSERT INTO tour_templates (company_id, name, status, start_date, end_date, created_by)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, company_id, name, status, start_date, end_date
+      INSERT INTO tour_templates (company_id, name, status, start_date, end_date, timing, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, company_id, name, status, start_date, end_date, timing
     `,
       [
         company_id,
@@ -78,6 +79,7 @@ export default async function handler(req, res) {
         status || "active",
         start_date || null,
         end_date || null,
+        JSON.stringify(timing || []),
         auth.sub,
       ]
     );

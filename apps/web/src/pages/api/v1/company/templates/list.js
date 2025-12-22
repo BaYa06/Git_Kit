@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     // сами шаблоны
     const tmplRes = await client.query(
       `
-      SELECT id, company_id, name, status, start_date, end_date, created_at, updated_at
+      SELECT id, company_id, name, status, start_date, end_date, created_at, updated_at, timing
       FROM tour_templates
       WHERE company_id = $1
       ORDER BY updated_at DESC NULLS LAST, created_at DESC
@@ -113,6 +113,7 @@ export default async function handler(req, res) {
         days,
         nights,
         segments,
+        timing: t.timing || [],
       };
     });
 

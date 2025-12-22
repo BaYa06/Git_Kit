@@ -33,6 +33,7 @@ export default async function handler(req, res) {
     start_date,
     end_date,
     components,
+    timing,
   } = req.body || {};
 
   if (!template_id || !company_id || !name) {
@@ -73,14 +74,16 @@ export default async function handler(req, res) {
           status = $2,
           start_date = $3,
           end_date = $4,
+          timing = $5,
           updated_at = now()
-      WHERE id = $5 AND company_id = $6
+      WHERE id = $6 AND company_id = $7
     `,
       [
         name.trim(),
         status || "active",
         start_date || null,
         end_date || null,
+        JSON.stringify(timing || []),
         template_id,
         company_id,
       ]

@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     // берём шаблон
     const tmplRes = await client.query(
       `
-      SELECT id, company_id, name, status, start_date, end_date
+      SELECT id, company_id, name, status, start_date, end_date, timing
       FROM tour_templates
       WHERE id = $1
     `,
@@ -83,6 +83,7 @@ export default async function handler(req, res) {
       status: t.status,
       start_date: t.start_date,
       end_date: t.end_date,
+      timing: t.timing || [],
       components: compRes.rows,
     };
 

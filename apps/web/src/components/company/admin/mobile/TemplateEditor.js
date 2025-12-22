@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import TimingTab from "./TimingTab";
 import base from "../../../../styles/admin/base.module.css";
 import cards from "../../../../styles/admin/cards.module.css";
 import tabs from "../../../../styles/admin/tabs.module.css";
@@ -40,10 +41,12 @@ export default function TemplateEditor({
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("active"); // active | draft
   const [components, setComponents] = useState([]);
+  const [timing, setTiming] = useState([]); // timing days data
   const [activeTab, setActiveTab] = useState("general"); // <--- ЭТО НУЖНО
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!!templateId);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
 
@@ -85,6 +88,7 @@ export default function TemplateEditor({
                 comment: c.comment || "",
                 position: c.position || index + 1,
             })),
+            timing: timing || [],
             };
 
             const url = templateId
@@ -105,6 +109,9 @@ export default function TemplateEditor({
             throw new Error(data.message || "Ошибка сохранения шаблона");
             }
 
+            setSuccessMessage("Шаблон успешно сохранен!");
+            setTimeout(() => setSuccessMessage(null), 3000);
+            
             if (onSaved) onSaved();
 
         } catch (e) {
@@ -148,6 +155,7 @@ export default function TemplateEditor({
           position: c.position || 1,
         }))
       );
+      setTiming(t.timing || []);
     } catch (e) {
       console.error(e);
       setError(e.message);
@@ -180,15 +188,43 @@ export default function TemplateEditor({
         <button
             type="button"
             onClick={handleSave}
+            disabled={isSaving}
             className={s.templateEditorSaveButton}
+            style={{ opacity: isSaving ? 0.7 : 1 }}
         >
-            Сохранить
+            {isSaving ? (
+                <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Сохранение...
+                </span>
+            ) : (
+                "Сохранить"
+            )}
         </button>
       </header>
 
 
       {/* Основные поля */}
       <div className={s.templateEditorBody}>
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-3 mb-4 flex items-center gap-3 animate-fade-in">
+            <span className="material-symbols-outlined text-emerald-500 text-[20px]">check_circle</span>
+            <span className="text-emerald-400 text-sm font-medium">{successMessage}</span>
+          </div>
+        )}
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 mb-4 flex items-center gap-3">
+            <span className="material-symbols-outlined text-red-500 text-[20px]">error</span>
+            <span className="text-red-400 text-sm font-medium">{error}</span>
+          </div>
+        )}
+        
         <label className={s.templateEditorField}>
           <span className={s.templateFieldLabel}>{isTourMode ? "Название тура" : "Название шаблона"}</span>
           <input
@@ -200,28 +236,31 @@ export default function TemplateEditor({
             />
         </label>
 
-        <div className={s.templateEditorDatesRow}>
-          <label className={s.templateEditorField}>
-            <span className={s.templateEditorLabel}>Старт</span>
-            <input
-                type="date"
-                className={s.templateEditorInput}
-                value={startDate}
-                placeholder="дд.мм.гггг"
-                onChange={(e) => setStartDate(e.target.value)}
-                />
-          </label>
-          <label className={s.templateEditorField}>
-            <span className={s.templateEditorLabel}>Конец</span>
-            <input
-                type="date"
-                className={s.templateEditorInput}
-                value={endDate}
-                placeholder="дд.мм.гггг"
-                onChange={(e) => setEndDate(e.target.value)}
-                />
-          </label>
-        </div>
+        {/* Даты только для режима тура, не для шаблона */}
+        {isTourMode && (
+          <div className={s.templateEditorDatesRow}>
+            <label className={s.templateEditorField}>
+              <span className={s.templateEditorLabel}>Старт</span>
+              <input
+                  type="date"
+                  className={s.templateEditorInput}
+                  value={startDate}
+                  placeholder="дд.мм.гггг"
+                  onChange={(e) => setStartDate(e.target.value)}
+                  />
+            </label>
+            <label className={s.templateEditorField}>
+              <span className={s.templateEditorLabel}>Конец</span>
+              <input
+                  type="date"
+                  className={s.templateEditorInput}
+                  value={endDate}
+                  placeholder="дд.мм.гггг"
+                  onChange={(e) => setEndDate(e.target.value)}
+                  />
+            </label>
+          </div>
+        )}
 
         {!isTourMode && (
             <div className={s.templateEditorTagsRow}>
@@ -267,6 +306,15 @@ export default function TemplateEditor({
           onClick={() => setActiveTab("tourists")}
         >
           Туристы
+        </button>
+        <button
+          type="button"
+          className={`${s.templateEditorTab} ${
+            activeTab === "timing" ? s.templateEditorTabActive : ""
+          }`}
+          onClick={() => setActiveTab("timing")}
+        >
+          Тайминг
         </button>
       </div>
 
@@ -365,6 +413,8 @@ export default function TemplateEditor({
             </p>
           </div>
         )}
+
+        {activeTab === "timing" && <TimingTab timing={timing} setTiming={setTiming} />}
       </div>
 
       {/* Модальное окно выбора компонента */}

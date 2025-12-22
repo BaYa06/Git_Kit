@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import TimingPreview from './TimingPreview';
+
 const badgeToneClasses = {
   blue: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
   emerald: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
@@ -10,7 +13,9 @@ const dotToneClasses = {
   idle: 'bg-gray-700 border-2 border-[#1F2937]',
 };
 
-export default function TemplateDetails({ template, loading, error }) {
+export default function TemplateDetails({ template, loading, error, onClose, onOpenEditor }) {
+  const [activeTab, setActiveTab] = useState('segments'); // 'segments' | 'timing'
+  
   if (loading) {
     return (
       <div className="xl:col-span-4">
@@ -42,6 +47,10 @@ export default function TemplateDetails({ template, loading, error }) {
   }
 
   const readyPercent = Math.round((template?.checklist?.ready ?? 0) * 100);
+  
+  // Вычисляем длительность из timing
+  const durationDays = template.timing?.length || template.durationDays || 0;
+  
   const timeline =
     template.itinerary ||
     template.components?.map((comp, index) => ({
@@ -55,8 +64,11 @@ export default function TemplateDetails({ template, loading, error }) {
     template.tags && template.tags.length > 0
       ? template.tags
       : [
-          template.durationDays
-            ? { label: `${template.durationDays} дн.`, tone: 'blue' }
+          durationDays > 0
+            ? { 
+                label: `${durationDays} ${durationDays === 1 ? 'день' : durationDays < 5 ? 'дня' : 'дней'}`, 
+                tone: 'blue' 
+              }
             : null,
           template.status
             ? {
@@ -71,7 +83,7 @@ export default function TemplateDetails({ template, loading, error }) {
 
   return (
     <div className="xl:col-span-4">
-      <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 sticky top-6">
+      <div className="glass-card rounded-2xl p-6 flex flex-col gap-6 sticky top-6 max-h-[calc(100vh-48px)] overflow-hidden">
         {error ? (
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 text-xs px-3 py-2">
             {error}
@@ -84,7 +96,11 @@ export default function TemplateDetails({ template, loading, error }) {
               <h2 className="text-xl font-bold text-white leading-tight">{template.name}</h2>
               <span className="text-xs text-gray-500">ID: {template.id}</span>
             </div>
-            <button className="text-gray-400 hover:text-white" type="button">
+            <button
+              className="text-gray-400 hover:text-white"
+              type="button"
+              onClick={onClose}
+            >
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -137,34 +153,80 @@ export default function TemplateDetails({ template, loading, error }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <h3 className="text-sm font-bold text-white">Структура тура</h3>
-          <div className="relative pl-2 flex flex-col gap-0">
-            {timeline.length === 0 && (
-              <div className="text-[11px] text-gray-500 pl-2 pb-2">Нет компонентов шаблона</div>
-            )}
-            {timeline.map((step) => (
-              <div
-                key={step.label}
-                className="relative pl-6 pb-6 border-l border-gray-700 last:border-0 last:pb-0"
-              >
-                <div className={`absolute -left-[5px] top-0 size-2.5 rounded-full ${dotToneClasses[step.state] || dotToneClasses.idle}`}></div>
-                <div className="flex flex-col gap-1 -mt-1.5">
-                  <span className={`text-xs font-bold ${step.state === 'done' ? 'text-white' : 'text-gray-300'}`}>
-                    {step.label}
-                  </span>
-                  <span className="text-[11px] text-gray-500">{step.description}</span>
+        <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 border-b border-white/10 flex-shrink-0">
+            <button
+              type="button"
+              className={`pb-3 px-1 text-xs font-semibold transition-colors relative ${
+                activeTab === 'segments'
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('segments')}
+            >
+              Сегменты
+              {activeTab === 'segments' && (
+                <span className="absolute bottom-0 left-0 h-0.5 w-full bg-primary rounded-t-full"></span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`pb-3 px-1 text-xs font-semibold transition-colors relative ${
+                activeTab === 'timing'
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+              onClick={() => setActiveTab('timing')}
+            >
+              Тайминг
+              {activeTab === 'timing' && (
+                <span className="absolute bottom-0 left-0 h-0.5 w-full bg-primary rounded-t-full"></span>
+              )}
+            </button>
+          </div>
+
+          {/* Tab Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
+            {activeTab === 'segments' && (
+              <>
+                <h3 className="text-sm font-bold text-white mb-3">Структура тура</h3>
+                <div className="relative pl-2 flex flex-col gap-0">
+                  {timeline.length === 0 && (
+                    <div className="text-[11px] text-gray-500 pl-2 pb-2">Нет компонентов шаблона</div>
+                  )}
+                  {timeline.map((step) => (
+                    <div
+                      key={step.label}
+                      className="relative pl-6 pb-6 border-l border-gray-700 last:border-0 last:pb-0"
+                    >
+                      <div className={`absolute -left-[5px] top-0 size-2.5 rounded-full ${dotToneClasses[step.state] || dotToneClasses.idle}`}></div>
+                      <div className="flex flex-col gap-1 -mt-1.5">
+                        <span className={`text-xs font-bold ${step.state === 'done' ? 'text-white' : 'text-gray-300'}`}>
+                          {step.label}
+                        </span>
+                        <span className="text-[11px] text-gray-500">{step.description}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {template.extraDays ? (
+                    <div className="relative pl-6 pt-2">
+                      <div className={`absolute -left-[5px] top-2 size-2.5 rounded-full ${dotToneClasses.idle}`}></div>
+                      <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                        + ещё {template.extraDays} {template.extraDays === 1 ? 'день' : 'дней'}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ))}
-            {template.extraDays ? (
-              <div className="relative pl-6 pt-2">
-                <div className={`absolute -left-[5px] top-2 size-2.5 rounded-full ${dotToneClasses.idle}`}></div>
-                <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">
-                  + ещё {template.extraDays} {template.extraDays === 1 ? 'день' : 'дней'}
-                </span>
-              </div>
-            ) : null}
+              </>
+            )}
+
+            {activeTab === 'timing' && (
+              <>
+                <h3 className="text-sm font-bold text-white mb-3">Расписание по дням</h3>
+                <TimingPreview timing={template.timing} />
+              </>
+            )}
           </div>
         </div>
 
@@ -172,6 +234,7 @@ export default function TemplateDetails({ template, loading, error }) {
           <button
             type="button"
             className="w-full py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+            onClick={() => onOpenEditor?.(template.id)}
           >
             <span className="material-symbols-outlined text-[18px]">edit_document</span>
             Открыть конструктор

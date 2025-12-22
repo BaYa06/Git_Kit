@@ -2,9 +2,16 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/api/v1/tours/list": "pages/api/v1/tours/list.js",
-  "/login": "pages/login.js",
-  "/api/v1/company/templates/list": "pages/api/v1/company/templates/list.js",
   "/company/[id]/admin": "pages/company/[id]/admin.js",
-  "/cabinet": "pages/cabinet.js"
+  "/cabinet": "pages/cabinet.js",
+  "/company/[id]/guide": "pages/company/[id]/guide.js",
+  "/company/[id]": "pages/company/[id].js",
+  "/api/v1/auth/logout": "pages/api/v1/auth/logout.js",
+  "/login": "pages/login.js",
+  "/api/v1/auth/login": "pages/api/v1/auth/login.js",
+  "/company/[id]/owner": "pages/company/[id]/owner.js",
+  "/api/v1/owner/team": "pages/api/v1/owner/team.js",
+  "/api/v1/owner/upcoming-tours": "pages/api/v1/owner/upcoming-tours.js",
+  "/api/v1/risks/list": "pages/api/v1/risks/list.js",
+  "/api/v1/owner/dashboard-stats": "pages/api/v1/owner/dashboard-stats.js"
 }

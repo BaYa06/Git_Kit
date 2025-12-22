@@ -31,6 +31,7 @@ import templatesStyles from "../../../../styles/admin/templates.module.css";
 import editorStyles from "../../../../styles/admin/editor.module.css";
 import touristsStyles from "../../../../styles/admin/tourists.module.css";
 import { GuideTouristsMock } from "../../guide/Tours";
+import TimingViewOnly from "../../guide/TimingViewOnly";
 
 const s = {
   ...base,
@@ -980,6 +981,7 @@ export function NewTourFromTemplateScreen({
   const [endDate, setEndDate] = useState("");
   const [touristsCount, setTouristsCount] = useState(""); 
   const [components, setComponents] = useState([]);
+  const [timing, setTiming] = useState([]);
   const [activeTab, setActiveTab] = useState("general");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -1485,6 +1487,16 @@ export function NewTourFromTemplateScreen({
             custom: {},
           }))
         );
+        // Загружаем тайминг из шаблона
+        let timingData = t.timing || [];
+        if (typeof timingData === 'string') {
+          try {
+            timingData = JSON.parse(timingData);
+          } catch (e) {
+            timingData = [];
+          }
+        }
+        setTiming(timingData);
       } catch (e) {
         console.error(e);
         setError(e.message);
@@ -1533,6 +1545,16 @@ export function NewTourFromTemplateScreen({
             custom: c.custom || {},
           }))
         );
+        // Загружаем тайминг
+        let timingData = t.timing || [];
+        if (typeof timingData === 'string') {
+          try {
+            timingData = JSON.parse(timingData);
+          } catch (e) {
+            timingData = [];
+          }
+        }
+        setTiming(timingData);
         await loadTourGuests(tourId);
       } catch (e) {
         console.error(e);
@@ -1785,6 +1807,15 @@ export function NewTourFromTemplateScreen({
           <button
             type="button"
             className={`${s.templateEditorTab} ${
+              activeTab === "timing" ? s.templateEditorTabActive : ""
+            }`}
+            onClick={() => setActiveTab("timing")}
+          >
+            Тайминг
+          </button>
+          <button
+            type="button"
+            className={`${s.templateEditorTab} ${
               activeTab === "reviews" ? s.templateEditorTabActive : ""
             }`}
             onClick={() => setActiveTab("reviews")}
@@ -1986,8 +2017,8 @@ export function NewTourFromTemplateScreen({
                 touristsData={guideCards}
                 onTogglePaid={handleTogglePaid}
               />
-            ) : guideLikeView ? (
-              // Админ в мобильном виде: редактируемый список
+            ) : (
+              // Админ: редактируемый список туристов
               <div className={s.touristsCard}>
                 <div className={s.touristsCardHeader}>
                   <div>
@@ -2251,7 +2282,13 @@ export function NewTourFromTemplateScreen({
                   </span>
                 </div>
               </div>
-            ) : null
+            )
+          )}
+
+          {activeTab === "timing" && (
+            <div className="px-0 py-4 md:p-6">
+              <TimingViewOnly timing={timing} />
+            </div>
           )}
 
           {activeTab === "reviews" && (

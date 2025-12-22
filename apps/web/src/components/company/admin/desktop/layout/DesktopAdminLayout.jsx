@@ -134,7 +134,7 @@ export default function DesktopAdminLayout({ company, user, role, guides, hotels
       case 'help':
         return <HelpPage />;
       case 'profile':
-        return <ProfilePage view="work" />;
+        return <ProfilePage view="work" user={user} role={role} company={company} />;
       default:
         return null;
     }

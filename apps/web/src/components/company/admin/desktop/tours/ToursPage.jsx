@@ -117,10 +117,15 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
       return true;
     });
     
-    // Сортировка по дате от ближайших к дальним
+    // Сортировка: предстоящие по возрастанию, прошедшие — от сегодняшних к старым
     filtered.sort((a, b) => {
       const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
       const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+
+      if (mainFilter === 'past') {
+        return dateB - dateA;
+      }
+
       return dateA - dateB;
     });
     
@@ -578,14 +583,14 @@ export default function ToursPage({ companyId, guides = [], hotels = [], drivers
                             )}
                           </td>
                           <td className="py-3 px-2">
-                            <span className="text-xs text-gray-300">
+                            <span className="text-xs text-gray-300 inline-block max-w-[120px] truncate" title={tour.transport_label}>
                               {tour.transport_required
                                 ? tour.transport_label || 'не выбрано'
                                 : 'не нужно'}
                             </span>
                           </td>
                           <td className="py-3 px-2">
-                            <span className="text-xs text-gray-300">
+                            <span className="text-xs text-gray-300 inline-block max-w-[140px] truncate" title={tour.hotel_label}>
                               {tour.hotel_required
                                 ? tour.hotel_label || 'не выбрано'
                                 : 'не нужно'}

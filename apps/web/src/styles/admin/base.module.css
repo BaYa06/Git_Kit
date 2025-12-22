@@ -1336,6 +1336,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .templateEditorField {
@@ -1345,6 +1347,8 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .templateEditorLabel {
@@ -1372,6 +1376,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+  width: 100%;
 }
 
 .templateEditorDatesInline {
@@ -1380,6 +1385,8 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 900px) {
@@ -1483,12 +1490,16 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .templateAccordionGrid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+  width: 100%;
 }
 
 @media (min-width: 900px) {
@@ -1604,6 +1615,9 @@
   border: 1px solid #354364;
   background-color: #1a2133;
   padding: 4px 14px 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .templateAccordionSummary {
@@ -2607,3 +2621,31 @@
   flex-shrink: 0;
 }
 
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
